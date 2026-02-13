@@ -2235,6 +2235,10 @@
     function toggleActionSection(name, enabled) {
       projectData.actionsEnabled[name] = enabled;
       const section = document.getElementById(`section-${name}`);
+      if (!section) {
+        console.warn(`toggleActionSection: elemento 'section-${name}' não encontrado`);
+        return;
+      }
       if (enabled) {
         section.classList.add('active');
         // Se for sismo, gerar gráficos
@@ -2545,20 +2549,32 @@
     }
 
     function importJSON(event) {
+      console.log("=== IMPORT INICIADO ===");
       const file = event.target.files[0];
-      if (!file) return;
+      if (!file) {
+        console.log("Nenhum ficheiro selecionado");
+        return;
+      }
+      console.log("Ficheiro selecionado:", file.name);
 
       const reader = new FileReader();
       reader.onload = e => {
+        console.log("FileReader onload disparado");
         try {
+          console.log("A fazer parse do JSON...");
           const data = JSON.parse(e.target.result);
+          console.log("JSON parsed com sucesso, data:", data);
+          console.log("A chamar loadAllData...");
           loadAllData(data);
+          console.log("loadAllData retornou");
           showStatus('Dados importados com sucesso', 'ok');
         } catch (err) {
+          console.error("ERRO no import:", err);
           showStatus('Erro ao importar: ' + err.message, 'bad');
         }
       };
       reader.readAsText(file);
+      console.log("FileReader.readAsText iniciado");
     }
 
     function collectAllData() {
@@ -2580,6 +2596,9 @@
     }
 
     function loadAllData(data) {
+      console.log("=== loadAllData CHAMADA ===");
+      console.log("Dados recebidos:", data);
+      
       // Detect V9 (legacy)
       if (Array.isArray(data.projectData?.floors)) {
         console.info("Migrating V9 to V10...");
@@ -2658,14 +2677,27 @@
       }
 
       // Re-render completo
+      console.log("=== INICIO RENDERS ===");
+      console.log("Vai chamar renderFloors...");
       renderFloors();
+      console.log("renderFloors executado");
+      
+      console.log("Vai chamar renderGeoTable...");
       renderGeoTable();
+      console.log("renderGeoTable executado");
+      
+      console.log("Vai chamar updateGeneralStats...");
       updateGeneralStats();
+      console.log("updateGeneralStats executado");
+      
+      console.log("Vai chamar updateKPIs...");
       updateKPIs();
-      updateKPIs();
-      if (typeof populateZonamentoFloorSelector === 'function') {
-        populateZonamentoFloorSelector();
-      }
+      console.log("updateKPIs executado");
+      
+      console.log("Vai chamar populateZonamentoFloorSelector...");
+      populateZonamentoFloorSelector();
+      console.log("populateZonamentoFloorSelector executado");
+      console.log("=== FIM RENDERS ===");
 
       showStatus('Dados carregados com sucesso', 'ok');
     }

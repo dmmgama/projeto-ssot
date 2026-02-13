@@ -18,6 +18,34 @@ Este documento serve de "Memória de Longo Prazo" do projeto.
 
 📅 Histórico de Versões
 
+### [v9.1 → v10.0] - 13/02/2026
+**Autor**: David + Claude Strategic + Claude Code
+**Resumo**: Refactor invisível para arquitetura multi-projeto Firebase-ready
+
+**Alterações Arquiteturais**:
+- Novo SSOT: `appState = { activeProjectId, projects: {} }`
+- `projectData` agora é Proxy (legacy bridge)
+- `floors`, `zones`, `geoHorizons` → Mapas UUID
+- Migração automática v9→v10 em `loadAllData()`
+
+**Bugs Corrigidos**:
+- findPisoById: parseInt() → comparação string direta
+- postMessage: Escrita em appState (não Proxy)
+- loadAllData: Chamadas render no final (fora de ifs)
+
+**Breaking Changes**:
+- Mutação directa `projectData.floors.push()` NÃO funciona
+- Funções DEVEM usar `appState` directamente
+
+**Compatibilidade**:
+- ✅ JSONs v9.1 migram automaticamente
+- ✅ UI inalterada (refactor invisível)
+- ✅ zonas.html não afectado
+
+**Status**: ✅ Production Ready
+**Próximos Passos**: Fase 2 (UI Lobby) agora segura para implementar
+
+
 [v9.1] - Documentação Técnica Completa - 13/02/2026
 **Autor**: Claude (Conselheiro Estratégico)
 **Resumo**: Gerados ESPECIFICACAO.md + GUIDELINES.md baseados em análise de Index_v9.1.html
