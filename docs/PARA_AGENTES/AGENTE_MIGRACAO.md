@@ -14,9 +14,67 @@ Este documento serve de "Memória de Longo Prazo" do projeto.
 **Autor:** (Nome do Agente/User)
 **Resumo:** ...
 **Alterações Arquiteturais:** ...
+```
 
+---
 
-📅 Histórico de Versões
+## 📅 Histórico de Versões
+
+### [v10.0 → v10.1] - 13/02/2026
+**Autor**: David + Claude Estratégico + Claude Code
+**Resumo**: Fase 2 - UI Lobby multi-projeto com arquitectura separada
+
+**Alterações Arquitecturais**:
+- Novo ficheiro `lobby.html` (gestão projetos)
+- Novo ficheiro `shared.js` (UUID + localStorage utilities)
+- `index.html` agora recebe URL param `?project=<uuid>`
+- Navegação: lobby.html → index.html?project=X → lobby.html
+
+**Funcionalidades Novas**:
+- Grid de projetos com cards (ID JSJ, Nome, Cliente)
+- CRUD completo: Criar, Abrir, Apagar projetos
+- Persistência automática em localStorage
+- Botão "🏠 Voltar ao Lobby" no index.html
+- Auto-save ao sair de projeto
+
+**Persistência**:
+- localStorage key: `ssot_projects`
+- Formato: `{ projectId: { id, floors: Map, zones: Map, ... } }`
+- Serialização Maps → Arrays no save
+- Desserialização Arrays → Maps no load
+
+**Migração v9→v10**:
+- JSONs v9.1 migram automaticamente (single project → multi-project)
+- Gera UUID novo para projeto migrado
+- Mantém compatibilidade com estrutura antiga
+
+**Bugs Corrigidos Durante Implementação**:
+1. Maps não serializavam (fix em saveProjectsToStorage)
+2. actionsData não persistia (fix: saveCurrentProject após postMessage)
+3. zonas.html abria vazio (fix: enviar actionsData existente no initEditor)
+
+**Breaking Changes**:
+- `index.html` sem URL param redirige para lobby.html
+- JSONs v10.1 incompatíveis com Index_v9.html (estrutura diferente)
+
+**Compatibilidade**:
+- ✅ Secções 1-8 inalteradas (funcionam igual)
+- ✅ zonas.html compatível (postMessage mantido)
+- ✅ Import v9 → v10 automático
+- ✅ appState.activeProject Proxy funcional
+
+**Ficheiros Novos**:
+- `lobby.html` (~280 linhas)
+- `shared.js` (~120 linhas)
+
+**Ficheiros Modificados**:
+- `Index_v10.html` (+ URL param logic, + botão lobby, + auto-save)
+
+**Próximos Passos**: Fase 3 (Backend Firebase)
+
+**Status**: ✅ Production Ready
+
+---
 
 ### [v9.1 → v10.0] - 13/02/2026
 **Autor**: David + Claude Strategic + Claude Code

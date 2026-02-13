@@ -237,6 +237,12 @@ selectActionsZone(floorId, zoneId, btn)
 
 ### 3.3 Funções de Cálculo EC1/EC8 (NÃO REMOVER)
 ```javascript
+// v10.1 - Multi-Projeto
+saveCurrentProject()          // Serializa projeto activo para localStorage
+loadProjectFromStorage(id)    // Carrega projeto específico
+backToLobby()                 // Salva + redirige para lobby.html
+openZonesEditor(floorId)      // ⚠️ CRÍTICO: Envia actionsData existente
+
 // Secção 7.1 - Gravíticas (Tabela Analítica)
 renderZoneActions(floor, zone)  // 🔥 Gera tabela cargas EC1
 getUsoCategoryData(uso)         // 🔥 Retorna {qk, psi0, psi1, psi2}
@@ -320,6 +326,17 @@ window.addEventListener('message', (event) => {
 document.getElementById(id)?.addEventListener('input', updateKPIs);
 ```
 **Motivo**: Actualiza KPIs em tempo real (Secção 1)
+
+### 4.5 Listener postMessage (zonas.html → index.html)
+```javascript
+window.addEventListener('message', (event) => {
+  if (event.data.type === 'zonesData') {
+    floor.actionsData = event.data.data;
+    saveCurrentProject();  // 🔥 CRÍTICO: Persistir após receber
+  }
+});
+```
+**Motivo**: actionsData deve persistir ao voltar ao lobby
 
 ### 4.4 Listeners Canvas (FloorViewer)
 ```javascript

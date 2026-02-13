@@ -99,6 +99,9 @@ class zone_calculator {}
 ### 2.1 Ordem de Declaração (Template)
 
 ```javascript
+// 0. IMPORTS (v10.1+)
+<script src="shared.js"></script>  // UUID + localStorage utilities
+
 // 1. VARIÁVEIS GLOBAIS
 let projectData = { floors: [], geoHorizons: [] };
 
@@ -201,6 +204,11 @@ if (h > maxThicknessFound) {
 ## 3. BOAS PRÁTICAS
 
 ### 3.1 SSOT (Single Source of Truth)
+
+**v10.1 Update**: 
+- `appState.projects[projectId]` é SSOT
+- `appState.activeProject` é Proxy (getter para projeto activo)
+- localStorage é cache persistente (não fonte de verdade em runtime)
 
 **REGRA DE OURO**: Nunca ler do DOM para cálculos.
 
@@ -836,6 +844,25 @@ const qk1 = viewer.getCategoryLoad(category);
 // 2. Verifica se há outra função com mesma lógica
 // (procura por "case 'B':" no código)
 ```
+
+### 10.4 "Dados não aparecem após voltar ao lobby"
+
+**Sintomas**: Editar projeto → Voltar lobby → Reabrir → Campos vazios
+
+**Causas**:
+1. `saveCurrentProject()` não chamado ao voltar
+2. `loadProjectsFromStorage()` não reconstrói Maps
+
+**Debug**:
+```javascript
+// Antes de voltar ao lobby
+console.log('Antes save:', appState.activeProject.floors.size);
+saveCurrentProject();
+const saved = JSON.parse(localStorage.getItem('ssot_projects'));
+console.log('Guardado:', saved[appState.activeProjectId].floors.length);
+```
+
+**Fix**: Garantir que `backToLobby()` chama `saveCurrentProject()` antes de redirigir.
 
 ---
 

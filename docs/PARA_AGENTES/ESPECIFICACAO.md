@@ -10,10 +10,11 @@
 ## 1. VISÃO GERAL
 
 ### 1.1 Arquitetura
-- **Tipo**: Single Page Application (SPA) sem framework
-- **Estado**: In-memory (variável global `projectData`)
-- **Persistência**: Import/Export JSON manual
-- **UI**: Navegação por secções (8 secções principais)
+- **Tipo**: Multi-Page Application (lobby.html + index.html)
+- **Estado**: localStorage (persistência automática)
+- **Navegação**: lobby.html (lista) → index.html?project=<uuid> (editor)
+- **UI Lobby**: Grid de projetos com CRUD
+- **UI Editor**: 8 secções (inalteradas vs v9.1)
 
 ### 1.2 Componentes Principais
 ```
@@ -34,11 +35,51 @@ User Input (DOM) → updateKPIs() → projectData (Global State)
 
 **REGRA CRÍTICA**: Nunca ler do DOM para cálculos. Sempre usar `projectData`.
 
+### 1.4 Fluxo Multi-Projeto
+```
+User → lobby.html (ponto de entrada)
+    ↓
+Clicar "Novo Projeto"
+    ↓
+index.html?project=new (cria UUID, abre vazio)
+    ↓
+Preencher Secções 1-8
+    ↓
+"🏠 Voltar ao Lobby"
+    ↓
+lobby.html (projeto aparece no grid)
+    ↓
+Clicar "Abrir"
+    ↓
+index.html?project=<uuid> (carrega dados)
+```
+
+**localStorage Schema** (v10.1):
+```json
+{
+  "ssot_projects": {
+    "uuid-1": {
+      "id": "uuid-1",
+      "id_jsj": "2026-001",
+      "nome_projeto": "Edifício A",
+      "floors": [{"id": "...", "name": "..."}],
+      "zones": [{"id": "...", "name": "..."}],
+      "geoHorizons": [{"horizonte": "..."}]
+    },
+    "uuid-2": { }
+  }
+}
+```
+
 ---
 
 ## 2. MODELO DE DADOS (Schema Completo)
 
 ### 2.1 Estrutura Global `projectData`
+
+**NOTA v10.1**: Em runtime, `floors/zones/geoHorizons` são Maps.
+No localStorage, são serializados como Arrays.
+Conversão automática em `shared.js` (saveProjectsToStorage / loadProjectsFromStorage).
 
 ```javascript
 let projectData = {

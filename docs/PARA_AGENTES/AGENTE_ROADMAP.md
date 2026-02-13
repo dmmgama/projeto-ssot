@@ -10,13 +10,19 @@ Objetivos estratégicos para a evolução da aplicação.
 - [x] appState multi-projeto
 - [x] Proxy legacy bridge
 
-## Fase 2: Arquitetura Multi-Projeto (Objetivo 2)
+## Fase 2: Arquitetura Multi-Projeto ✅ COMPLETO (v10.1)
 * **Objetivo:** Permitir gestão de múltiplos projetos numa só sessão.
 * **Tarefas:**
-    * [ ] Criar **Secção 0**: "Lobby" de gestão de projetos.
-    * [ ] Alterar `projectData` para `appState = { activeId: null, projects: {} }`.
-    * [ ] Implementar UI para Criar/Ativar/Apagar projetos.
-    * [ ] Garantir que Secções 1-8 leem apenas do projeto ativo.
+    * [x] Criar lobby.html (gestão de projetos)
+    * [x] Criar shared.js (utilities)
+    * [x] Adaptar index.html para URL params
+    * [x] Implementar persistência localStorage
+    * [x] UI CRUD completa (Criar/Abrir/Apagar)
+    * [x] Integração com zonas.html (actionsData)
+    * [x] Migração automática v9→v10
+
+**Implementação**: lobby.html (ponto entrada) + index.html (editor projeto único)
+**Persistência**: localStorage (Maps serializados como Arrays)
 
 ## Fase 3: Backend & Web App (Objetivo 3)
 * **Objetivo:** Dados consistentes e acessíveis.
