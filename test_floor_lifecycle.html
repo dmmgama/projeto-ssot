@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Suite - Floor Lifecycle</title>
+  <script src="shared.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0a0e17;
+      color: #e0e6ed;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #4ecca3; border-bottom: 2px solid #4ecca3; padding-bottom: 10px; }
+    h2 { color: #5dade2; margin-top: 30px; }
+    .test-section {
+      background: #12161f;
+      border: 1px solid #1e2530;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .test-result {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+    .test-pass {
+      background: #1e4d2b;
+      border-left: 4px solid #4ecca3;
+    }
+    .test-fail {
+      background: #4d1e1e;
+      border-left: 4px solid #e74c3c;
+    }
+    .test-info {
+      background: #1e3a4d;
+      border-left: 4px solid #5dade2;
+    }
+    button {
+      background: #4ecca3;
+      color: #0a0e17;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 10px 5px;
+      font-size: 14px;
+    }
+    button:hover { background: #3dbb92; }
+    button:active { transform: scale(0.98); }
+    .btn-danger {
+      background: #e74c3c;
+      color: white;
+    }
+    .btn-danger:hover { background: #c0392b; }
+    pre {
+      background: #0a0e17;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      border: 1px solid #1e2530;
+    }
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      flex: 1;
+      background: linear-gradient(135deg, #1e2530 0%, #12161f 100%);
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #4ecca3;
+    }
+    .stat-label {
+      color: #8492a6;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🧪 Test Suite - Floor Lifecycle (UUID + Maps)</h1>
+
+<div class="test-section">
+  <h2>📊 Test Statistics</h2>
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-value" id="passCount">0</div>
+      <div class="stat-label">✓ Passed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="failCount">0</div>
+      <div class="stat-label">✗ Failed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="totalCount">0</div>
+      <div class="stat-label">Total Tests</div>
+    </div>
+  </div>
+</div>
+
+<div class="test-section">
+  <h2>🎮 Controls</h2>
+  <button onclick="runAllTests()">▶️ Run All Tests</button>
+  <button onclick="clearResults()">🗑️ Clear Results</button>
+  <button onclick="clearStorage()" class="btn-danger">⚠️ Clear LocalStorage</button>
+</div>
+
+<div id="results"></div>
+
+<script>
+  let testResults = [];
+  let passCount = 0;
+  let failCount = 0;
+
+  function log(message, type = 'info') {
+    const resultDiv = document.createElement('div');
+    resultDiv.className = `test-result test-${type}`;
+    
+    const icon = type === 'pass' ? '✓' : type === 'fail' ? '✗' : 'ℹ';
+    resultDiv.innerHTML = `<strong>${icon}</strong> ${message}`;
+    
+    document.getElementById('results').appendChild(resultDiv);
+    testResults.push({ message, type });
+    
+    if (type === 'pass') {
+      passCount++;
+      document.getElementById('passCount').textContent = passCount;
+    } else if (type === 'fail') {
+      failCount++;
+      document.getElementById('failCount').textContent = failCount;
+    }
+    
+    document.getElementById('totalCount').textContent = passCount + failCount;
+  }
+
+  function assert(condition, message) {
+    if (condition) {
+      log(`✓ ${message}`, 'pass');
+      return true;
+    } else {
+      log(`✗ ${message}`, 'fail');
+      return false;
+    }
+  }
+
+  function clearResults() {
+    document.getElementById('results').innerHTML = '';
+    testResults = [];
+    passCount = 0;
+    failCount = 0;
+    document.getElementById('passCount').textContent = '0';
+    document.getElementById('failCount').textContent = '0';
+    document.getElementById('totalCount').textContent = '0';
+  }
+
+  function clearStorage() {
+    if (confirm('⚠️ This will clear ALL localStorage data. Continue?')) {
+      localStorage.clear();
+      log('LocalStorage cleared', 'info');
+    }
+  }
+
+  async function runAllTests() {
+    clearResults();
+    log('=== Starting Test Suite ===', 'info');
+    
+    // Test 1: Create Project with Floors/Zones
+    log('', 'info');
+    log('TEST 1: Create Project Structure', 'info');
+    const projectId = generateUUID();
+    const floorId1 = generateUUID();
+    const floorId2 = generateUUID();
+    const zone1Id = generateUUID();
+    const zone2Id = generateUUID();
+    
+    const testProject = {
+      id: projectId,
+      nome_projeto: 'Test Project',
+      cliente: 'Test Client',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      floors: new Map([
+        [floorId1, {
+          id: floorId1,
+          name: 'Piso 0',
+          order: 0,
+          cota: 0,
+          area: 100,
+          zones: new Map([
+            [zone1Id, {
+              id: zone1Id,
+              name: 'Zona A',
+              area: 50,
+              uso: 'Habitacao',
+              tipoLaje: 'Vigada'
+            }]
+          ]),
+          actionsData: { layers: {} }
+        }],
+        [floorId2, {
+          id: floorId2,
+          name: 'Piso 1',
+          order: 1,
+          cota: 3.0,
+          area: 95,
+          zones: new Map([
+            [zone2Id, {
+              id: zone2Id,
+              name: 'Zona B',
+              area: 45,
+              uso: 'Comercio',
+              tipoLaje: 'Fungiforme'
+            }]
+          ]),
+          actionsData: { layers: {} }
+        }]
+      ]),
+      geoHorizons: new Map()
+    };
+    
+    assert(testProject.floors instanceof Map, 'floors is a Map');
+    assert(testProject.floors.size === 2, 'Project has 2 floors');
+    
+    const floor1 = testProject.floors.get(floorId1);
+    assert(floor1 !== undefined, 'Floor 1 exists');
+    assert(floor1.zones instanceof Map, 'Floor 1 zones is a Map');
+    assert(floor1.zones.size === 1, 'Floor 1 has 1 zone');
+    
+    const zone1 = floor1.zones.get(zone1Id);
+    assert(zone1 !== undefined, 'Zone 1 exists');
+    assert(zone1.name === 'Zona A', 'Zone 1 name is correct');
+    
+    // Test 2: Save to Storage
+    log('', 'info');
+    log('TEST 2: Save to LocalStorage', 'info');
+    const projects = { [projectId]: testProject };
+    const saveResult = saveProjectsToStorage(projects);
+    
+    assert(saveResult === true, 'Save operation succeeded');
+    
+    const rawData = localStorage.getItem(StorageKeys.PROJECTS);
+    assert(rawData !== null, 'Data exists in localStorage');
+    
+    const parsedRaw = JSON.parse(rawData);
+    assert(typeof parsedRaw[projectId].floors === 'object', 'Floors serialized as object');
+    assert(typeof parsedRaw[projectId].floors[floorId1].zones === 'object', 'Zones serialized as nested object');
+    
+    // Test 3: Load from Storage
+    log('', 'info');
+    log('TEST 3: Load from LocalStorage', 'info');
+    const loadedProjects = loadProjectsFromStorage();
+    
+    assert(Object.keys(loadedProjects).length === 1, 'Loaded 1 project');
+    
+    const loadedProject = loadedProjects[projectId];
+    assert(loadedProject !== undefined, 'Project loaded successfully');
+    assert(loadedProject.floors instanceof Map, 'Loaded floors is a Map');
+    assert(loadedProject.floors.size === 2, 'Loaded project has 2 floors');
+    
+    const loadedFloor1 = loadedProject.floors.get(floorId1);
+    assert(loadedFloor1 !== undefined, 'Loaded floor 1 exists');
+    assert(loadedFloor1.zones instanceof Map, 'Loaded floor 1 zones is a Map');
+    assert(loadedFloor1.zones.size === 1, 'Loaded floor 1 has 1 zone');
+    
+    const loadedZone1 = loadedFloor1.zones.get(zone1Id);
+    assert(loadedZone1 !== undefined, 'Loaded zone 1 exists');
+    assert(loadedZone1.name === 'Zona A', 'Loaded zone 1 name preserved');
+    assert(loadedZone1.area === 50, 'Loaded zone 1 area preserved');
+    
+    // Test 4: Validate Structure Integrity
+    log('', 'info');
+    log('TEST 4: Structure Integrity', 'info');
+    
+    // Check no array access patterns leak
+    assert(!Array.isArray(loadedProject.floors), 'floors is NOT an array');
+    assert(!Array.isArray(loadedFloor1.zones), 'zones is NOT an array');
+    
+    // Check UUID integrity
+    assert(loadedFloor1.id === floorId1, 'Floor UUID preserved');
+    assert(loadedZone1.id === zone1Id, 'Zone UUID preserved');
+    
+    // Test 5: Modify and Re-save
+    log('', 'info');
+    log('TEST 5: Modify and Re-save', 'info');
+    
+    const newZoneId = generateUUID();
+    loadedFloor1.zones.set(newZoneId, {
+      id: newZoneId,
+      name: 'Zona C',
+      area: 30,
+      uso: 'Servicos',
+      tipoLaje: 'Lajeta'
+    });
+    
+    assert(loadedFloor1.zones.size === 2, 'New zone added (size = 2)');
+    
+    const resaveResult = saveProjectsToStorage({ [projectId]: loadedProject });
+    assert(resaveResult === true, 'Re-save succeeded');
+    
+    const reloadedProjects = loadProjectsFromStorage();
+    const reloadedFloor = reloadedProjects[projectId].floors.get(floorId1);
+    assert(reloadedFloor.zones.size === 2, 'Re-loaded floor has 2 zones');
+    
+    const newZone = reloadedFloor.zones.get(newZoneId);
+    assert(newZone !== undefined, 'New zone persisted');
+    assert(newZone.name === 'Zona C', 'New zone data correct');
+    
+    // Test 6: Delete Operations
+    log('', 'info');
+    log('TEST 6: Delete Operations', 'info');
+    
+    reloadedFloor.zones.delete(newZoneId);
+    assert(reloadedFloor.zones.size === 1, 'Zone deleted (size = 1)');
+    
+    reloadedProjects[projectId].floors.delete(floorId2);
+    assert(reloadedProjects[projectId].floors.size === 1, 'Floor deleted (size = 1)');
+    
+    const finalSave = saveProjectsToStorage(reloadedProjects);
+    assert(finalSave === true, 'Final save succeeded');
+    
+    const finalLoad = loadProjectsFromStorage();
+    const finalProject = finalLoad[projectId];
+    assert(finalProject.floors.size === 1, 'Final load shows 1 floor');
+    assert(finalProject.floors.get(floorId1).zones.size === 1, 'Final load shows 1 zone');
+    
+    // Summary
+    log('', 'info');
+    log(`=== Test Suite Complete: ${passCount} passed, ${failCount} failed ===`, 
+         failCount === 0 ? 'pass' : 'fail');
+    
+    if (failCount === 0) {
+      log('🎉 All tests passed! Storage layer is working correctly.', 'pass');
+    } else {
+      log('⚠️ Some tests failed. Check implementation.', 'fail');
+    }
+  }
+
+  // Auto-run on load
+  log('Test suite loaded. Click "Run All Tests" to begin.', 'info');
+</script>
+
+</body>
+</html>

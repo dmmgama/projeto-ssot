@@ -5,11 +5,10 @@
 
 Objetivos estratégicos para a evolução da aplicação.
 
-## Fase 1: Saneamento e Modularização
-* **Objetivo:** Limpar código e preparar escalabilidade.
-* **Tarefas:**
-    * [ ] Refactor: Extrair lógica de cálculo (Engenharia) do HTML para classes JS dedicadas.
-    * [ ] Unificar lógica de cálculo (tabela vs gráfico) numa única função.
+## Fase 1: Saneamento ✅ COMPLETO (v10.0)
+- [x] Refactor Array→UUID
+- [x] appState multi-projeto
+- [x] Proxy legacy bridge
 
 ## Fase 2: Arquitetura Multi-Projeto (Objetivo 2)
 * **Objetivo:** Permitir gestão de múltiplos projetos numa só sessão.
