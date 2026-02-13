@@ -14,7 +14,23 @@ Este documento serve de "Memória de Longo Prazo" do projeto.
 **Autor:** (Nome do Agente/User)
 **Resumo:** ...
 **Alterações Arquiteturais:** ...
+
+
 📅 Histórico de Versões
+
+[v9.1] - Documentação Técnica Completa - 13/02/2026
+**Autor**: Claude (Conselheiro Estratégico)
+**Resumo**: Gerados ESPECIFICACAO.md + GUIDELINES.md baseados em análise de Index_v9.1.html
+
+**Adições**:
+- ESPECIFICACAO.md (7200 palavras): Schema completo, API interna, protocolo zonas.html
+- GUIDELINES.md (3800 palavras): Naming, estrutura, protocolos alteração, testes
+
+**Observações**:
+- Tag `<title>` ainda diz v6.0 (corrigir em v9.2)
+- Confirmada limpeza v9.0→v9.1 (código morto removido)
+- Nenhuma alteração funcional vs v9.0
+
 [v9.1] - Limpeza de Código Morto - 12/02/2026
 Autor: Antigravity Agent
 Resumo: Auditoria e remoção de funcionalidades quebradas ou não utilizadas.
@@ -22,6 +38,8 @@ Alterações:
 - Removido script `updateTosco` (ignorado por innerHTML injection).
 - Removido método `getZoneCentroid` (não utilizado).
 - Validado integridade dos restantes componentes.
+
+
 
 [v9.0] - Versão Estável (Atual)
 Status: Production Ready

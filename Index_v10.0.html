@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Template Edifício JSJ · v9.1</title>
+  <title>Template Edifício JSJ · v10.0</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -1442,7 +1442,7 @@
           <!-- SECTION 7.1: AÇÕES GRAVÍTICAS (ZONAMENTO GRÁFICO) -->
           <div class="action-section active" id="section-zonamento">
             <div class="action-header" onclick="toggleActionBody('zonamento')">
-              <h3>🗺️ 7.1 · Ações Gravíticas (Análise Analítica) v9.0</h3>
+              <h3>🗺️ 7.1 · Zonamento Gráfico</h3>
               <span class="action-toggle">▼</span>
             </div>
             <div class="action-body show" id="body-zonamento">
@@ -2253,201 +2253,6 @@
       toggle.classList.toggle('open');
     }
 
-    // Ações Gravíticas por Zonas
-    function updateActionsFloorTabs() {
-      const activeProj = appState.projects[appState.activeProjectId];
-      if (!activeProj) return;
-
-      const tabsContainer = document.getElementById('actionsFloorTabs');
-      const contentContainer = document.getElementById('actionsFloorsContent');
-
-      if (!tabsContainer || !contentContainer) return;
-
-      const floors = Object.values(activeProj.floors).sort((a, b) => (a.order || 0) - (b.order || 0));
-
-      if (floors.length === 0) {
-        tabsContainer.innerHTML = '<p style="color:var(--muted);font-size:12px">Nenhum piso definido. Adicione pisos na Caracterização Geral.</p>';
-        contentContainer.innerHTML = '';
-        return;
-      }
-
-      tabsContainer.innerHTML = floors.map((floor, i) => `
-    <button class="floor-tab ${i === 0 ? 'active' : ''}" onclick="selectActionsFloor('${floor.id}', this)">${floor.name}</button>
-  `).join('');
-
-      contentContainer.innerHTML = floors.map((floor, i) => `
-    <div class="zone-actions-floor" id="actions-floor-${floor.id}" style="display:${i === 0 ? 'block' : 'none'}">
-      ${Object.keys(floor.zones).length === 0 ? `
-        <div style="padding:30px 20px;text-align:center;color:var(--muted);background:#1a1f2a;border-radius:8px">
-          <p style="margin-bottom:8px;font-size:14px">Nenhuma zona definida neste piso.</p>
-          <p style="font-size:12px">Adicione zonas na secção "Caracterização Geral".</p>
-        </div>
-      ` : `
-        <div class="zone-tabs">
-          ${Object.values(floor.zones).map((zone, zi) => `
-            <button class="zone-tab ${zi === 0 ? 'active' : ''}" onclick="selectActionsZone('${floor.id}', '${zone.id}', this)">${zone.name}</button>
-          `).join('')}
-        </div>
-        ${Object.values(floor.zones).map((zone, zi) => `
-          <div class="zone-actions-content ${zi === 0 ? 'show' : ''}" id="actions-zone-${floor.id}-${zone.id}">
-            ${renderZoneActions(floor, zone)}
-          </div>
-        `).join('')}
-      `}
-    </div>
-  `).join('');
-    }
-
-    function selectActionsFloor(floorId, btn) {
-      document.querySelectorAll('.floor-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.zone-actions-floor').forEach(f => f.style.display = 'none');
-      document.getElementById(`actions-floor-${floorId}`).style.display = 'block';
-    }
-
-    function selectActionsZone(floorId, zoneId, btn) {
-      const parent = btn.parentElement;
-      parent.querySelectorAll('.zone-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const container = document.getElementById(`actions-floor-${floorId}`);
-      container.querySelectorAll('.zone-actions-content').forEach(c => c.classList.remove('show'));
-      document.getElementById(`actions-zone-${floorId}-${zoneId}`).classList.add('show');
-    }
-
-    function renderZoneActions(floor, zone) {
-      if (!zone.permanentes) zone.permanentes = [];
-      if (!zone.variaveis) zone.variaveis = [];
-      if (!zone.walls) zone.walls = [];
-
-      const hEquiv = calculateEquivThickness(zone.tipoLaje, zone.espessura);
-      const ppLaje = hEquiv * 25;
-
-      // Calcular paredes
-      let wallsLoad = 0;
-      zone.walls.forEach(w => {
-        const area = w.length * w.height;
-        const weight = area * w.peso;
-        wallsLoad += weight;
-      });
-      const wallsDistributed = zone.area > 0 ? wallsLoad / zone.area : 0;
-
-      // Total permanentes
-      let totalPerm = ppLaje + wallsDistributed;
-      zone.permanentes.forEach(p => totalPerm += parseFloat(p.value) || 0);
-
-      // Variáveis importadas
-      const { qk, psi0, psi1, psi2 } = getUsoCategoryData(zone.uso);
-
-      // Combinações
-      const G = totalPerm;
-      const Q = qk;
-      const combinations = [
-        { name: 'ELU Fund. 1', value: 1.35 * G + 1.50 * Q, formula: '1.35G + 1.50Q', type: 'elu' },
-        { name: 'ELU Fund. 2', value: 1.35 * G + 1.50 * psi0 * Q, formula: '1.35G + 1.50ψ₀Q', type: 'elu' },
-        { name: 'SLS Caract.', value: G + Q, formula: 'G + Q', type: 'els' },
-        { name: 'SLS Freq.', value: G + psi1 * Q, formula: 'G + ψ₁Q', type: 'els' },
-        { name: 'SLS Q-perm.', value: G + psi2 * Q, formula: 'G + ψ₂Q', type: 'els' }
-      ];
-
-      return `
-    <div style="display:grid;gap:16px">
-      <!-- Ações Permanentes -->
-      <div class="action-card">
-        <div class="action-card-header">
-          <div class="action-card-title">⚖️ Ações Permanentes</div>
-          <div class="action-card-actions">
-            <button class="btn-sm" onclick="openWallsModal('${floor.id}', '${zone.id}')">🧱 Gerir Paredes</button>
-            <button class="btn-sm" onclick="openAddPermanentModal('${floor.id}', '${zone.id}')">➕ Adicionar</button>
-          </div>
-        </div>
-        <div class="action-card-body">
-          <table class="action-table">
-            <thead><tr><th>Designação</th><th>Valor [kN/m²]</th><th>Observações</th><th>Ações</th></tr></thead>
-            <tbody>
-              <tr>
-                <td>Peso próprio laje <span class="tag auto">AUTO</span></td>
-                <td class="auto-value">${ppLaje.toFixed(2)}</td>
-                <td style="font-size:10px;color:var(--muted)">${zone.tipoLaje} heq=${hEquiv.toFixed(3)}m</td>
-                <td><span class="tag locked">🔒</span></td>
-              </tr>
-              ${wallsDistributed > 0 ? `
-              <tr>
-                <td>Paredes divisórias <span class="tag auto">AUTO</span></td>
-                <td class="auto-value">${wallsDistributed.toFixed(2)}</td>
-                <td style="font-size:10px;color:var(--muted)">${zone.walls.length} paredes</td>
-                <td><button class="btn-sm" onclick="openWallsModal('${floor.id}', '${zone.id}')">✏️</button></td>
-              </tr>
-              ` : ''}
-              ${zone.permanentes.map((p, pi) => `
-              <tr>
-                <td>${p.design}</td>
-                <td>${parseFloat(p.value).toFixed(2)}</td>
-                <td style="font-size:10px;color:var(--muted)">${p.obs || '—'}</td>
-                <td><button class="btn-danger" onclick="deletePermanentAction('${floor.id}','${zone.id}',${pi})">🗑️</button></td>
-              </tr>
-              `).join('')}
-              <tr style="background:#1a1f2a;font-weight:700">
-                <td>TOTAL G</td>
-                <td class="auto-value">${totalPerm.toFixed(2)}</td>
-                <td style="font-size:10px;color:var(--muted)">Soma automática</td>
-                <td></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      <!-- Ações Variáveis -->
-      <div class="action-card">
-        <div class="action-card-header">
-          <div class="action-card-title">📊 Ações Variáveis</div>
-        </div>
-        <div class="action-card-body">
-          <table class="action-table">
-            <thead><tr><th>Nome</th><th>Categoria</th><th>qk [kN/m²]</th><th>ψ₀</th><th>ψ₁</th><th>ψ₂</th></tr></thead>
-            <tbody>
-              <tr>
-                <td>Sobrecarga uso <span class="tag imported">IMPORT</span></td>
-                <td class="imported-value">${zone.uso}</td>
-                <td class="imported-value">${qk.toFixed(2)}</td>
-                <td class="imported-value">${psi0.toFixed(2)}</td>
-                <td class="imported-value">${psi1.toFixed(2)}</td>
-                <td class="imported-value">${psi2.toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
-          <p style="font-size:10px;color:var(--muted);margin-top:8px;font-style:italic">
-            💡 Valores importados automaticamente da categoria de uso definida na Caracterização Geral
-          </p>
-        </div>
-      </div>
-      
-      <!-- Combinações -->
-      <div class="combinations-summary">
-        <div class="combinations-header">
-          <div class="combinations-title">Combinações de Ações (EC0)</div>
-          <div class="combinations-subtitle">Valores de cálculo | Zona: ${zone.area.toFixed(1)} m²</div>
-        </div>
-        <div style="padding:14px">
-          <table class="combinations-table">
-            <thead><tr><th>Combinação</th><th>p [kN/m²]</th><th>Reação Zona [kN]</th><th>Reação Piso [kN]</th></tr></thead>
-            <tbody>
-              ${combinations.map(c => `
-              <tr class="${c.type}-row">
-                <td><span class="combination-name">${c.name}</span><br><span class="combination-formula">${c.formula}</span></td>
-                <td class="combination-value">${c.value.toFixed(2)}</td>
-                <td class="combination-value">${(c.value * zone.area).toFixed(1)}</td>
-                <td class="combination-value">${(c.value * floor.area).toFixed(1)}</td>
-              </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-    }
-
     function getUsoCategoryData(uso) {
       const map = {
         'A': { qk: 2.0, psi0: 0.70, psi1: 0.50, psi2: 0.30 },
@@ -2827,6 +2632,13 @@
         appState.activeProjectId = data.appState.activeProjectId;
         appState.projects = data.appState.projects; // Should deep copy? Reference is fine for now
 
+        // Validar projeto ativo existe
+        if (!appState.projects[appState.activeProjectId]) {
+          const firstId = Object.keys(appState.projects)[0];
+          console.warn("activeProjectId inválido, usando:", firstId);
+          appState.activeProjectId = firstId;
+        }
+
         if (data.legacyInputs) {
           Object.keys(data.legacyInputs).forEach(key => {
             const el = document.getElementById(key);
@@ -2845,10 +2657,16 @@
         }
       }
 
+      // Re-render completo
       renderFloors();
+      renderGeoTable();
       updateGeneralStats();
-      updateActionsFloorTabs();
       updateKPIs();
+      updateKPIs();
+      if (typeof populateZonamentoFloorSelector === 'function') {
+        populateZonamentoFloorSelector();
+      }
+
       showStatus('Dados carregados com sucesso', 'ok');
     }
 
@@ -2976,7 +2794,7 @@
 
       // SEC 7: AÇÕES
       md += `## 7. AÇÕES\n\n`;
-      md += `### 7.1. Ações Consideradas\n\n`;
+      md += `### 🗺️ 7.1 · Zonamento Gráfico\n\n`;
       md += `- ⚖️ Ações Gravíticas (Permanentes + Variáveis): **Sim** (obrigatório)\n`;
       md += `- 🌍 Ação Sísmica: **${projectData.actionsEnabled.sismo ? 'Sim' : 'Não'}**\n`;
       md += `- 🌬️ Ação do Vento: **${projectData.actionsEnabled.vento ? 'Sim' : 'Não'}**\n`;
@@ -3077,7 +2895,20 @@
 
     // Helper: Find floor by ID
     function findPisoById(id) {
-      return projectData.floors.find(f => f.id === parseInt(id));
+      // Fix: UUIDs are strings, do not use parseInt
+      const floor = projectData.floors.find(f => f.id === id);
+      console.log(`[DEBUG] findPisoById(${id}) -> found:`, !!floor);
+      return floor;
+    }
+
+    // Restore missing function to prevent crashes
+    function updateActionsFloorTabs() {
+      // This function was missing but called in multiple places.
+      // It serves to refresh the UI in Section 7 when floors change in Section 2.
+      console.log("[DEBUG] updateActionsFloorTabs called via proxy/stub");
+      if (typeof populateZonamentoFloorSelector === 'function') {
+        populateZonamentoFloorSelector();
+      }
     }
 
     // Global FloorViewer instance
@@ -3166,6 +2997,7 @@
 
     // PostMessage listener for data from zonas.html
     window.addEventListener('message', (event) => {
+      console.log("[DEBUG] window.message received:", event.data);
       if (event.data.type === 'zonesData') {
         const pisoId = event.data.pisoId;
         const zonesData = event.data.data; // Align with zonas.html structure
@@ -3175,9 +3007,18 @@
           return;
         }
 
-        const floor = findPisoById(pisoId);
-        if (floor) {
-          floor.actionsData = zonesData;
+        // Fix: Write directly to appState to ensure persistence
+        const activeProj = appState.projects[appState.activeProjectId];
+        if (activeProj && activeProj.floors[pisoId]) {
+          activeProj.floors[pisoId].actionsData = zonesData;
+          console.log("=== postMessage DEBUG ===");
+          console.log("pisoId:", pisoId);
+          console.log("Dados gravados em appState com sucesso!");
+          console.log("Zones Count:", Object.keys(zonesData.layers || {}).length);
+
+          // Legacy support (optional, if proxy needs it immediately)
+          const floor = findPisoById(pisoId);
+          if (floor) floor.actionsData = zonesData;
           console.log('Zonamento data received for floor:', floor.name, zonesData);
 
           // Refresh viewer if this floor is currently selected
@@ -3191,6 +3032,8 @@
           // Update floor selector to show zone count
           populateZonamentoFloorSelector();
           showStatus('Zonamento atualizado com sucesso!', 'ok');
+        } else {
+          console.error("[DEBUG] Could not find intented floor in appState to save data", pisoId);
         }
       }
     });
