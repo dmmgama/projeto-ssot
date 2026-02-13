@@ -1079,8 +1079,74 @@
             }
         }
 
-        // v8: Load existing data from parent window
+        // ✅ v10.2 FIX: Listen for initEditor postMessage from Index.html
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'initEditor') {
+                const floorId = event.data.floorId;
+                const actionsData = event.data.data;
+                
+                console.log('[zonas.html v10.2] Received initEditor:', {
+                    floorId: floorId,
+                    hasData: !!actionsData,
+                    layersCount: Object.keys(actionsData?.layers || {}).length
+                });
+
+                if (!actionsData || !actionsData.layers || Object.keys(actionsData.layers).length === 0) {
+                    console.log('[zonas.html v10.2] No data to load, starting fresh');
+                    return;
+                }
+
+                // Load blueprint
+                if (actionsData.blueprint && actionsData.blueprint.image) {
+                    scale = actionsData.blueprint.scale || 1;
+                    img.onload = () => {
+                        canvas.width = container.clientWidth;
+                        canvas.height = container.clientHeight;
+                        resetView();
+                        redraw();
+                    };
+                    img.src = actionsData.blueprint.image;
+                }
+
+                // Load layers
+                if (actionsData.layers) {
+                    layers = actionsData.layers;
+                    // Rebuild layerMeta from loaded data
+                    layerMeta = {};
+                    for (let layerName in layers) {
+                        // Infer type from layer content
+                        if (layerName === 'Estrutura' || layerName.includes('Espessuras')) {
+                            layerMeta[layerName] = { type: 'struct' };
+                        } else if (layerName === 'Sobrecargas' || layerName.includes('Sobrecarga')) {
+                            layerMeta[layerName] = { type: 'sc' };
+                        } else if (layerName === 'RCP' || layerName.includes('RP')) {
+                            layerMeta[layerName] = { type: 'other' };
+                        } else {
+                            layerMeta[layerName] = { type: 'other' };
+                        }
+                    }
+                    updateLayerSel();
+                    updateZoneList();
+                    redraw();
+                    console.log('[zonas.html v10.2] Data loaded successfully!');
+                }
+            }
+        });
+
+        // ✅ v10.2 FIX: Notify parent window when ready
         window.addEventListener('load', () => {
+            const pisoId = new URLSearchParams(location.search).get('piso');
+            if (window.opener && pisoId) {
+                console.log('[zonas.html v10.2] Editor ready, requesting data for floor:', pisoId);
+                window.opener.postMessage({
+                    type: 'editorReady',
+                    floorId: pisoId
+                }, '*');
+            }
+        });
+
+        // v8: Load existing data from parent window (Fallback for older versions)
+        setTimeout(() => {
             const pisoId = new URLSearchParams(location.search).get('piso');
             let actionsData = null;
 
@@ -1146,7 +1212,7 @@
                     redraw();
                 }
             }
-        });
+        }, 100); // Delay fallback to give postMessage priority
 
         updateLayerSel();
         resetView(); 
