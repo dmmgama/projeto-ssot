@@ -1,0 +1,18 @@
+# Windows image resurce caches
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Folder config file
+.DS_Store
+
+# Node modules (just in case)
+node_modules/
+
+# Local env files
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.log

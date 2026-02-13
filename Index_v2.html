@@ -1,0 +1,2736 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Template Edifício JSJ · v2.0</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #161a22;
+      --ink: #e8ecf1;
+      --muted: #9aa5b1;
+      --accent: #3aa3ff;
+      --ok: #2ecc71;
+      --warn: #f1c40f;
+      --bad: #e74c3c;
+      --line: #242936;
+      --pad: 12px;
+      --rad: 10px;
+      --gap: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, system-ui, sans-serif;
+      line-height: 1.5
+    }
+
+    /* Layout */
+    .app {
+      display: flex;
+      min-height: 100vh
+    }
+
+    .nav {
+      width: 280px;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      padding: var(--pad);
+      position: sticky;
+      top: 0;
+      align-self: flex-start;
+      height: 100vh;
+      overflow: auto
+    }
+
+    .logo {
+      font-weight: 700;
+      margin: 8px 6px 16px;
+      font-size: 18px;
+      color: var(--accent)
+    }
+
+    .nav button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s
+    }
+
+    .nav button.active,
+    .nav button:hover {
+      background: #1f2430
+    }
+
+    .main {
+      flex: 1;
+      padding: 16px 18px 80px;
+      max-width: 1800px
+    }
+
+    h2 {
+      margin: 16px 0 12px;
+      font-size: 20px;
+      color: var(--accent)
+    }
+
+    h3 {
+      margin: 16px 0 10px;
+      font-size: 16px;
+      color: var(--ink)
+    }
+
+    .section {
+      display: none
+    }
+
+    .section.active {
+      display: block
+    }
+
+    /* Cards & Grids */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: var(--gap)
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--rad);
+      padding: var(--pad)
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 500
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #0d1016;
+      color: var(--ink);
+      font-size: 13px
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent)
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: #202634;
+      color: #cbd5e1;
+      font-size: 11px;
+      font-weight: 600
+    }
+
+    .kpi {
+      display: flex;
+      gap: 10px;
+      align-items: center
+    }
+
+    .kpi .num {
+      font-size: 22px;
+      font-weight: 700
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 8px 0 16px
+    }
+
+    .toolbar button {
+      background: #1b2130;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s
+    }
+
+    .toolbar button:hover {
+      background: #242936;
+      border-color: var(--accent)
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.2s
+    }
+
+    .btn-primary:hover {
+      background: #5bb3ff
+    }
+
+    .btn-secondary {
+      background: #1a1f2a;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s
+    }
+
+    .btn-secondary:hover {
+      background: #242936;
+      border-color: var(--accent)
+    }
+
+    .btn-sm {
+      background: #12161f;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.2s;
+      font-weight: 500
+    }
+
+    .btn-sm:hover {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent)
+    }
+
+    .btn-danger {
+      background: rgba(231, 76, 60, 0.2);
+      border: 1px solid var(--bad);
+      color: var(--bad);
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500
+    }
+
+    .btn-danger:hover {
+      background: var(--bad);
+      color: #fff
+    }
+
+    /* Tables */
+    .tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 12px
+    }
+
+    .tbl th,
+    .tbl td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px;
+      text-align: left
+    }
+
+    .tbl th {
+      color: var(--muted);
+      font-weight: 600;
+      background: #1a1f2a;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px
+    }
+
+    .tbl tr:hover {
+      background: #12161f
+    }
+
+    .tbl input,
+    .tbl select {
+      padding: 6px;
+      font-size: 12px
+    }
+
+    .add-row {
+      border: 1px dashed var(--line);
+      background: #12161f;
+      padding: 12px;
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: center;
+      font-size: 13px;
+      transition: all 0.2s;
+      margin-top: 12px
+    }
+
+    .add-row:hover {
+      background: #1a1f2a;
+      border-color: var(--accent);
+      color: var(--ink)
+    }
+
+    /* Pisos & Zonas */
+    .floor-card {
+      background: #1a1f2a;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+      transition: all 0.2s
+    }
+
+    .floor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px
+    }
+
+    .floor-name-input {
+      background: transparent;
+      border: none;
+      color: var(--ink);
+      font-size: 16px;
+      font-weight: 600;
+      width: 250px;
+      padding: 4px
+    }
+
+    .floor-name-input:focus {
+      outline: 1px solid var(--accent);
+      border-radius: 4px
+    }
+
+    .zones-badge {
+      background: var(--accent);
+      color: #000;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s
+    }
+
+    .zones-badge:hover {
+      background: #5bb3ff
+    }
+
+    .floor-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--muted);
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    .floor-stats input {
+      width: 80px;
+      padding: 4px 8px;
+      font-size: 12px
+    }
+
+    .zone-selector {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--line);
+      display: none
+    }
+
+    .zone-selector.show {
+      display: block
+    }
+
+    .zone-list {
+      margin-top: 12px
+    }
+
+    .zone-item {
+      background: #12161f;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .zone-item-name {
+      font-weight: 600;
+      color: var(--ink)
+    }
+
+    .zone-item-info {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px
+    }
+
+    .zone-item-actions {
+      display: flex;
+      gap: 6px
+    }
+
+    /* Zone Edit Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center
+    }
+
+    .modal.show {
+      display: flex
+    }
+
+    .modal-content {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 900px;
+      width: 90%;
+      max-height: 90vh;
+      overflow: auto
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink)
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px
+    }
+
+    .modal-close:hover {
+      color: var(--ink)
+    }
+
+    .modal-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px
+    }
+
+    .modal-footer {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end
+    }
+
+    /* Actions */
+    .actions-selector {
+      background: #1a1f2a;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px
+    }
+
+    .actions-checkboxes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 12px
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      background: #12161f;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s
+    }
+
+    .checkbox-item:hover {
+      background: #1a1f2a
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--accent)
+    }
+
+    .checkbox-item label {
+      margin: 0;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500
+    }
+
+    .checkbox-item.mandatory {
+      opacity: 0.7
+    }
+
+    .checkbox-item.mandatory input {
+      cursor: not-allowed
+    }
+
+    .action-section {
+      background: #1a1f2a;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      display: none
+    }
+
+    .action-section.active {
+      display: block
+    }
+
+    .action-header {
+      background: #202634;
+      padding: 14px 16px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s
+    }
+
+    .action-header:hover {
+      background: #242936
+    }
+
+    .action-header h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600
+    }
+
+    .action-toggle {
+      color: var(--muted);
+      font-size: 18px;
+      transition: transform 0.3s
+    }
+
+    .action-toggle.open {
+      transform: rotate(180deg)
+    }
+
+    .action-body {
+      padding: 16px;
+      display: none;
+      background: #12161f
+    }
+
+    .action-body.show {
+      display: block
+    }
+
+    .floor-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 16px
+    }
+
+    .floor-tab {
+      background: #1a1f2a;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+      font-weight: 500
+    }
+
+    .floor-tab:hover {
+      background: #202634;
+      color: var(--ink)
+    }
+
+    .floor-tab.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+      font-weight: 600
+    }
+
+    .zone-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 16px
+    }
+
+    .zone-tab {
+      background: #0d121a;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.2s;
+      font-weight: 500
+    }
+
+    .zone-tab:hover {
+      background: #12161f;
+      color: var(--ink)
+    }
+
+    .zone-tab.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+      font-weight: 600
+    }
+
+    .zone-actions-content {
+      display: none
+    }
+
+    .zone-actions-content.show {
+      display: block
+    }
+
+    /* Action Cards - Estilo EC Dashboard */
+    .action-card {
+      background: #0d121a;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden
+    }
+
+    .action-card-header {
+      background: #1a1f2a;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .action-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink)
+    }
+
+    .action-card-actions {
+      display: flex;
+      gap: 8px
+    }
+
+    .action-card-body {
+      padding: 14px
+    }
+
+    /* Action Tables - Estilo EC Dashboard */
+    .action-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px
+    }
+
+    .action-table thead {
+      background: #0d121a
+    }
+
+    .action-table th {
+      color: var(--muted);
+      text-align: left;
+      padding: 10px;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .action-table td {
+      padding: 10px;
+      border-bottom: 1px solid #1a1f2a;
+      color: var(--ink)
+    }
+
+    .action-table tbody tr:last-child td {
+      border-bottom: none
+    }
+
+    .action-table tbody tr:hover {
+      background: #0d121a
+    }
+
+    .action-table input {
+      width: 100%;
+      padding: 6px 8px;
+      background: #0d121a;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      border-radius: 4px;
+      font-size: 12px
+    }
+
+    .action-table input:focus {
+      border-color: var(--accent)
+    }
+
+    .action-table .editable {
+      cursor: pointer
+    }
+
+    .action-table .editable:hover {
+      background: #12161f
+    }
+
+    .auto-value {
+      color: var(--ok);
+      font-weight: 600
+    }
+
+    .imported-value {
+      color: var(--accent);
+      font-weight: 600
+    }
+
+    .locked {
+      opacity: 0.6;
+      pointer-events: none
+    }
+
+    /* Combinations Table - Estilo EC Dashboard */
+    .combinations-summary {
+      margin-top: 16px;
+      background: #0d121a;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden
+    }
+
+    .combinations-header {
+      background: #1a1f2a;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .combinations-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink)
+    }
+
+    .combinations-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px
+    }
+
+    .combinations-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: #0d121a
+    }
+
+    .combinations-table thead {
+      background: #0d121a
+    }
+
+    .combinations-table th {
+      color: var(--muted);
+      text-align: left;
+      padding: 10px;
+      font-weight: 600;
+      font-size: 11px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .combinations-table td {
+      padding: 10px;
+      border-bottom: 1px solid #1a1f2a;
+      color: var(--ink)
+    }
+
+    .combinations-table tbody tr:last-child td {
+      border-bottom: none
+    }
+
+    .elu-row {
+      background: rgba(231, 76, 60, 0.08)
+    }
+
+    .els-row {
+      background: rgba(46, 204, 113, 0.08)
+    }
+
+    .combination-name {
+      font-weight: 600;
+      color: var(--accent);
+      font-size: 11px
+    }
+
+    .combination-value {
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      font-size: 13px
+    }
+
+    .combination-formula {
+      font-size: 10px;
+      color: var(--muted);
+      font-style: italic
+    }
+
+    .tag {
+      display: inline-block;
+      background: #1a1f2a;
+      color: var(--muted);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-left: 6px;
+      letter-spacing: 0.3px
+    }
+
+    .tag.auto {
+      background: rgba(46, 204, 113, 0.25);
+      color: var(--ok)
+    }
+
+    .tag.imported {
+      background: rgba(58, 163, 255, 0.25);
+      color: var(--accent)
+    }
+
+    .tag.locked {
+      background: rgba(100, 100, 100, 0.25);
+      color: var(--muted)
+    }
+
+    /* Chart Container */
+    .chart-container {
+      background: #0d121a;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 16px
+    }
+
+    .chart-canvas {
+      width: 100%;
+      height: 400px
+    }
+
+    /* Footer */
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 280px;
+      right: 0;
+      background: #0b0e13;
+      border-top: 1px solid var(--line);
+      padding: 10px 16px;
+      color: var(--muted);
+      font-size: 11px;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    /* Responsive */
+    @media(max-width:1024px) {
+      .app {
+        flex-direction: column
+      }
+
+      .nav {
+        width: 100%;
+        height: auto;
+        position: relative
+      }
+
+      footer {
+        left: 0
+      }
+
+      .modal-body {
+        grid-template-columns: 1fr
+      }
+    }
+
+    /* Loading */
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--line);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <aside class="nav">
+      <div class="logo">🏗️ Template JSJ · v2.0</div>
+      <button data-target="sec1" class="active">1 · Identificação</button>
+      <button data-target="sec2">2 · Caracterização Geral</button>
+      <button data-target="sec3">3 · Elementos Base</button>
+      <button data-target="sec4">4 · Condições Arquitetónicas</button>
+      <button data-target="sec5">5 · Geotécnica</button>
+      <button data-target="sec6">6 · Solução Estrutural</button>
+      <button data-target="sec7">7 · Ações</button>
+      <button data-target="sec8">8 · Critérios Segurança</button>
+      <button data-target="secR">📄 Relatórios</button>
+    </aside>
+
+    <main class="main">
+      <div class="toolbar">
+        <button onclick="exportJSON()">💾 Exportar JSON</button>
+        <button onclick="document.getElementById('fileInput').click()">📂 Importar JSON</button>
+        <button onclick="exportMarkdown()">📝 Exportar Markdown</button>
+        <input type="file" id="fileInput" accept=".json" style="display:none" onchange="importJSON(event)">
+      </div>
+
+      <!-- SEC 1: IDENTIFICAÇÃO -->
+      <section id="sec1" class="section active">
+        <h2>1 · Identificação do Projeto</h2>
+
+        <!-- Campos Principais -->
+        <div class="grid">
+          <div class="card"><label>ID JSJ</label><input id="id_jsj" type="number" placeholder="Ex: 669" /></div>
+          <div class="card"><label>Nome Projeto</label><input id="nome_projeto" placeholder="Nome interno do projeto" />
+          </div>
+          <div class="card"><label>Cliente</label><input id="cliente" placeholder="Entidade cliente" /></div>
+          <div class="card"><label>Designação da Obra</label><input id="designacao"
+              placeholder="Nome oficial da obra" /></div>
+          <div class="card"><label>Localização</label><input id="localizacao" placeholder="Morada completa" /></div>
+          <div class="card"><label>Tipologia</label>
+            <select id="tipologia">
+              <option>Habitação</option>
+              <option>Serviços</option>
+              <option>Industrial</option>
+              <option>Infraestrutura</option>
+              <option>Misto</option>
+            </select>
+          </div>
+          <div class="card"><label>Especialidade</label>
+            <select id="especialidade">
+              <option selected>Estruturas e Fundações</option>
+              <option>Estruturas</option>
+              <option>Fundações</option>
+              <option>Reforço</option>
+            </select>
+          </div>
+          <div class="card"><label>Tipo de Obra</label>
+            <select id="tipo_obra" onchange="toggleTipoObraCustom(this.value)">
+              <option>Obra Nova</option>
+              <option>Reabilitação</option>
+              <option>Pontes e Viadutos</option>
+              <option>Avaliação Estrutural</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+          <div class="card" id="tipo_obra_custom_container" style="display:none">
+            <label>Especificar Tipo de Obra</label><input id="tipo_obra_custom" placeholder="Descreva o tipo de obra" />
+          </div>
+          <div class="card"><label>FASE ATUAL</label>
+            <select id="fase_atual">
+              <option>Estudo Prévio</option>
+              <option>Licenciamento</option>
+              <option selected>Execução</option>
+              <option>Assistência Técnica</option>
+              <option>Outra</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tabela de Fases -->
+        <h3 style="margin-top:24px">📋 Acompanhamento de Fases</h3>
+        <div class="card">
+          <table class="tbl" id="tblFases">
+            <thead>
+              <tr>
+                <th>Fase</th>
+                <th>Data de Entrega</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Estudo Prévio</td>
+                <td><input type="date" id="fase_ep_data" /></td>
+                <td><select id="fase_ep_estado">
+                    <option value="">—</option>
+                    <option>Em Curso</option>
+                    <option>Completa</option>
+                  </select></td>
+              </tr>
+              <tr>
+                <td>Licenciamento</td>
+                <td><input type="date" id="fase_lic_data" /></td>
+                <td><select id="fase_lic_estado">
+                    <option value="">—</option>
+                    <option>Em Curso</option>
+                    <option>Completa</option>
+                  </select></td>
+              </tr>
+              <tr>
+                <td>Execução</td>
+                <td><input type="date" id="fase_exec_data" /></td>
+                <td><select id="fase_exec_estado">
+                    <option value="">—</option>
+                    <option>Em Curso</option>
+                    <option>Completa</option>
+                  </select></td>
+              </tr>
+              <tr>
+                <td>Assistência Técnica</td>
+                <td><input type="date" id="fase_at_data" /></td>
+                <td><select id="fase_at_estado">
+                    <option value="">—</option>
+                    <option>Em Curso</option>
+                    <option>Completa</option>
+                  </select></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Equipa do Projeto -->
+        <h3 style="margin-top:24px">👥 Equipa do Projeto</h3>
+        <div class="grid">
+          <div class="card"><label>Responsável Técnico</label><input id="resp_tecnico" placeholder="Nome" /></div>
+          <div class="card"><label>Equipa de Engenharia</label><input id="equipa_eng" placeholder="Nomes" /></div>
+          <div class="card"><label>BIM</label><input id="bim" placeholder="Responsável BIM" /></div>
+          <div class="card"><label>Gestão de Projeto</label><input id="gestao_projeto" placeholder="Nome" /></div>
+          <div class="card"><label>Fiscalização</label><input id="fiscalizacao" placeholder="Entidade" /></div>
+          <div class="card"><label>Promotor</label><input id="promotor" placeholder="Entidade" /></div>
+          <div class="card"><label>Arquitetura</label><input id="arquitetura" placeholder="Gabinete" /></div>
+          <div class="card"><label>Especialidades</label><input id="especialidades" placeholder="Gabinetes" /></div>
+          <div class="card"><label>BIM Manager</label><input id="bim_manager" placeholder="Nome" /></div>
+          <div class="card"><label>Outros</label><input id="outros_equipa" placeholder="Outros intervenientes" /></div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid" style="margin-top:16px">
+          <div class="card kpi"><span class="badge">ID</span>
+            <div class="num" id="kpiID">#—</div>
+          </div>
+          <div class="card kpi"><span class="badge">Projeto</span>
+            <div class="num" id="kpiNome">—</div>
+          </div>
+          <div class="card kpi"><span class="badge">Fase</span>
+            <div class="num" id="kpiFase">—</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SEC 2: CARACTERIZAÇÃO GERAL -->
+      <section id="sec2" class="section">
+        <h2>2 · Caracterização Geral</h2>
+
+        <h3>📊 Resumo Geral (Automático)</h3>
+        <div class="grid">
+          <div class="card kpi"><span class="badge">Implantação</span>
+            <div class="num" id="kpiImplant">0</div><small style="color:var(--muted);font-size:11px">m²</small>
+          </div>
+          <div class="card kpi"><span class="badge">ABC</span>
+            <div class="num" id="kpiABC">0</div><small style="color:var(--muted);font-size:11px">m²</small>
+          </div>
+          <div class="card kpi"><span class="badge">Nº Pisos</span>
+            <div class="num" id="kpiPisos">0</div>
+          </div>
+          <div class="card kpi"><span class="badge">Altura Total</span>
+            <div class="num" id="kpiAltura">0</div><small style="color:var(--muted);font-size:11px">m</small>
+          </div>
+        </div>
+
+        <h3>🏢 Pisos e Zonas</h3>
+        <button class="add-row" onclick="addFloor()">➕ Adicionar Piso</button>
+        <div id="floorsContainer"></div>
+      </section>
+
+      <!-- SEC 3: ELEMENTOS BASE -->
+      <section id="sec3" class="section">
+        <h2>3 · Elementos Base</h2>
+        <div class="grid">
+          <div class="card"><label>Arquitetura</label><input id="arq" placeholder="Autor | Fase | Data" /></div>
+          <div class="card"><label>Especialidades MEP</label><input id="mep" placeholder="Autor | Fase | Data" /></div>
+          <div class="card"><label>Escavação/Contenção</label><input id="escav" placeholder="Autor | Fase | Data" />
+          </div>
+          <div class="card"><label>Estudo Geotécnico</label><input id="geotec" placeholder="Entidade | Data | Ref" />
+          </div>
+          <div class="card"><label>Estudo Hidrogeológico</label><input id="hidro" placeholder="Entidade | Data" /></div>
+          <div class="card"><label>Prospeções</label><input id="prosp" placeholder="Entidade | Data | Tipo" /></div>
+          <div class="card"><label>Caracterização Estrutural</label><input id="carac" placeholder="Entidade | Data" />
+          </div>
+          <div class="card"><label>Inspeção Estrutural</label><input id="insp" placeholder="Entidade | Data" /></div>
+          <div class="card"><label>Ensaios</label><input id="ensaios" placeholder="Tipo | Entidade | Data" /></div>
+          <div class="card"><label>Projetos Originais</label><input id="orig" placeholder="Referência | Data" /></div>
+          <div class="card" style="grid-column:span 2"><label>Outros Estudos</label><textarea id="outros"
+              rows="3"></textarea></div>
+        </div>
+      </section>
+
+      <!-- SEC 4: CONDIÇÕES ARQUITETÓNICAS -->
+      <section id="sec4" class="section">
+        <h2>4 · Condições Arquitetónicas</h2>
+        <div class="card">
+          <label>Condicionantes Principais</label>
+          <textarea id="cond_arq" rows="6" placeholder="Pés-direitos, vãos, restrições, etc."></textarea>
+        </div>
+      </section>
+
+      <!-- SEC 5: GEOTÉCNICA -->
+      <section id="sec5" class="section">
+        <h2>5 · Condições Geotécnicas</h2>
+        <div class="grid">
+          <div class="card"><label>Formações Geológicas</label><input id="geo_form" /></div>
+          <div class="card"><label>Horizontes</label><input id="geo_horiz" placeholder="G0, G1, G2..." /></div>
+          <div class="card"><label>Prof. Substrato Competente (m)</label><input id="geo_sub" type="number" step="0.1" />
+          </div>
+          <div class="card"><label>Natureza dos Solos</label><input id="geo_nat" /></div>
+          <div class="card"><label>Tipo Solo p/ Ação Sísmica (EC8)</label>
+            <select id="geo_tipo_sismo">
+              <option value="A">A - Rocha, formação rochosa</option>
+              <option value="B">B - Depósitos rígidos (NSPT>50, cu>250kPa, Vs>360m/s)</option>
+              <option value="C">C - Depósitos médios (NSPT 15-50, cu 70-250kPa)</option>
+              <option value="D">D - Depósitos brandos (NSPT<15, cu<70kPa)</option>
+              <option value="E">E - Perfil de solo: camada superficial</option>
+            </select>
+          </div>
+          <div class="card"><label>Tensão Admissível σadm (kN/m²)</label><input id="geo_sigma_adm" type="number"
+              step="10" placeholder="Para dimensionamento fundações" /></div>
+        </div>
+
+        <h3>Parâmetros por Horizonte</h3>
+        <div class="card">
+          <table class="tbl" id="tblGeo">
+            <thead>
+              <tr>
+                <th>Horizonte</th>
+                <th>NSPT</th>
+                <th>γ (kN/m³)</th>
+                <th>c' (kPa)</th>
+                <th>φ (°)</th>
+                <th>E (MPa)</th>
+                <th>σadm (kPa)</th>
+                <th>Escav.</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <button class="add-row" onclick="addGeoRow()">➕ Adicionar Horizonte</button>
+        </div>
+
+        <h3>Condições Hidrogeológicas</h3>
+        <div class="grid">
+          <div class="card"><label>Nível Freático (m)</label><input id="hid_nf" type="number" step="0.1" /></div>
+          <div class="card"><label>Coluna de Água (m)</label><input id="hid_col" type="number" step="0.1" /></div>
+          <div class="card"><label>Agressividade (XA)</label><select id="hid_xa">
+              <option>XA1</option>
+              <option>XA2</option>
+              <option>XA3</option>
+            </select></div>
+          <div class="card"><label>Observações</label><textarea id="hid_obs" rows="2"></textarea></div>
+        </div>
+      </section>
+
+      <!-- SEC 6: SOLUÇÃO ESTRUTURAL -->
+      <section id="sec6" class="section">
+        <h2>6 · Solução Estrutural</h2>
+        <div class="card">
+          <label>Descrição da Solução</label>
+          <textarea id="sol_desc" rows="8"
+            placeholder="Sistema estrutural, materiais, fundações, particularidades..."></textarea>
+        </div>
+      </section>
+
+      <!-- SEC 7: AÇÕES -->
+      <section id="sec7" class="section">
+        <h2>7 · Ações</h2>
+
+        <!-- Quadro 1: Seleção -->
+        <div class="actions-selector">
+          <h3 style="margin:0 0 4px 0;font-size:15px">Quadro 1: Seleção de Ações a Considerar</h3>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Selecione as ações relevantes para este
+            projeto</p>
+          <div class="actions-checkboxes">
+            <div class="checkbox-item mandatory">
+              <input type="checkbox" id="act_graviticas" checked disabled>
+              <label for="act_graviticas">⚖️ Ações Gravíticas (G+Q)</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="act_sismo" onchange="toggleActionSection('sismo',this.checked)">
+              <label for="act_sismo">🌍 Ação Sísmica</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="act_vento" onchange="toggleActionSection('vento',this.checked)">
+              <label for="act_vento">🌬️ Ação do Vento</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="act_impulsos" onchange="toggleActionSection('impulsos',this.checked)">
+              <label for="act_impulsos">🏔️ Impulsos de Terras</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="act_retracao" onchange="toggleActionSection('retracao',this.checked)">
+              <label for="act_retracao">↔️ Retração/Fluência</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="act_temperatura" onchange="toggleActionSection('temperatura',this.checked)">
+              <label for="act_temperatura">🌡️ Variação Térmica</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="act_neve" onchange="toggleActionSection('neve',this.checked)">
+              <label for="act_neve">❄️ Sobrecarga Neve</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="act_agua" onchange="toggleActionSection('agua',this.checked)">
+              <label for="act_agua">💧 Pressão Hidrostática</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quadro 2: Ações Selecionadas -->
+        <h3 style="margin:20px 0 12px 0">Quadro 2: Ações Selecionadas (Detalhamento)</h3>
+        <div class="actions-container">
+
+          <!-- AÇÕES GRAVÍTICAS -->
+          <div class="action-section active" id="section-graviticas">
+            <div class="action-header" onclick="toggleActionBody('graviticas')">
+              <h3>⚖️ Ações Gravíticas (Permanentes + Variáveis)</h3>
+              <span class="action-toggle">▼</span>
+            </div>
+            <div class="action-body show" id="body-graviticas">
+              <div style="margin-bottom:16px">
+                <h4 style="margin:0 0 8px 0;color:var(--muted);font-size:13px">Selecione um piso:</h4>
+                <div class="floor-tabs" id="actionsFloorTabs"></div>
+              </div>
+              <div id="actionsFloorsContent"></div>
+            </div>
+          </div>
+
+          <!-- AÇÃO SÍSMICA -->
+          <div class="action-section" id="section-sismo">
+            <div class="action-header" onclick="toggleActionBody('sismo')">
+              <h3>🌍 Ação Sísmica (EC8)</h3>
+              <span class="action-toggle">▼</span>
+            </div>
+            <div class="action-body" id="body-sismo">
+              <div class="grid">
+                <div class="card"><label>Zona Sísmica</label>
+                  <select id="sismo_zona">
+                    <option>1.1</option>
+                    <option>1.2</option>
+                    <option>1.3</option>
+                    <option>1.4</option>
+                    <option>2.1</option>
+                    <option>2.2</option>
+                    <option>2.3</option>
+                    <option>2.4</option>
+                    <option>2.5</option>
+                  </select>
+                </div>
+                <div class="card"><label>Tipo de Terreno (auto-preenchido)</label>
+                  <select id="sismo_terreno" disabled>
+                    <option value="A">A - Rocha</option>
+                    <option value="B">B - Depósitos rígidos</option>
+                    <option value="C">C - Depósitos médios</option>
+                    <option value="D">D - Depósitos brandos</option>
+                    <option value="E">E - Perfil especial</option>
+                  </select>
+                  <small style="color:var(--muted);font-size:10px">Importado da Geotécnica</small>
+                </div>
+                <div class="card"><label>Classe Importância</label>
+                  <select id="sismo_importancia">
+                    <option>I (γI=0.85)</option>
+                    <option selected>II (γI=1.0)</option>
+                    <option>III (γI=1.15)</option>
+                    <option>IV (γI=1.45)</option>
+                  </select>
+                </div>
+                <div class="card"><label>Coef. Comportamento (q)</label><input id="sismo_q" type="number" step="0.1"
+                    value="3.0" /></div>
+                <div class="card"><label>Amortecimento (%)</label><input id="sismo_amort" type="number" step="0.5"
+                    value="5.0" /></div>
+              </div>
+
+              <h4 style="margin:20px 0 12px 0;font-size:14px">Espectros de Resposta</h4>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="chart-container">
+                  <h5 style="margin:0 0 12px 0;font-size:13px;color:var(--ink)">Sismo Tipo 1 (M ≥ 5.5)</h5>
+                  <canvas id="seismicChart1" class="chart-canvas"></canvas>
+                </div>
+                <div class="chart-container">
+                  <h5 style="margin:0 0 12px 0;font-size:13px;color:var(--ink)">Sismo Tipo 2 (M < 5.5)</h5>
+                      <canvas id="seismicChart2" class="chart-canvas"></canvas>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:16px">
+                <label>Observações</label>
+                <textarea id="sismo_obs" rows="3"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- AÇÃO DO VENTO -->
+          <div class="action-section" id="section-vento">
+            <div class="action-header" onclick="toggleActionBody('vento')">
+              <h3>🌬️ Ação do Vento (EC1-1-4)</h3>
+              <span class="action-toggle">▼</span>
+            </div>
+            <div class="action-body" id="body-vento">
+              <div class="grid">
+                <div class="card"><label>Zona</label><select id="vento_zona">
+                    <option>A</option>
+                    <option>B</option>
+                  </select></div>
+                <div class="card"><label>vb,0 (m/s)</label><input id="vento_vb" type="number" step="0.1" value="27" />
+                </div>
+                <div class="card"><label>Categoria Terreno</label>
+                  <select id="vento_cat">
+                    <option>0 (mar)</option>
+                    <option>I (lagos)</option>
+                    <option>II (rural)</option>
+                    <option>III (suburbano)</option>
+                    <option>IV (urbano)</option>
+                  </select>
+                </div>
+                <div class="card"><label>z0 (m)</label><input id="vento_z0" type="number" step="0.01" value="0.3" />
+                </div>
+                <div class="card"><label>co</label><input id="vento_co" type="number" step="0.1" value="1.0" /></div>
+                <div class="card"><label>cpi</label><input id="vento_cpi" type="number" step="0.1" value="0.0" /></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- IMPULSOS TERRAS -->
+          <div class="action-section" id="section-impulsos">
+            <div class="action-header" onclick="toggleActionBody('impulsos')">
+              <h3>🏔️ Impulsos de Terras</h3>
+              <span class="action-toggle">▼</span>
+            </div>
+            <div class="action-body" id="body-impulsos">
+              <div class="grid">
+                <div class="card"><label>Altura (m)</label><input id="imp_h" type="number" step="0.1" /></div>
+                <div class="card"><label>γ (kN/m³)</label><input id="imp_gamma" type="number" step="0.1" value="18" />
+                </div>
+                <div class="card"><label>φ (°)</label><input id="imp_phi" type="number" step="1" value="30" /></div>
+                <div class="card"><label>c (kPa)</label><input id="imp_c" type="number" step="1" value="0" /></div>
+                <div class="card"><label>K0</label><input id="imp_k0" type="number" step="0.01" value="0.5" /></div>
+                <div class="card"><label>q (kN/m²)</label><input id="imp_q" type="number" step="0.1" /></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RETRAÇÃO -->
+          <div class="action-section" id="section-retracao">
+            <div class="action-header" onclick="toggleActionBody('retracao')">
+              <h3>↔️ Retração e Fluência</h3>
+              <span class="action-toggle">▼</span>
+            </div>
+            <div class="action-body" id="body-retracao">
+              <div class="grid">
+                <div class="card"><label>HR (%)</label><input id="ret_hr" type="number" step="5" value="70" /></div>
+                <div class="card"><label>t0 (dias)</label><input id="ret_t0" type="number" step="1" value="28" /></div>
+                <div class="card"><label>Cimento</label><select id="ret_cement">
+                    <option>R</option>
+                    <option>N</option>
+                    <option>S</option>
+                  </select></div>
+                <div class="card"><label>Cura</label><select id="ret_cura">
+                    <option>Ao ar</option>
+                    <option>Cofragem</option>
+                    <option>Tratamento</option>
+                  </select></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TEMPERATURA -->
+          <div class="action-section" id="section-temperatura">
+            <div class="action-header" onclick="toggleActionBody('temperatura')">
+              <h3>🌡️ Variação Térmica</h3>
+              <span class="action-toggle">▼</span>
+            </div>
+            <div class="action-body" id="body-temperatura">
+              <div class="grid">
+                <div class="card"><label>ΔT Contração (°C)</label><input id="temp_contr" type="number" step="1"
+                    value="-15" /></div>
+                <div class="card"><label>ΔT Expansão (°C)</label><input id="temp_exp" type="number" step="1"
+                    value="20" /></div>
+                <div class="card"><label>α (10⁻⁶/°C)</label><input id="temp_alpha" type="number" step="0.1"
+                    value="10" /></div>
+                <div class="card"><label>T ref (°C)</label><input id="temp_ref" type="number" step="1" value="20" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NEVE -->
+          <div class="action-section" id="section-neve">
+            <div class="action-header" onclick="toggleActionBody('neve')">
+              <h3>❄️ Sobrecarga Neve (EC1-1-3)</h3>
+              <span class="action-toggle">▼</span>
+            </div>
+            <div class="action-body" id="body-neve">
+              <div class="grid">
+                <div class="card"><label>Zona</label><select id="neve_zona">
+                    <option>A</option>
+                    <option>B</option>
+                    <option>C</option>
+                  </select></div>
+                <div class="card"><label>Altitude (m)</label><input id="neve_alt" type="number" step="10" /></div>
+                <div class="card"><label>sk (kN/m²)</label><input id="neve_sk" type="number" step="0.1" value="0.3" />
+                </div>
+                <div class="card"><label>Ce</label><input id="neve_ce" type="number" step="0.1" value="1.0" /></div>
+                <div class="card"><label>Ct</label><input id="neve_ct" type="number" step="0.1" value="1.0" /></div>
+                <div class="card"><label>μ</label><input id="neve_mu" type="number" step="0.1" value="0.8" /></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ÁGUA -->
+          <div class="action-section" id="section-agua">
+            <div class="action-header" onclick="toggleActionBody('agua')">
+              <h3>💧 Pressão Hidrostática</h3>
+              <span class="action-toggle">▼</span>
+            </div>
+            <div class="action-body" id="body-agua">
+              <div class="grid">
+                <div class="card"><label>Nível (m)</label><input id="agua_nivel" type="number" step="0.1" /></div>
+                <div class="card"><label>γw (kN/m³)</label><input id="agua_gamma" type="number" step="0.1" value="10" />
+                </div>
+                <div class="card"><label>Subpressões</label><select id="agua_subp">
+                    <option>Sim</option>
+                    <option>Não</option>
+                  </select></div>
+                <div class="card"><label>Drenagem</label><select id="agua_dren">
+                    <option>Sim</option>
+                    <option>Não</option>
+                  </select></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SEC 8: CRITÉRIOS -->
+      <section id="sec8" class="section">
+        <h2>8 · Critérios de Segurança</h2>
+        <div class="card">
+          <label>Regulamentação</label>
+          <textarea id="crit_reg" rows="6" placeholder="Eurocódigos, regulamentos nacionais, normas..."></textarea>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <label>Critérios de Dimensionamento</label>
+          <textarea id="crit_dim" rows="6" placeholder="ELU, ELS, fendilhação, deformações..."></textarea>
+        </div>
+      </section>
+
+      <!-- RELATÓRIOS -->
+      <section id="secR" class="section">
+        <h2>📄 Relatórios e Exportação</h2>
+        <div class="card">
+          <h3>Gerar Memória Descritiva</h3>
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 16px 0">
+            Exporta todos os dados preenchidos em formato Markdown estruturado
+          </p>
+          <button class="btn-primary" onclick="generateMarkdownReport()" style="width:100%;padding:14px;font-size:14px">
+            📝 Gerar Relatório Markdown Completo
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <footer>
+      <span>Template JSJ v2.0 | © 2025 JSJ - Consultoria e Projectos de Engenharia, Lda</span>
+      <span id="statusMsg"></span>
+    </footer>
+  </div>
+
+  <!-- MODAL: EDITAR ZONA -->
+  <div class="modal" id="zoneModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="zoneModalTitle">Editar Zona</h3>
+        <button class="modal-close" onclick="closeZoneModal()">×</button>
+      </div>
+      <div class="modal-body" id="zoneModalBody"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeZoneModal()">Cancelar</button>
+        <button class="btn-primary" onclick="saveZone()">💾 Salvar Zona</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADICIONAR AÇÃO PERMANENTE -->
+  <div class="modal" id="addPermanentModal">
+    <div class="modal-content" style="max-width:600px">
+      <div class="modal-header">
+        <h3 class="modal-title">Adicionar Ação Permanente</h3>
+        <button class="modal-close" onclick="closeModal('addPermanentModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="card"><label>Designação</label><input id="perm_design" placeholder="Ex: Pavimento flutuante" />
+        </div>
+        <div class="card" style="margin-top:12px"><label>Valor (kN/m²)</label><input id="perm_value" type="number"
+            step="0.01" /></div>
+        <div class="card" style="margin-top:12px"><label>Observações</label><input id="perm_obs"
+            placeholder="Opcional" /></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('addPermanentModal')">Cancelar</button>
+        <button class="btn-primary" onclick="addPermanentAction()">➕ Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GERIR PAREDES -->
+  <div class="modal" id="wallsModal">
+    <div class="modal-content" style="max-width:700px">
+      <div class="modal-header">
+        <h3 class="modal-title">🧱 Gerir Paredes Divisórias</h3>
+        <button class="modal-close" onclick="closeModal('wallsModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:16px">
+          Defina as paredes divisórias para cálculo automático da carga distribuída
+        </p>
+        <table class="tbl" id="wallsTable">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Comprimento (m)</th>
+              <th>Altura (m)</th>
+              <th>Peso (kN/m²)</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="wallsTableBody"></tbody>
+        </table>
+        <button class="add-row" onclick="addWallRow()">➕ Adicionar Parede</button>
+        <div style="margin-top:16px;padding:12px;background:#1a1f2a;border-radius:6px">
+          <strong style="color:var(--ink)">Carga Distribuída Calculada:</strong>
+          <span id="wallsTotal" style="color:var(--ok);font-weight:700;margin-left:8px">0.00 kN/m²</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('wallsModal')">Cancelar</button>
+        <button class="btn-primary" onclick="saveWalls()">💾 Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== DADOS GLOBAIS ====================
+    let projectData = {
+      floors: [],
+      geoHorizons: [],
+      actionsEnabled: { graviticas: true, sismo: false, vento: false, impulsos: false, retracao: false, temperatura: false, neve: false, agua: false }
+    };
+    let currentEditingZone = null;
+    let currentWallsZone = null;
+    let seismicCharts = { type1: null, type2: null };
+
+    // ==================== NAVEGAÇÃO ====================
+    document.querySelectorAll('.nav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(btn.dataset.target).classList.add('active');
+      });
+    });
+
+    // ==================== SEC 1: FUNÇÕES E KPIs ====================
+    // Toggle custom field for "Tipo de Obra"
+    function toggleTipoObraCustom(value) {
+      const container = document.getElementById('tipo_obra_custom_container');
+      container.style.display = value === 'Outros' ? 'block' : 'none';
+    }
+
+    // Update KPIs
+    ['id_jsj', 'nome_projeto', 'fase_atual'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', updateKPIs);
+    });
+
+    function updateKPIs() {
+      const idJsj = document.getElementById('id_jsj')?.value || '—';
+      const nomeProjeto = document.getElementById('nome_projeto')?.value || '—';
+      const faseAtual = document.getElementById('fase_atual')?.value || '—';
+
+      document.getElementById('kpiID').textContent = idJsj !== '—' ? `#${idJsj}` : '#—';
+      document.getElementById('kpiNome').textContent = nomeProjeto;
+      document.getElementById('kpiFase').textContent = faseAtual;
+    }
+
+
+    // ==================== SEC 2: PISOS E ZONAS ====================
+    function addFloor() {
+      const floor = {
+        id: Date.now(),
+        name: `Piso ${projectData.floors.length}`,
+        cota: 0,
+        area: 0,
+        zones: []
+      };
+      projectData.floors.push(floor);
+      renderFloors();
+      updateGeneralStats();
+      updateActionsFloorTabs();
+    }
+
+    function renderFloors() {
+      const container = document.getElementById('floorsContainer');
+      container.innerHTML = projectData.floors.map(floor => `
+    <div class="floor-card">
+      <div class="floor-header">
+        <input type="text" value="${floor.name}" onchange="updateFloorName(${floor.id}, this.value)" 
+               class="floor-name-input">
+        <div class="zones-badge" onclick="toggleFloorZones(${floor.id})">${floor.zones.length} Zonas ▼</div>
+      </div>
+      <div class="floor-stats">
+        <span>📍 Cota: <input type="number" value="${floor.cota}" step="0.01" onchange="updateFloorCota(${floor.id}, this.value)" 
+                           style="width:80px;padding:4px;background:#12161f;border:1px solid var(--line);color:var(--ink);border-radius:4px"> m</span>
+        <span>📐 Área: <strong>${floor.area.toFixed(0)} m²</strong></span>
+        <button onclick="deleteFloor(${floor.id})" class="btn-danger" style="margin-left:auto">🗑️ Eliminar Piso</button>
+      </div>
+      
+      <div class="zone-selector" id="zones-${floor.id}">
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+          <span style="font-size:13px;color:var(--ink);font-weight:600">Zonas deste piso</span>
+          <button class="btn-sm" onclick="openAddZoneModal(${floor.id})">➕ Adicionar Zona</button>
+        </div>
+        <div class="zone-list">
+          ${floor.zones.map(zone => `
+            <div class="zone-item">
+              <div>
+                <div class="zone-item-name">${zone.name}</div>
+                <div class="zone-item-info">${zone.area} m² | ${zone.uso} | ${zone.tipoLaje}</div>
+              </div>
+              <div class="zone-item-actions">
+                <button class="btn-sm" onclick="openEditZoneModal(${floor.id}, ${zone.id})">✏️ Editar</button>
+                <button class="btn-danger" onclick="deleteZone(${floor.id}, ${zone.id})">🗑️</button>
+              </div>
+            </div>
+          `).join('')}
+          ${floor.zones.length === 0 ? '<p style="text-align:center;color:var(--muted);padding:20px">Nenhuma zona definida</p>' : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+    }
+
+    function updateFloorName(floorId, name) {
+      const floor = projectData.floors.find(f => f.id === floorId);
+      if (floor) {
+        floor.name = name;
+        updateActionsFloorTabs();
+      }
+    }
+
+    function updateFloorCota(floorId, cota) {
+      const floor = projectData.floors.find(f => f.id === floorId);
+      if (floor) floor.cota = parseFloat(cota) || 0;
+    }
+
+    function deleteFloor(floorId) {
+      if (!confirm('Eliminar este piso e todas as suas zonas?')) return;
+      projectData.floors = projectData.floors.filter(f => f.id !== floorId);
+      renderFloors();
+      updateGeneralStats();
+      updateActionsFloorTabs();
+    }
+
+    function toggleFloorZones(floorId) {
+      const selector = document.getElementById(`zones-${floorId}`);
+      selector.classList.toggle('show');
+    }
+
+    // MODAL: ADICIONAR/EDITAR ZONA
+    function openAddZoneModal(floorId) {
+      currentEditingZone = { floorId, zone: null };
+      const floor = projectData.floors.find(f => f.id === floorId);
+
+      document.getElementById('zoneModalTitle').textContent = 'Adicionar Nova Zona';
+      document.getElementById('zoneModalBody').innerHTML = renderZoneForm({
+        id: Date.now(),
+        name: `Zona ${floor.zones.length + 1}`,
+        area: 0,
+        cotaLimpo: floor.cota,
+        acabamento: 60,
+        uso: 'B - Escritórios',
+        tipoLaje: 'Maciça',
+        espessura: 0.25,
+        vaoMax: 0
+      });
+
+      document.getElementById('zoneModal').classList.add('show');
+    }
+
+    function openEditZoneModal(floorId, zoneId) {
+      const floor = projectData.floors.find(f => f.id === floorId);
+      const zone = floor?.zones.find(z => z.id === zoneId);
+      if (!zone) return;
+
+      currentEditingZone = { floorId, zone };
+      document.getElementById('zoneModalTitle').textContent = 'Editar Zona';
+      document.getElementById('zoneModalBody').innerHTML = renderZoneForm(zone);
+      document.getElementById('zoneModal').classList.add('show');
+    }
+
+    function renderZoneForm(zone) {
+      const cotaTosco = (zone.cotaLimpo - zone.acabamento / 1000).toFixed(3);
+      const hEquiv = calculateEquivThickness(zone.tipoLaje, zone.espessura);
+
+      return `
+    <div class="card">
+      <label>Nome da Zona</label>
+      <input type="text" id="zf_name" value="${zone.name}">
+    </div>
+    <div class="card">
+      <label>Área (m²)</label>
+      <input type="number" id="zf_area" value="${zone.area}" step="0.1">
+    </div>
+    <div class="card">
+      <label>Cota Piso Limpo (m)</label>
+      <input type="number" id="zf_limpo" value="${zone.cotaLimpo}" step="0.01" onchange="updateTosco()">
+    </div>
+    <div class="card">
+      <label>Acabamento (mm)</label>
+      <input type="number" id="zf_acab" value="${zone.acabamento}" step="5" onchange="updateTosco()">
+    </div>
+    <div class="card">
+      <label>Cota Piso Tosco (m) <span class="tag auto">AUTO</span></label>
+      <input type="text" id="zf_tosco" value="${cotaTosco}" disabled style="color:var(--ok);font-weight:600">
+    </div>
+    <div class="card">
+      <label>Uso (EC1-1-1)</label>
+      <select id="zf_uso">
+        <option ${zone.uso.includes('A') ? 'selected' : ''}>A - Habitação</option>
+        <option ${zone.uso.includes('B') ? 'selected' : ''}>B - Escritórios</option>
+        <option ${zone.uso.includes('C1') ? 'selected' : ''}>C1 - Espaços c/ mesas</option>
+        <option ${zone.uso.includes('C2') ? 'selected' : ''}>C2 - Espaços c/ cadeiras</option>
+        <option ${zone.uso.includes('C3') ? 'selected' : ''}>C3 - Sem obstáculos</option>
+        <option ${zone.uso.includes('C4') ? 'selected' : ''}>C4 - Atividade física</option>
+        <option ${zone.uso.includes('C5') ? 'selected' : ''}>C5 - Aglomerações</option>
+        <option ${zone.uso.includes('D1') ? 'selected' : ''}>D1 - Comércio</option>
+        <option ${zone.uso.includes('D2') ? 'selected' : ''}>D2 - Grande comércio</option>
+        <option ${zone.uso.includes('E1') ? 'selected' : ''}>E1 - Arquivo</option>
+        <option ${zone.uso.includes('E2') ? 'selected' : ''}>E2 - Industrial</option>
+        <option ${zone.uso.includes('F') ? 'selected' : ''}>F - Tráfego <30kN</option>
+        <option ${zone.uso.includes('G') ? 'selected' : ''}>G - Tráfego 30-160kN</option>
+        <option ${zone.uso.includes('H') ? 'selected' : ''}>H - Cobertura acessível</option>
+        <option ${zone.uso.includes('I') ? 'selected' : ''}>I - Cobertura não acessível</option>
+      </select>
+    </div>
+    <div class="card">
+      <label>Tipo de Laje</label>
+      <select id="zf_tipo" onchange="updateEquiv()">
+        <option ${zone.tipoLaje === 'Maciça' ? 'selected' : ''}>Maciça</option>
+        <option ${zone.tipoLaje === 'Aligeirada' ? 'selected' : ''}>Aligeirada</option>
+        <option ${zone.tipoLaje === 'Bandas' ? 'selected' : ''}>Laje de Bandas</option>
+        <option ${zone.tipoLaje === 'Fungiforme' ? 'selected' : ''}>Fungiforme</option>
+        <option ${zone.tipoLaje === 'Pré-esforçada' ? 'selected' : ''}>Pré-esforçada</option>
+        <option ${zone.tipoLaje === 'Mista' ? 'selected' : ''}>Mista</option>
+      </select>
+    </div>
+    <div class="card">
+      <label>Espessura Nominal (m)</label>
+      <input type="number" id="zf_esp" value="${zone.espessura}" step="0.01" onchange="updateEquiv()">
+    </div>
+    <div class="card">
+      <label>Espessura Equivalente (m) <span class="tag auto">AUTO</span></label>
+      <input type="text" id="zf_equiv" value="${hEquiv.toFixed(3)}" disabled style="color:var(--ok);font-weight:600">
+    </div>
+    <div class="card">
+      <label>Vão Máximo (m)</label>
+      <input type="number" id="zf_vao" value="${zone.vaoMax}" step="0.1">
+    </div>
+    <script>
+      function updateTosco() {
+        const limpo = parseFloat(document.getElementById('zf_limpo').value) || 0;
+        const acab = parseFloat(document.getElementById('zf_acab').value) || 0;
+        document.getElementById('zf_tosco').value = (limpo - acab/1000).toFixed(3);
+      }
+      function updateEquiv() {
+        const tipo = document.getElementById('zf_tipo').value;
+        const esp = parseFloat(document.getElementById('zf_esp').value) || 0;
+        const equiv = calculateEquivThickness(tipo, esp);
+        document.getElementById('zf_equiv').value = equiv.toFixed(3);
+      }
+      function calculateEquivThickness(tipo, h) {
+        const map = {'Maciça':1,'Aligeirada':0.44,'Bandas':0.75,'Fungiforme':0.85,'Pré-esforçada':1,'Mista':0.6};
+        return h * (map[tipo] || 1);
+      }
+    <\/script>
+  `;
+    }
+
+    function closeZoneModal() {
+      document.getElementById('zoneModal').classList.remove('show');
+      currentEditingZone = null;
+    }
+
+    function saveZone() {
+      if (!currentEditingZone) return;
+
+      const zoneData = {
+        id: currentEditingZone.zone?.id || Date.now(),
+        name: document.getElementById('zf_name').value,
+        area: parseFloat(document.getElementById('zf_area').value) || 0,
+        cotaLimpo: parseFloat(document.getElementById('zf_limpo').value) || 0,
+        acabamento: parseFloat(document.getElementById('zf_acab').value) || 0,
+        uso: document.getElementById('zf_uso').value,
+        tipoLaje: document.getElementById('zf_tipo').value,
+        espessura: parseFloat(document.getElementById('zf_esp').value) || 0,
+        vaoMax: parseFloat(document.getElementById('zf_vao').value) || 0,
+        permanentes: currentEditingZone.zone?.permanentes || [],
+        variaveis: currentEditingZone.zone?.variaveis || [],
+        walls: currentEditingZone.zone?.walls || []
+      };
+
+      const floor = projectData.floors.find(f => f.id === currentEditingZone.floorId);
+      if (!floor) return;
+
+      if (currentEditingZone.zone) {
+        // Edit existing
+        const idx = floor.zones.findIndex(z => z.id === currentEditingZone.zone.id);
+        if (idx >= 0) floor.zones[idx] = zoneData;
+      } else {
+        // Add new
+        floor.zones.push(zoneData);
+      }
+
+      renderFloors();
+      updateGeneralStats();
+      updateActionsFloorTabs();
+      closeZoneModal();
+      showStatus('Zona guardada com sucesso', 'ok');
+    }
+
+    function deleteZone(floorId, zoneId) {
+      if (!confirm('Eliminar esta zona?')) return;
+      const floor = projectData.floors.find(f => f.id === floorId);
+      if (floor) {
+        floor.zones = floor.zones.filter(z => z.id !== zoneId);
+        renderFloors();
+        updateGeneralStats();
+        updateActionsFloorTabs();
+      }
+    }
+
+    function calculateEquivThickness(tipo, h) {
+      const map = { 'Maciça': 1, 'Aligeirada': 0.44, 'Bandas': 0.75, 'Fungiforme': 0.85, 'Pré-esforçada': 1, 'Mista': 0.6 };
+      return h * (map[tipo] || 1);
+    }
+
+    function updateGeneralStats() {
+      let totalArea = 0;
+      let nPisos = projectData.floors.length;
+      let maxCota = 0;
+
+      projectData.floors.forEach(floor => {
+        floor.area = floor.zones.reduce((sum, z) => sum + (z.area || 0), 0);
+        totalArea += floor.area;
+        if (floor.cota > maxCota) maxCota = floor.cota;
+      });
+
+      const implantacao = projectData.floors[0]?.area || 0;
+
+      document.getElementById('kpiImplant').textContent = implantacao.toFixed(0);
+      document.getElementById('kpiABC').textContent = totalArea.toFixed(0);
+      document.getElementById('kpiPisos').textContent = nPisos;
+      document.getElementById('kpiAltura').textContent = maxCota.toFixed(1);
+
+      renderFloors();
+    }
+
+    // ==================== SEC 5: GEOTÉCNICA ====================
+    function addGeoRow() {
+      projectData.geoHorizons.push({ horizonte: '', nspt: '', gamma: '', c: '', phi: '', e: '', sigma: '', escav: '' });
+      renderGeoTable();
+    }
+
+    function renderGeoTable() {
+      const tbody = document.querySelector('#tblGeo tbody');
+      tbody.innerHTML = projectData.geoHorizons.map((row, i) => `
+    <tr>
+      <td><input value="${row.horizonte}" onchange="projectData.geoHorizons[${i}].horizonte=this.value" style="width:100%"></td>
+      <td><input type="number" value="${row.nspt}" onchange="projectData.geoHorizons[${i}].nspt=this.value" style="width:70px"></td>
+      <td><input type="number" value="${row.gamma}" step="0.1" onchange="projectData.geoHorizons[${i}].gamma=this.value" style="width:70px"></td>
+      <td><input type="number" value="${row.c}" step="1" onchange="projectData.geoHorizons[${i}].c=this.value" style="width:70px"></td>
+      <td><input type="number" value="${row.phi}" step="1" onchange="projectData.geoHorizons[${i}].phi=this.value" style="width:70px"></td>
+      <td><input type="number" value="${row.e}" step="1" onchange="projectData.geoHorizons[${i}].e=this.value" style="width:70px"></td>
+      <td><input type="number" value="${row.sigma}" step="10" onchange="projectData.geoHorizons[${i}].sigma=this.value" style="width:80px"></td>
+      <td><select onchange="projectData.geoHorizons[${i}].escav=this.value">
+        <option ${row.escav === 'Fácil' ? 'selected' : ''}>Fácil</option>
+        <option ${row.escav === 'Média' ? 'selected' : ''}>Média</option>
+        <option ${row.escav === 'Difícil' ? 'selected' : ''}>Difícil</option>
+      </select></td>
+      <td><button class="btn-danger" onclick="projectData.geoHorizons.splice(${i},1);renderGeoTable()">🗑️</button></td>
+    </tr>
+  `).join('');
+    }
+
+    // Auto-preencher tipo terreno sismo
+    document.getElementById('geo_tipo_sismo')?.addEventListener('change', function () {
+      const tipoSismo = this.value;
+      document.getElementById('sismo_terreno').value = tipoSismo;
+    });
+
+    // ==================== SEC 7: AÇÕES ====================
+    function toggleActionSection(name, enabled) {
+      projectData.actionsEnabled[name] = enabled;
+      const section = document.getElementById(`section-${name}`);
+      if (enabled) {
+        section.classList.add('active');
+        // Se for sismo, gerar gráficos
+        if (name === 'sismo') {
+          setTimeout(generateSeismicCharts, 100);
+        }
+      } else {
+        section.classList.remove('active');
+      }
+    }
+
+    function toggleActionBody(name) {
+      const body = document.getElementById(`body-${name}`);
+      const toggle = document.querySelector(`#section-${name} .action-toggle`);
+      body.classList.toggle('show');
+      toggle.classList.toggle('open');
+    }
+
+    // Ações Gravíticas por Zonas
+    function updateActionsFloorTabs() {
+      const tabsContainer = document.getElementById('actionsFloorTabs');
+      const contentContainer = document.getElementById('actionsFloorsContent');
+
+      if (!tabsContainer || !contentContainer) return;
+
+      if (projectData.floors.length === 0) {
+        tabsContainer.innerHTML = '<p style="color:var(--muted);font-size:12px">Nenhum piso definido. Adicione pisos na Caracterização Geral.</p>';
+        contentContainer.innerHTML = '';
+        return;
+      }
+
+      tabsContainer.innerHTML = projectData.floors.map((floor, i) => `
+    <button class="floor-tab ${i === 0 ? 'active' : ''}" onclick="selectActionsFloor(${floor.id}, this)">${floor.name}</button>
+  `).join('');
+
+      contentContainer.innerHTML = projectData.floors.map((floor, i) => `
+    <div class="zone-actions-floor" id="actions-floor-${floor.id}" style="display:${i === 0 ? 'block' : 'none'}">
+      ${floor.zones.length === 0 ? `
+        <div style="padding:30px 20px;text-align:center;color:var(--muted);background:#1a1f2a;border-radius:8px">
+          <p style="margin-bottom:8px;font-size:14px">Nenhuma zona definida neste piso.</p>
+          <p style="font-size:12px">Adicione zonas na secção "Caracterização Geral".</p>
+        </div>
+      ` : `
+        <div class="zone-tabs">
+          ${floor.zones.map((zone, zi) => `
+            <button class="zone-tab ${zi === 0 ? 'active' : ''}" onclick="selectActionsZone(${floor.id}, ${zone.id}, this)">${zone.name}</button>
+          `).join('')}
+        </div>
+        ${floor.zones.map((zone, zi) => `
+          <div class="zone-actions-content ${zi === 0 ? 'show' : ''}" id="actions-zone-${floor.id}-${zone.id}">
+            ${renderZoneActions(floor, zone)}
+          </div>
+        `).join('')}
+      `}
+    </div>
+  `).join('');
+    }
+
+    function selectActionsFloor(floorId, btn) {
+      document.querySelectorAll('.floor-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.zone-actions-floor').forEach(f => f.style.display = 'none');
+      document.getElementById(`actions-floor-${floorId}`).style.display = 'block';
+    }
+
+    function selectActionsZone(floorId, zoneId, btn) {
+      const parent = btn.parentElement;
+      parent.querySelectorAll('.zone-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const container = document.getElementById(`actions-floor-${floorId}`);
+      container.querySelectorAll('.zone-actions-content').forEach(c => c.classList.remove('show'));
+      document.getElementById(`actions-zone-${floorId}-${zoneId}`).classList.add('show');
+    }
+
+    function renderZoneActions(floor, zone) {
+      if (!zone.permanentes) zone.permanentes = [];
+      if (!zone.variaveis) zone.variaveis = [];
+      if (!zone.walls) zone.walls = [];
+
+      const hEquiv = calculateEquivThickness(zone.tipoLaje, zone.espessura);
+      const ppLaje = hEquiv * 25;
+
+      // Calcular paredes
+      let wallsLoad = 0;
+      zone.walls.forEach(w => {
+        const area = w.length * w.height;
+        const weight = area * w.peso;
+        wallsLoad += weight;
+      });
+      const wallsDistributed = zone.area > 0 ? wallsLoad / zone.area : 0;
+
+      // Total permanentes
+      let totalPerm = ppLaje + wallsDistributed;
+      zone.permanentes.forEach(p => totalPerm += parseFloat(p.value) || 0);
+
+      // Variáveis importadas
+      const { qk, psi0, psi1, psi2 } = getUsoCategoryData(zone.uso);
+
+      // Combinações
+      const G = totalPerm;
+      const Q = qk;
+      const combinations = [
+        { name: 'ELU Fund. 1', value: 1.35 * G + 1.50 * Q, formula: '1.35G + 1.50Q', type: 'elu' },
+        { name: 'ELU Fund. 2', value: 1.35 * G + 1.50 * psi0 * Q, formula: '1.35G + 1.50ψ₀Q', type: 'elu' },
+        { name: 'SLS Caract.', value: G + Q, formula: 'G + Q', type: 'els' },
+        { name: 'SLS Freq.', value: G + psi1 * Q, formula: 'G + ψ₁Q', type: 'els' },
+        { name: 'SLS Q-perm.', value: G + psi2 * Q, formula: 'G + ψ₂Q', type: 'els' }
+      ];
+
+      return `
+    <div style="display:grid;gap:16px">
+      <!-- Ações Permanentes -->
+      <div class="action-card">
+        <div class="action-card-header">
+          <div class="action-card-title">⚖️ Ações Permanentes</div>
+          <div class="action-card-actions">
+            <button class="btn-sm" onclick="openWallsModal(${floor.id}, ${zone.id})">🧱 Gerir Paredes</button>
+            <button class="btn-sm" onclick="openAddPermanentModal(${floor.id}, ${zone.id})">➕ Adicionar</button>
+          </div>
+        </div>
+        <div class="action-card-body">
+          <table class="action-table">
+            <thead><tr><th>Designação</th><th>Valor [kN/m²]</th><th>Observações</th><th>Ações</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Peso próprio laje <span class="tag auto">AUTO</span></td>
+                <td class="auto-value">${ppLaje.toFixed(2)}</td>
+                <td style="font-size:10px;color:var(--muted)">${zone.tipoLaje} heq=${hEquiv.toFixed(3)}m</td>
+                <td><span class="tag locked">🔒</span></td>
+              </tr>
+              ${wallsDistributed > 0 ? `
+              <tr>
+                <td>Paredes divisórias <span class="tag auto">AUTO</span></td>
+                <td class="auto-value">${wallsDistributed.toFixed(2)}</td>
+                <td style="font-size:10px;color:var(--muted)">${zone.walls.length} paredes</td>
+                <td><button class="btn-sm" onclick="openWallsModal(${floor.id}, ${zone.id})">✏️</button></td>
+              </tr>
+              ` : ''}
+              ${zone.permanentes.map((p, pi) => `
+              <tr>
+                <td>${p.design}</td>
+                <td>${parseFloat(p.value).toFixed(2)}</td>
+                <td style="font-size:10px;color:var(--muted)">${p.obs || '—'}</td>
+                <td><button class="btn-danger" onclick="deletePermanentAction(${floor.id},${zone.id},${pi})">🗑️</button></td>
+              </tr>
+              `).join('')}
+              <tr style="background:#1a1f2a;font-weight:700">
+                <td>TOTAL G</td>
+                <td class="auto-value">${totalPerm.toFixed(2)}</td>
+                <td style="font-size:10px;color:var(--muted)">Soma automática</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Ações Variáveis -->
+      <div class="action-card">
+        <div class="action-card-header">
+          <div class="action-card-title">📊 Ações Variáveis</div>
+        </div>
+        <div class="action-card-body">
+          <table class="action-table">
+            <thead><tr><th>Nome</th><th>Categoria</th><th>qk [kN/m²]</th><th>ψ₀</th><th>ψ₁</th><th>ψ₂</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Sobrecarga uso <span class="tag imported">IMPORT</span></td>
+                <td class="imported-value">${zone.uso}</td>
+                <td class="imported-value">${qk.toFixed(2)}</td>
+                <td class="imported-value">${psi0.toFixed(2)}</td>
+                <td class="imported-value">${psi1.toFixed(2)}</td>
+                <td class="imported-value">${psi2.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size:10px;color:var(--muted);margin-top:8px;font-style:italic">
+            💡 Valores importados automaticamente da categoria de uso definida na Caracterização Geral
+          </p>
+        </div>
+      </div>
+      
+      <!-- Combinações -->
+      <div class="combinations-summary">
+        <div class="combinations-header">
+          <div class="combinations-title">Combinações de Ações (EC0)</div>
+          <div class="combinations-subtitle">Valores de cálculo | Zona: ${zone.area.toFixed(1)} m²</div>
+        </div>
+        <div style="padding:14px">
+          <table class="combinations-table">
+            <thead><tr><th>Combinação</th><th>p [kN/m²]</th><th>Reação Zona [kN]</th><th>Reação Piso [kN]</th></tr></thead>
+            <tbody>
+              ${combinations.map(c => `
+              <tr class="${c.type}-row">
+                <td><span class="combination-name">${c.name}</span><br><span class="combination-formula">${c.formula}</span></td>
+                <td class="combination-value">${c.value.toFixed(2)}</td>
+                <td class="combination-value">${(c.value * zone.area).toFixed(1)}</td>
+                <td class="combination-value">${(c.value * floor.area).toFixed(1)}</td>
+              </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+    }
+
+    function getUsoCategoryData(uso) {
+      const map = {
+        'A': { qk: 2.0, psi0: 0.70, psi1: 0.50, psi2: 0.30 },
+        'B': { qk: 3.0, psi0: 0.70, psi1: 0.50, psi2: 0.30 },
+        'C1': { qk: 3.0, psi0: 0.70, psi1: 0.70, psi2: 0.60 },
+        'C2': { qk: 4.0, psi0: 0.70, psi1: 0.70, psi2: 0.60 },
+        'C3': { qk: 5.0, psi0: 0.70, psi1: 0.70, psi2: 0.60 },
+        'C4': { qk: 5.0, psi0: 0.70, psi1: 0.70, psi2: 0.60 },
+        'C5': { qk: 5.0, psi0: 0.70, psi1: 0.70, psi2: 0.60 },
+        'D1': { qk: 4.0, psi0: 0.70, psi1: 0.70, psi2: 0.60 },
+        'D2': { qk: 5.0, psi0: 0.70, psi1: 0.70, psi2: 0.60 },
+        'E1': { qk: 7.5, psi0: 1.00, psi1: 0.90, psi2: 0.80 },
+        'E2': { qk: 7.5, psi0: 1.00, psi1: 0.90, psi2: 0.80 },
+        'F': { qk: 2.5, psi0: 0.70, psi1: 0.70, psi2: 0.60 },
+        'G': { qk: 5.0, psi0: 0.70, psi1: 0.50, psi2: 0.30 },
+        'H': { qk: 0.4, psi0: 0.00, psi1: 0.00, psi2: 0.00 },
+        'I': { qk: 0.0, psi0: 0.00, psi1: 0.00, psi2: 0.00 }
+      };
+      const key = uso.charAt(0);
+      return map[key] || { qk: 2.0, psi0: 0.70, psi1: 0.50, psi2: 0.30 };
+    }
+
+    // MODAL: Adicionar Ação Permanente
+    function openAddPermanentModal(floorId, zoneId) {
+      currentEditingZone = { floorId, zoneId };
+      document.getElementById('perm_design').value = '';
+      document.getElementById('perm_value').value = '';
+      document.getElementById('perm_obs').value = '';
+      document.getElementById('addPermanentModal').classList.add('show');
+    }
+
+    function addPermanentAction() {
+      if (!currentEditingZone) return;
+
+      const design = document.getElementById('perm_design').value.trim();
+      const value = document.getElementById('perm_value').value;
+      const obs = document.getElementById('perm_obs').value.trim();
+
+      if (!design || !value) {
+        alert('Preencha designação e valor');
+        return;
+      }
+
+      const floor = projectData.floors.find(f => f.id === currentEditingZone.floorId);
+      const zone = floor?.zones.find(z => z.id === currentEditingZone.zoneId);
+      if (!zone) return;
+
+      if (!zone.permanentes) zone.permanentes = [];
+      zone.permanentes.push({ design, value: parseFloat(value), obs });
+
+      closeModal('addPermanentModal');
+      updateActionsFloorTabs();
+      showStatus('Ação permanente adicionada', 'ok');
+    }
+
+    function deletePermanentAction(floorId, zoneId, index) {
+      const floor = projectData.floors.find(f => f.id === floorId);
+      const zone = floor?.zones.find(z => z.id === zoneId);
+      if (!zone) return;
+      zone.permanentes.splice(index, 1);
+      updateActionsFloorTabs();
+    }
+
+    // MODAL: Gerir Paredes
+    function openWallsModal(floorId, zoneId) {
+      currentWallsZone = { floorId, zoneId };
+      const floor = projectData.floors.find(f => f.id === floorId);
+      const zone = floor?.zones.find(z => z.id === zoneId);
+      if (!zone) return;
+
+      if (!zone.walls) zone.walls = [];
+      renderWallsTable(zone);
+      document.getElementById('wallsModal').classList.add('show');
+    }
+
+    function renderWallsTable(zone) {
+      const tbody = document.getElementById('wallsTableBody');
+      tbody.innerHTML = zone.walls.map((w, i) => `
+    <tr>
+      <td><select onchange="zone.walls[${i}].type=this.value;calculateWalls(zone)">
+        <option ${w.type === 'Alvenaria' ? 'selected' : ''}>Alvenaria</option>
+        <option ${w.type === 'Gesso' ? 'selected' : ''}>Gesso cartonado</option>
+        <option ${w.type === 'Betão' ? 'selected' : ''}>Betão</option>
+      </select></td>
+      <td><input type="number" value="${w.length}" step="0.1" onchange="zone.walls[${i}].length=parseFloat(this.value);calculateWalls(zone)" style="width:80px"></td>
+      <td><input type="number" value="${w.height}" step="0.1" onchange="zone.walls[${i}].height=parseFloat(this.value);calculateWalls(zone)" style="width:80px"></td>
+      <td><input type="number" value="${w.peso}" step="0.1" onchange="zone.walls[${i}].peso=parseFloat(this.value);calculateWalls(zone)" style="width:80px"></td>
+      <td><button class="btn-danger" onclick="zone.walls.splice(${i},1);renderWallsTable(zone)">🗑️</button></td>
+    </tr>
+  `).join('');
+      calculateWalls(zone);
+    }
+
+    function addWallRow() {
+      if (!currentWallsZone) return;
+      const floor = projectData.floors.find(f => f.id === currentWallsZone.floorId);
+      const zone = floor?.zones.find(z => z.id === currentWallsZone.zoneId);
+      if (!zone) return;
+
+      zone.walls.push({ type: 'Alvenaria', length: 0, height: 2.7, peso: 1.8 });
+      renderWallsTable(zone);
+    }
+
+    function calculateWalls(zone) {
+      let totalWeight = 0;
+      zone.walls.forEach(w => {
+        const area = (w.length || 0) * (w.height || 0);
+        const weight = area * (w.peso || 0);
+        totalWeight += weight;
+      });
+      const distributed = zone.area > 0 ? totalWeight / zone.area : 0;
+      document.getElementById('wallsTotal').textContent = distributed.toFixed(2) + ' kN/m²';
+    }
+
+    function saveWalls() {
+      closeModal('wallsModal');
+      updateActionsFloorTabs();
+      showStatus('Paredes guardadas', 'ok');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('show');
+    }
+
+    // Gráficos Sísmicos
+    function generateSeismicCharts() {
+      const zona = document.getElementById('sismo_zona').value;
+      const terreno = document.getElementById('sismo_terreno').value;
+      const q = parseFloat(document.getElementById('sismo_q').value) || 3;
+      const amort = parseFloat(document.getElementById('sismo_amort').value) || 5;
+
+      // agR values por zona (simplificado)
+      const agRMap = {
+        '1.1': 2.5, '1.2': 2.0, '1.3': 1.5, '1.4': 1.25,
+        '2.1': 2.5, '2.2': 2.0, '2.3': 1.7, '2.4': 1.1, '2.5': 0.8
+      };
+      const agR = agRMap[zona] || 1.5;
+
+      // S, TB, TC, TD por terreno (EC8 Portugal)
+      const paramsMap = {
+        'A': { S: 1.0, TB: 0.10, TC: 0.25, TD: 2.0 },
+        'B': { S: 1.35, TB: 0.10, TC: 0.25, TD: 2.0 },
+        'C': { S: 1.60, TB: 0.10, TC: 0.25, TD: 2.0 },
+        'D': { S: 2.0, TB: 0.10, TC: 0.30, TD: 2.0 },
+        'E': { S: 1.40, TB: 0.05, TC: 0.25, TD: 1.2 }
+      };
+      const params = paramsMap[terreno] || paramsMap['B'];
+
+      // Tipo 1 e Tipo 2
+      generateSeismicChart('seismicChart1', 'Tipo 1', agR, params, q, amort, 1);
+      generateSeismicChart('seismicChart2', 'Tipo 2', agR * 0.7, params, q, amort, 2);
+    }
+
+    function generateSeismicChart(canvasId, tipo, ag, params, q, amort, type) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+
+      // Períodos
+      const periods = [];
+      for (let T = 0; T <= 4; T += 0.05) periods.push(T);
+
+      // Calcular Se(T) - Elastic spectrum
+      const Se = periods.map(T => {
+        const { S, TB, TC, TD } = params;
+        let value;
+        if (T < TB) {
+          value = ag * S * (1 + (T / TB) * (2.5 - 1));
+        } else if (T >= TB && T < TC) {
+          value = ag * S * 2.5;
+        } else if (T >= TC && T < TD) {
+          value = ag * S * 2.5 * (TC / T);
+        } else {
+          value = ag * S * 2.5 * (TC * TD) / (T * T);
+        }
+        return Math.max(value, 0.2 * ag); // Beta*ag minimum
+      });
+
+      // Calcular Sd(T) - Design spectrum
+      const Sd = Se.map(se => se / q);
+
+      // Destroy existing chart
+      const chartKey = canvasId === 'seismicChart1' ? 'type1' : 'type2';
+      if (seismicCharts[chartKey]) {
+        seismicCharts[chartKey].destroy();
+      }
+
+      // Create chart
+      seismicCharts[chartKey] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: periods,
+          datasets: [
+            {
+              label: 'Elástico Se(T)',
+              data: Se,
+              borderColor: 'rgba(58,163,255,0.8)',
+              backgroundColor: 'rgba(58,163,255,0.1)',
+              borderWidth: 2,
+              pointRadius: 0,
+              fill: true
+            },
+            {
+              label: 'Projeto Sd(T)',
+              data: Sd,
+              borderColor: 'rgba(46,204,113,0.8)',
+              backgroundColor: 'rgba(46,204,113,0.1)',
+              borderWidth: 2,
+              pointRadius: 0,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              title: { display: true, text: 'Período T [s]', color: '#9aa5b1' },
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#9aa5b1' }
+            },
+            y: {
+              title: { display: true, text: 'Aceleração [m/s²]', color: '#9aa5b1' },
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#9aa5b1' },
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: { labels: { color: '#e8ecf1' } },
+            title: { display: false }
+          }
+        }
+      });
+    }
+
+    // Atualizar gráficos quando parâmetros mudam
+    ['sismo_zona', 'sismo_q', 'sismo_amort'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', () => {
+        if (document.getElementById('body-sismo').classList.contains('show')) {
+          generateSeismicCharts();
+        }
+      });
+    });
+
+    // ==================== EXPORTAÇÃO ====================
+    function exportJSON() {
+      const data = collectAllData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `template_jsj_${Date.now()}.json`;
+      a.click();
+      showStatus('JSON exportado', 'ok');
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          loadAllData(data);
+          showStatus('Dados importados com sucesso', 'ok');
+        } catch (err) {
+          showStatus('Erro ao importar: ' + err.message, 'bad');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function collectAllData() {
+      const data = { projectData };
+      document.querySelectorAll('input[id], select[id], textarea[id]').forEach(el => {
+        if (el.id && !el.id.startsWith('kpi') && !el.id.startsWith('zf_')) {
+          data[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+        }
+      });
+      return data;
+    }
+
+    function loadAllData(data) {
+      if (data.projectData) {
+        projectData = data.projectData;
+        renderFloors();
+        renderGeoTable();
+        updateGeneralStats();
+        updateActionsFloorTabs();
+      }
+      Object.keys(data).forEach(key => {
+        const el = document.getElementById(key);
+        if (el) {
+          if (el.type === 'checkbox') {
+            el.checked = data[key];
+            if (key.startsWith('act_')) {
+              const actionName = key.replace('act_', '');
+              toggleActionSection(actionName, data[key]);
+            }
+          } else {
+            el.value = data[key];
+          }
+        }
+      });
+      updateKPIs();
+    }
+
+    function exportMarkdown() {
+      generateMarkdownReport();
+    }
+
+    function generateMarkdownReport() {
+      showStatus('A gerar relatório...', 'warn');
+
+      setTimeout(() => {
+        const md = buildMarkdownReport();
+        const blob = new Blob([md], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `memoria_descritiva_${Date.now()}.md`;
+        a.click();
+        showStatus('Relatório Markdown gerado', 'ok');
+      }, 500);
+    }
+
+    function buildMarkdownReport() {
+      let md = `# MEMÓRIA DESCRITIVA E JUSTIFICATIVA\n\n`;
+      md += `**Template Edifício JSJ v3.1**\n`;
+      md += `*Gerado em: ${new Date().toLocaleString('pt-PT')}*\n\n`;
+      md += `---\n\n`;
+
+      // SEC 1: IDENTIFICAÇÃO
+      md += `## 1. IDENTIFICAÇÃO DO PROJETO\n\n`;
+      md += `**Cliente:** ${document.getElementById('cliente')?.value || '—'}\n\n`;
+      md += `**Promotor:** ${document.getElementById('promotor')?.value || '—'}\n\n`;
+      md += `**Designação da Obra:** ${document.getElementById('designacao')?.value || '—'}\n\n`;
+      md += `**Localização:** ${document.getElementById('localizacao')?.value || '—'}\n\n`;
+      md += `**Coordenadas GPS:** ${document.getElementById('gps')?.value || '—'}\n\n`;
+      md += `**Fase do Projeto:** ${document.getElementById('fase')?.value || '—'}\n\n`;
+      md += `**Especialidade:** ${document.getElementById('especialidade')?.value || '—'}\n\n`;
+      md += `**Tipologia:** ${document.getElementById('tipologia')?.value || '—'} - ${document.getElementById('subtipologia')?.value || '—'}\n\n`;
+      md += `---\n\n`;
+
+      // SEC 2: CARACTERIZAÇÃO
+      md += `## 2. CARACTERIZAÇÃO GERAL\n\n`;
+      md += `### 2.1. Resumo Geral\n\n`;
+      md += `- **Área de Implantação:** ${document.getElementById('kpiImplant')?.textContent} m²\n`;
+      md += `- **Área Bruta de Construção (ABC):** ${document.getElementById('kpiABC')?.textContent} m²\n`;
+      md += `- **Número de Pisos:** ${document.getElementById('kpiPisos')?.textContent}\n`;
+      md += `- **Altura Total:** ${document.getElementById('kpiAltura')?.textContent} m\n\n`;
+
+      md += `### 2.2. Pisos e Zonas\n\n`;
+      projectData.floors.forEach(floor => {
+        md += `#### ${floor.name}\n\n`;
+        md += `- **Cota de Referência:** ${floor.cota.toFixed(2)} m\n`;
+        md += `- **Área Total do Piso:** ${floor.area.toFixed(2)} m²\n`;
+        md += `- **Número de Zonas:** ${floor.zones.length}\n\n`;
+
+        if (floor.zones.length > 0) {
+          floor.zones.forEach(zone => {
+            md += `##### ${zone.name}\n\n`;
+            md += `- **Área:** ${zone.area} m²\n`;
+            md += `- **Cota Piso Limpo:** ${zone.cotaLimpo.toFixed(2)} m\n`;
+            md += `- **Acabamento:** ${zone.acabamento} mm\n`;
+            md += `- **Cota Piso Tosco:** ${(zone.cotaLimpo - zone.acabamento / 1000).toFixed(3)} m\n`;
+            md += `- **Uso (EC1-1-1):** ${zone.uso}\n`;
+            md += `- **Tipo de Laje:** ${zone.tipoLaje}\n`;
+            md += `- **Espessura Nominal:** ${zone.espessura.toFixed(3)} m\n`;
+            md += `- **Espessura Equivalente:** ${calculateEquivThickness(zone.tipoLaje, zone.espessura).toFixed(3)} m\n`;
+            md += `- **Vão Máximo:** ${zone.vaoMax} m\n\n`;
+          });
+        }
+      });
+
+      md += `---\n\n`;
+
+      // SEC 3: ELEMENTOS BASE
+      md += `## 3. ELEMENTOS BASE E CONDICIONANTES\n\n`;
+      md += `**Arquitetura:** ${document.getElementById('arq')?.value || '—'}\n\n`;
+      md += `**Especialidades MEP:** ${document.getElementById('mep')?.value || '—'}\n\n`;
+      md += `**Escavação/Contenção:** ${document.getElementById('escav')?.value || '—'}\n\n`;
+      md += `**Estudo Geotécnico:** ${document.getElementById('geotec')?.value || '—'}\n\n`;
+      md += `**Estudo Hidrogeológico:** ${document.getElementById('hidro')?.value || '—'}\n\n`;
+      md += `**Prospeções:** ${document.getElementById('prosp')?.value || '—'}\n\n`;
+      md += `**Caracterização Estrutural:** ${document.getElementById('carac')?.value || '—'}\n\n`;
+      md += `**Inspeção Estrutural:** ${document.getElementById('insp')?.value || '—'}\n\n`;
+      md += `**Ensaios:** ${document.getElementById('ensaios')?.value || '—'}\n\n`;
+      md += `**Projetos Originais:** ${document.getElementById('orig')?.value || '—'}\n\n`;
+      md += `**Outros Estudos:** ${document.getElementById('outros')?.value || '—'}\n\n`;
+      md += `---\n\n`;
+
+      // SEC 4: ARQUITETURA
+      md += `## 4. CONDIÇÕES ARQUITETÓNICAS\n\n`;
+      md += `${document.getElementById('cond_arq')?.value || 'Não especificado'}\n\n`;
+      md += `---\n\n`;
+
+      // SEC 5: GEOTÉCNICA
+      md += `## 5. CONDIÇÕES GEOTÉCNICAS\n\n`;
+      md += `### 5.1. Caracterização Geral\n\n`;
+      md += `- **Formações Geológicas:** ${document.getElementById('geo_form')?.value || '—'}\n`;
+      md += `- **Horizontes Identificados:** ${document.getElementById('geo_horiz')?.value || '—'}\n`;
+      md += `- **Profundidade do Substrato Competente:** ${document.getElementById('geo_sub')?.value || '—'} m\n`;
+      md += `- **Natureza dos Solos:** ${document.getElementById('geo_nat')?.value || '—'}\n`;
+      md += `- **Tipo de Solo para Ação Sísmica (EC8):** ${document.getElementById('geo_tipo_sismo')?.value || '—'}\n`;
+      md += `- **Tensão Admissível σadm:** ${document.getElementById('geo_sigma_adm')?.value || '—'} kN/m²\n\n`;
+
+      if (projectData.geoHorizons.length > 0) {
+        md += `### 5.2. Parâmetros Geotécnicos por Horizonte\n\n`;
+        md += `| Horizonte | NSPT | γ (kN/m³) | c' (kPa) | φ (°) | E (MPa) | σadm (kPa) | Escavabilidade |\n`;
+        md += `|-----------|------|-----------|----------|-------|---------|------------|----------------|\n`;
+        projectData.geoHorizons.forEach(h => {
+          md += `| ${h.horizonte} | ${h.nspt} | ${h.gamma} | ${h.c} | ${h.phi} | ${h.e} | ${h.sigma} | ${h.escav} |\n`;
+        });
+        md += `\n`;
+      }
+
+      md += `### 5.3. Condições Hidrogeológicas\n\n`;
+      md += `- **Nível Freático:** ${document.getElementById('hid_nf')?.value || '—'} m\n`;
+      md += `- **Coluna de Água:** ${document.getElementById('hid_col')?.value || '—'} m\n`;
+      md += `- **Agressividade (Classe XA):** ${document.getElementById('hid_xa')?.value || '—'}\n`;
+      md += `- **Observações:** ${document.getElementById('hid_obs')?.value || '—'}\n\n`;
+      md += `---\n\n`;
+
+      // SEC 6: SOLUÇÃO
+      md += `## 6. SOLUÇÃO ESTRUTURAL ADOTADA\n\n`;
+      md += `${document.getElementById('sol_desc')?.value || 'Não especificado'}\n\n`;
+      md += `---\n\n`;
+
+      // SEC 7: AÇÕES
+      md += `## 7. AÇÕES\n\n`;
+      md += `### 7.1. Ações Consideradas\n\n`;
+      md += `- ⚖️ Ações Gravíticas (Permanentes + Variáveis): **Sim** (obrigatório)\n`;
+      md += `- 🌍 Ação Sísmica: **${projectData.actionsEnabled.sismo ? 'Sim' : 'Não'}**\n`;
+      md += `- 🌬️ Ação do Vento: **${projectData.actionsEnabled.vento ? 'Sim' : 'Não'}**\n`;
+      md += `- 🏔️ Impulsos de Terras: **${projectData.actionsEnabled.impulsos ? 'Sim' : 'Não'}**\n`;
+      md += `- ↔️ Retração/Fluência: **${projectData.actionsEnabled.retracao ? 'Sim' : 'Não'}**\n`;
+      md += `- 🌡️ Variação Térmica: **${projectData.actionsEnabled.temperatura ? 'Sim' : 'Não'}**\n`;
+      md += `- ❄️ Sobrecarga de Neve: **${projectData.actionsEnabled.neve ? 'Sim' : 'Não'}**\n`;
+      md += `- 💧 Pressão Hidrostática: **${projectData.actionsEnabled.agua ? 'Sim' : 'Não'}**\n\n`;
+
+      md += `### 7.2. Ações Gravíticas\n\n`;
+      projectData.floors.forEach(floor => {
+        md += `#### ${floor.name}\n\n`;
+        floor.zones.forEach(zone => {
+          md += `##### ${zone.name}\n\n`;
+
+          // Permanentes
+          const hEquiv = calculateEquivThickness(zone.tipoLaje, zone.espessura);
+          const ppLaje = hEquiv * 25;
+          md += `**Ações Permanentes:**\n\n`;
+          md += `- Peso próprio laje: ${ppLaje.toFixed(2)} kN/m² (${zone.tipoLaje}, heq=${hEquiv.toFixed(3)}m)\n`;
+
+          if (zone.walls && zone.walls.length > 0) {
+            let totalWalls = 0;
+            zone.walls.forEach(w => totalWalls += w.length * w.height * w.peso);
+            const distWalls = zone.area > 0 ? totalWalls / zone.area : 0;
+            md += `- Paredes divisórias: ${distWalls.toFixed(2)} kN/m² (${zone.walls.length} paredes)\n`;
+          }
+
+          if (zone.permanentes) {
+            zone.permanentes.forEach(p => {
+              md += `- ${p.design}: ${parseFloat(p.value).toFixed(2)} kN/m²${p.obs ? ` (${p.obs})` : ''}\n`;
+            });
+          }
+
+          md += `\n**Ações Variáveis:**\n\n`;
+          const { qk, psi0, psi1, psi2 } = getUsoCategoryData(zone.uso);
+          md += `- Sobrecarga de uso: ${qk.toFixed(2)} kN/m² (Categoria ${zone.uso})\n`;
+          md += `  - ψ₀ = ${psi0.toFixed(2)}\n`;
+          md += `  - ψ₁ = ${psi1.toFixed(2)}\n`;
+          md += `  - ψ₂ = ${psi2.toFixed(2)}\n\n`;
+        });
+      });
+
+      if (projectData.actionsEnabled.sismo) {
+        md += `### 7.3. Ação Sísmica (EC8)\n\n`;
+        md += `- **Zona Sísmica:** ${document.getElementById('sismo_zona')?.value}\n`;
+        md += `- **Tipo de Terreno:** ${document.getElementById('sismo_terreno')?.value}\n`;
+        md += `- **Classe de Importância:** ${document.getElementById('sismo_importancia')?.value}\n`;
+        md += `- **Coeficiente de Comportamento (q):** ${document.getElementById('sismo_q')?.value}\n`;
+        md += `- **Amortecimento:** ${document.getElementById('sismo_amort')?.value}%\n`;
+        md += `- **Observações:** ${document.getElementById('sismo_obs')?.value || '—'}\n\n`;
+      }
+
+      if (projectData.actionsEnabled.vento) {
+        md += `### 7.4. Ação do Vento (EC1-1-4)\n\n`;
+        md += `- **Zona:** ${document.getElementById('vento_zona')?.value}\n`;
+        md += `- **Velocidade Base vb,0:** ${document.getElementById('vento_vb')?.value} m/s\n`;
+        md += `- **Categoria de Terreno:** ${document.getElementById('vento_cat')?.value}\n`;
+        md += `- **Rugosidade z0:** ${document.getElementById('vento_z0')?.value} m\n`;
+        md += `- **Coeficiente de Orografia co:** ${document.getElementById('vento_co')?.value}\n`;
+        md += `- **Coeficiente de Pressão Interna cpi:** ${document.getElementById('vento_cpi')?.value}\n\n`;
+      }
+
+      if (projectData.actionsEnabled.impulsos) {
+        md += `### 7.5. Impulsos de Terras\n\n`;
+        md += `- **Altura:** ${document.getElementById('imp_h')?.value} m\n`;
+        md += `- **Peso Volúmico γ:** ${document.getElementById('imp_gamma')?.value} kN/m³\n`;
+        md += `- **Ângulo de Atrito φ:** ${document.getElementById('imp_phi')?.value}°\n`;
+        md += `- **Coesão c:** ${document.getElementById('imp_c')?.value} kPa\n`;
+        md += `- **Coeficiente de Impulso K0:** ${document.getElementById('imp_k0')?.value}\n`;
+        md += `- **Sobrecargas à Superfície:** ${document.getElementById('imp_q')?.value} kN/m²\n\n`;
+      }
+
+      md += `---\n\n`;
+
+      // SEC 8: CRITÉRIOS
+      md += `## 8. CRITÉRIOS DE SEGURANÇA E DIMENSIONAMENTO\n\n`;
+      md += `### 8.1. Regulamentação e Normas\n\n`;
+      md += `${document.getElementById('crit_reg')?.value || 'Não especificado'}\n\n`;
+      md += `### 8.2. Critérios de Dimensionamento\n\n`;
+      md += `${document.getElementById('crit_dim')?.value || 'Não especificado'}\n\n`;
+      md += `---\n\n`;
+
+      md += `*Relatório gerado automaticamente pelo Template Edifício JSJ v3.1*\n`;
+      md += `*© 2025 JSJ - Consultoria e Projectos de Engenharia, Lda*\n`;
+
+      return md;
+    }
+
+    // ==================== UTILS ====================
+    function showStatus(msg, type) {
+      const el = document.getElementById('statusMsg');
+      el.textContent = msg;
+      el.style.color = type === 'ok' ? 'var(--ok)' : type === 'bad' ? 'var(--bad)' : 'var(--warn)';
+      setTimeout(() => el.textContent = '', 3000);
+    }
+
+    // ==================== INIT ====================
+    window.addEventListener('DOMContentLoaded', () => {
+      updateKPIs();
+      renderFloors();
+      renderGeoTable();
+      updateActionsFloorTabs();
+
+      // Auto-preencher tipo terreno sismo quando mudar geotécnica
+      const geoSismo = document.getElementById('geo_tipo_sismo');
+      if (geoSismo) {
+        const sismoTerreno = document.getElementById('sismo_terreno');
+        sismoTerreno.value = geoSismo.value;
+        geoSismo.addEventListener('change', () => {
+          sismoTerreno.value = geoSismo.value;
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>
