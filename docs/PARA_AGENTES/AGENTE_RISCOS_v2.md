@@ -14,10 +14,11 @@
 | **Estrutura `actionsData`** (layers/shapes) | **Viewer 2D + Editor (zonas.html)** | 🔥 ALTA | `postMessage` espera formato específico. Alteração unilateral quebra comunicação entre janelas. |
 | **`FloorViewer` (classe)** | **Canvas Secção 7** | 🔥 ALTA | Motor gráfico completo. Remover ou alterar assinatura de métodos quebra renderização. |
 | **Funções `collectAllData()` / `loadAllData()`** | **Import/Export JSON** | 🔥 CRÍTICA | Sistema de persistência. Alteração quebra compatibilidade com JSONs antigos. |
+| **Firebase CRUD functions** (v11.0+) | **Multi-user sync + Auth** | 🔥 CRÍTICA | Alterar serialização quebra Firestore writes. Memory leaks se listeners não limpos. |
 
 ---
 
-## 2. IDs HTML PROTEGIDOS (Críticos)
+## 2. IDS HTML PROTEGIDOS (Críticos)
 
 ### 2.1 Secção 1 - Identificação
 ```
@@ -355,6 +356,15 @@ document.getElementById(id)?.addEventListener('input', updateKPIs);
 ```
 **Motivo**: Actualiza KPIs em tempo real (Secção 1)
 
+### 4.4 Listeners Canvas (FloorViewer)
+```javascript
+this.canvas.addEventListener('click', (e) => this.handleClick(e));
+this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+```
+**Motivo**: Interactividade do Viewer 2D (Secção 7)
+
 ### 4.5 Listener postMessage (zonas.html → index.html)
 ```javascript
 window.addEventListener('message', (event) => {
@@ -366,14 +376,13 @@ window.addEventListener('message', (event) => {
 ```
 **Motivo**: actionsData deve persistir ao voltar ao lobby
 
-### 4.4 Listeners Canvas (FloorViewer)
+### 4.6 Listener beforeunload (v11.0 - Cleanup)
 ```javascript
-this.canvas.addEventListener('click', (e) => this.handleClick(e));
-this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+window.addEventListener('beforeunload', () => {
+  if (unsubscribe) unsubscribe();  // 🔥 CRÍTICO: Limpar listener Firestore
+});
 ```
-**Motivo**: Interactividade do Viewer 2D (Secção 7)
+**Motivo**: Evita memory leaks de listeners real-time
 
 ---
 
@@ -522,6 +531,7 @@ Antes de mexer em código, valida:
 - [ ] Mudança afecta `actionsData`? → Testa zonas.html
 - [ ] Mudança em cálculo EC1? → Altera AMBOS os lugares
 - [ ] Listener será removido? → Valida se não quebra sync
+- [ ] Função Firebase async? → Valida await + error handling
 
 ---
 
@@ -534,7 +544,48 @@ Ver ficheiro `@AGENTE_TESTES.md` completo.
 2. ✅ Export JSON → Ficheiro válido
 3. ✅ Viewer 2D → Canvas renderiza
 4. ✅ Console → 0 erros JavaScript
+5. ✅ Firebase sync → Cross-session funciona (v11.0+)
+6. ✅ Auth flow → Login/logout (v11.0+)
 
 ---
 
-*Última actualização: 12/02/2026 (Extracção de Index_v9.html)*
+## 11. RISCOS ESPECÍFICOS v11.0 (Firebase)
+
+### 11.1 Serialização Nested Arrays
+**Problema**: Firestore rejeita arrays aninhados (ex: `shapes: [[{x,y}]]`)
+
+**Solução Implementada**:
+- `sanitizeNestedArrays()` em `firebase-data.js`
+- JSON.stringify antes de save
+- JSON.parse após load
+
+**NUNCA** remover estas funções sem validar alternativa!
+
+### 11.2 Memory Leaks (Real-time Listeners)
+**Problema**: `onSnapshot` continua a escutar após sair de página
+
+**Solução Implementada**:
+```javascript
+let unsubscribe = subscribeToProject(id, callback);
+window.addEventListener('beforeunload', () => {
+  if (unsubscribe) unsubscribe();
+});
+```
+
+**SEMPRE** usar este pattern ao adicionar listeners Firestore!
+
+### 11.3 Focus-Aware Updates
+**Problema**: Real-time update sobrescreve edição do user
+
+**Solução Implementada**:
+```javascript
+if (!document.hasFocus()) {
+  loadAllData(updatedData);  // Só atualiza se user não está a editar
+}
+```
+
+**NUNCA** fazer `loadAllData()` sem verificar focus em callbacks real-time!
+
+---
+
+*Última actualização: 15/02/2026 (v11.0 - Firebase Backend)*

@@ -1,74 +1,95 @@
-﻿# SSOT JSJ Template - EspecificaÃ§Ã£o TÃ©cnica v11.0
+# SSOT JSJ Template - Especificação Técnica v11.0
 
-**VersÃ£o:** 11.0  
+**Versão:** 11.0  
 **Data:** Fevereiro 2026  
-**Tipo:** AplicaÃ§Ã£o Web Standalone (HTML + Vanilla JS)  
-**Objetivo:** Sistema unificado de gestÃ£o de projetos de engenharia estrutural
+**Tipo:** Aplicação Web Cloud-Native (Firebase)  
+**Objetivo:** Sistema unificado de gestão de projetos de engenharia estrutural
 
 ---
 
-## 1. VISÃƒO GERAL
+## 1. VISÃO GERAL
 
 ### 1.1 Arquitetura
-- **Tipo**: Multi-Page Application (lobby.html + index.html)
-- **Estado**: localStorage (persistÃªncia automÃ¡tica)
-- **NavegaÃ§Ã£o**: lobby.html (lista) â†’ index.html?project=<uuid> (editor)
+- **Tipo**: Multi-Page Application (login.html → lobby.html → index.html)
+- **Estado**: Firestore (persistência cloud real-time)
+- **Auth**: Firebase Authentication (@jsj.pt whitelist obrigatório)
+- **Navegação**: login.html → lobby.html (lista) → index.html?project=<uuid> (editor)
 - **UI Lobby**: Grid de projetos com CRUD
-- **UI Editor**: 8 secÃ§Ãµes (inalteradas vs v9.1)
+- **UI Editor**: 8 secções (inalteradas vs v9.1)
 
 ### 1.2 Componentes Principais
 ```
-Index_v9.1.html (3817 linhas)
-â”œâ”€â”€ CSS (linhas 9-1220): Sistema de design dark theme
-â”œâ”€â”€ HTML (linhas 1221-2062): Estrutura das 8 secÃ§Ãµes
-â””â”€â”€ JavaScript (linhas 2063-3814): LÃ³gica + Motor GrÃ¡fico
+Index_v11.0.html (3900+ linhas)
+├── CSS (linhas 9-1220): Sistema de design dark theme
+├── HTML (linhas 1221-2062): Estrutura das 8 secções
+└── JavaScript (linhas 2063+): Lógica + Motor Gráfico + Firebase integration
+
+firebase-config.js (~150 linhas)
+├── Firebase SDK v10.7.1 imports
+├── Config + initialization
+└── Auth whitelist (@jsj.pt)
+
+firebase-data.js (~500 linhas)
+├── Firestore CRUD operations
+├── Map/Array serialization
+├── Nested arrays sanitization
+└── Real-time subscriptions
+
+login.html (~200 linhas)
+└── Firebase Auth UI (Google Sign-In)
+
+lobby.html (~400 linhas)
+├── Auth guard
+├── Projects grid (Firestore-backed)
+└── CRUD operations
 ```
 
 ### 1.3 Fluxo de Dados (SSOT Principle)
 ```
-User Input (DOM) â†’ updateKPIs() â†’ projectData (Global State)
-                                       â†“
-                            collectAllData() â†’ JSON Export
-                                       â†“
-                            loadAllData(JSON) â†’ Repopulate DOM
+User Input (DOM) → updateKPIs() → projectData (Global State)
+                                       ↓
+                        Auto-save (30s) → Firestore
+                                       ↓
+                            Real-time sync → onSnapshot
+                                       ↓
+                            Focus-aware update → loadAllData()
 ```
 
-**REGRA CRÃTICA**: Nunca ler do DOM para cÃ¡lculos. Sempre usar `projectData`.
+**REGRA CRÍTICA**: Nunca ler do DOM para cálculos. Sempre usar `projectData`.
 
 ### 1.4 Fluxo Multi-Projeto
 ```
-User â†’ lobby.html (ponto de entrada)
-    â†“
+User → login.html (Firebase Auth @jsj.pt)
+    ↓
+lobby.html (Firestore query: owner = user.uid)
+    ↓
 Clicar "Novo Projeto"
-    â†“
-index.html?project=new (cria UUID, abre vazio)
-    â†“
-Preencher SecÃ§Ãµes 1-8
-    â†“
-"ðŸ  Voltar ao Lobby"
-    â†“
+    ↓
+index.html?project=new (cria Firestore doc + UUID)
+    ↓
+Preencher Secções 1-8
+    ↓
+Auto-save 30s → Firestore
+    ↓
+"🏠 Voltar ao Lobby"
+    ↓
 lobby.html (projeto aparece no grid)
-    â†“
+    ↓
 Clicar "Abrir"
-    â†“
-index.html?project=<uuid> (carrega dados)
+    ↓
+index.html?project=<uuid> (subscribe real-time)
 ```
 
-**localStorage Schema** (v10.1):
-```json
-{
-  "ssot_projects": {
-    "uuid-1": {
-      "id": "uuid-1",
-      "id_jsj": "2026-001",
-      "nome_projeto": "EdifÃ­cio A",
-      "floors": [{"id": "...", "name": "..."}],
-      "zones": [{"id": "...", "name": "..."}],
-      "geoHorizons": [{"horizonte": "..."}]
-    },
-    "uuid-2": { }
-  }
-}
+**Firestore Schema** (v11.0):
+```
+projects (collection)
+├── <projectId> (document)
+    ├── owner: "user@jsj.pt"
+    ├── id_jsj: "2026-001"
+    ├── nome_projeto: "Edifício A"
+    ├── floors: [...]  // Serialized from Map
+    ├── geoHorizons: [...]
+    └── updatedAt: timestamp
 ```
 
 ---
@@ -77,35 +98,36 @@ index.html?project=<uuid> (carrega dados)
 
 ### 2.1 Estrutura Global `projectData`
 
-**NOTA v10.1**: Em runtime, `floors/zones/geoHorizons` sÃ£o Maps.
-No localStorage, sÃ£o serializados como Arrays.
-ConversÃ£o automÃ¡tica em `shared.js` (saveProjectsToStorage / loadProjectsFromStorage).
+**NOTA v11.0**: 
+- Runtime: `floors/zones/geoHorizons` são Maps (UUID keys)
+- Firestore: Serialized como Arrays
+- Conversão automática em `firebase-data.js`
 
 ```javascript
 let projectData = {
   floors: [
     {
-      id: 1234567890,              // Timestamp Ãºnico (number)
+      id: 1234567890,              // Timestamp único (number)
       name: "Piso 0",              // string
       cota: 0.00,                  // float (m)
-      area: 150.00,                // float (mÂ²)
+      area: 150.00,                // float (m²)
       imageData: "",               // Base64 string (PNG/JPG) - planta do piso
       zones: [
         {
-          id: 9876543210,          // Timestamp Ãºnico (number)
+          id: 9876543210,          // Timestamp único (number)
           name: "Zona A",          // string
-          area: 50.00,             // float (mÂ²)
+          area: 50.00,             // float (m²)
           cotaLimpo: 0.00,         // float (m)
           acabamento: 50,          // int (mm)
           uso: "B",                // string - Categoria EC1 (A-H)
-          tipoLaje: "MaciÃ§a",      // string - Tipo estrutural
+          tipoLaje: "Maciça",      // string - Tipo estrutural
           espessura: 0.25,         // float (m)
           vaoMax: 6.0,             // float (m)
           permanentes: [],         // Array<{nome: string, valor: float, tipo: string}>
           walls: []                // Array<{comprimento: float, espessura: float, altura: float, gamma: float}>
         }
       ],
-      actionsData: {               // ðŸ”¥ CRÃTICO - Do zonas.html (editor grÃ¡fico)
+      actionsData: {               // 🔥 CRÍTICO - Do zonas.html (editor gráfico)
         blueprint: {
           scale: 1.0,              // Escala m/px
           imageData: ""            // Base64 (duplicado por sync)
@@ -117,28 +139,21 @@ let projectData = {
               design: "L1",
               uso: "B",
               manualLoad: "0.25",  // Espessura em m (string!)
-              shapes: [            // Array de polÃ­gonos
-                [                  // PolÃ­gono = array de pontos
-                  {x: 100, y: 200},
-                  {x: 300, y: 200},
-                  {x: 300, y: 400},
-                  {x: 100, y: 400}
-                ]
-              ]
+              shapes: "[[[{\"x\":100,\"y\":200}]]]"  // 🔥 v11.0: JSON string (nested arrays)
             }
           ],
           "Sobrecargas": [         // Layer de sobrecargas
             {
               id: 124,
               uso: "B",            // Categoria EC1
-              shapes: [...]
+              shapes: "[[[...]]]"  // JSON string
             }
           ],
           "Paredes_RP": [          // Layer de RCP (Revestimentos/Paredes)
             {
               id: 125,
-              manualLoad: "1.5",   // kN/mÂ² (string!)
-              shapes: [...]
+              manualLoad: "1.5",   // kN/m² (string!)
+              shapes: "[[[...]]]"  // JSON string
             }
           ]
         }
@@ -149,57 +164,57 @@ let projectData = {
     {
       horizonte: "H1",             // string
       nspt: 10,                    // int
-      gamma: 18.0,                 // float (kN/mÂ³)
+      gamma: 18.0,                 // float (kN/m³)
       c: 5,                        // float (kPa)
       phi: 30,                     // float (graus)
       e: 50,                       // float (MPa)
       sigma: 200,                  // float (kPa)
-      escav: "FÃ¡cil"               // string
+      escav: "Fácil"               // string
     }
   ]
 };
 ```
 
-### 2.2 ValidaÃ§Ãµes e RestriÃ§Ãµes
+### 2.2 Validações e Restrições
 
-#### IDs Ãšnicos
-- **MÃ©todo**: `Date.now()` (timestamp em ms)
-- **ColisÃ£o**: ImprovÃ¡vel (user nÃ£o clica 2x no mesmo ms)
-- **ValidaÃ§Ã£o**: Nenhuma (assumes unicidade)
+#### IDs Únicos
+- **Método**: `Date.now()` (timestamp em ms)
+- **Colisão**: Improvável (user não clica 2x no mesmo ms)
+- **Validação**: Nenhuma (assumes unicidade)
 
 #### Tipos de Dados
 ```javascript
-// ConversÃµes crÃ­ticas
-parseFloat(input.value) || 0     // NÃºmeros com fallback 0
+// Conversões críticas
+parseFloat(input.value) || 0     // Números com fallback 0
 parseInt(input.value, 10) || 0   // Inteiros
 input.value.trim() || ""         // Strings
 ```
 
 #### Categorias EC1 (Uso)
 ```javascript
-// Valores vÃ¡lidos para zone.uso
+// Valores válidos para zone.uso
 const VALID_CATEGORIES = ['A', 'B', 'C', 'D', 'E', 'F', 'H'];
-// A: 2.0 kN/mÂ² (HabitaÃ§Ã£o)
-// B: 3.0 kN/mÂ² (EscritÃ³rios)
-// C: 4.0 kN/mÂ² (Escolas/Restaurantes)
-// D: 5.0 kN/mÂ² (ComÃ©rcio)
-// E: 7.5 kN/mÂ² (ArmazÃ©m)
-// F: 2.5 kN/mÂ² (Garagem)
-// H: 0.4 kN/mÂ² (Cobertura)
+// A: 2.0 kN/m² (Habitação)
+// B: 3.0 kN/m² (Escritórios)
+// C: 4.0 kN/m² (Escolas/Restaurantes)
+// D: 5.0 kN/m² (Comércio)
+// E: 7.5 kN/m² (Armazém)
+// F: 2.5 kN/m² (Garagem)
+// H: 0.4 kN/m² (Cobertura)
 ```
 
 #### Tipos de Laje
 ```javascript
-const SLAB_TYPES = ['MaciÃ§a', 'Fungiforme', 'Aligeirada', 'Vigada', 'PrÃ©-laje'];
+const SLAB_TYPES = ['Maciça', 'Fungiforme', 'Aligeirada', 'Vigada', 'Pré-laje'];
 ```
 
 ---
 
-## 3. SECÃ‡Ã•ES FUNCIONAIS (NÃ­veis 1-8)
+## 3. SECÇÕES FUNCIONAIS (Níveis 1-8)
 
-### SecÃ§Ã£o 1: IdentificaÃ§Ã£o do Projeto
+### Secção 1: Identificação do Projeto
 
-**IDs HTML CrÃ­ticos** (23 campos):
+**IDs HTML Críticos** (23 campos):
 ```
 id_jsj, nome_projeto, cliente, designacao, localizacao,
 tipologia, especialidade, tipo_obra, tipo_obra_custom, fase_atual,
@@ -212,14 +227,14 @@ resp_tecnico, equipa_eng, bim, gestao_projeto, fiscalizacao
 - `kpiID`, `kpiNome`, `kpiFase` (read-only displays)
 - `kpiImplant`, `kpiABC`, `kpiPisos`, `kpiAltura` (calculados)
 
-**FunÃ§Ã£o de AtualizaÃ§Ã£o**:
+**Função de Actualização**:
 ```javascript
 function updateKPIs() {
   document.getElementById('kpiID').textContent = 
     document.getElementById('id_jsj').value || '---';
   // ... (idem para nome, fase)
   
-  // CÃ¡lculo de KPIs geomÃ©tricos
+  // Cálculo de KPIs geométricos
   let totalImplant = 0, totalABC = 0, maxCota = 0, minCota = 0;
   projectData.floors.forEach(f => {
     totalImplant = Math.max(totalImplant, f.area || 0);
@@ -237,16 +252,16 @@ function updateKPIs() {
 
 ---
 
-### SecÃ§Ã£o 2: CaracterizaÃ§Ã£o Geral da Obra
+### Secção 2: Caracterização Geral da Obra
 
-**Estrutura DinÃ¢mica**:
+**Estrutura Dinâmica**:
 - Lista de pisos (renderizada por `renderFloors()`)
-- Cada piso contÃ©m zonas (expandÃ­vel)
+- Cada piso contém zonas (expandível)
 - Modal para criar/editar zonas
 
-**IDs DinÃ¢micos** (gerados por JS):
+**IDs Dinâmicos** (gerados por JS):
 ```javascript
-// PadrÃ£o: {tipo}_{id do piso/zona}
+// Padrão: {tipo}_{id do piso/zona}
 floor_name_1234567890
 floor_cota_1234567890
 floor_area_1234567890
@@ -256,7 +271,7 @@ zone_tipoLaje_9876543210
 // ... etc
 ```
 
-**FunÃ§Ãµes CrÃ­ticas**:
+**Funções Críticas**:
 ```javascript
 addFloor()                    // Adiciona piso ao array + renderiza
 deleteFloor(floorId)          // Remove piso (valida se tem zonas)
@@ -269,15 +284,15 @@ saveZone()                    // Salva zona (create ou update)
 deleteZone(floorId, zoneId)
 ```
 
-**CÃ¡lculo de Espessura Equivalente**:
+**Cálculo de Espessura Equivalente**:
 ```javascript
 function calculateEquivThickness(tipo, h) {
   const coefs = {
-    'MaciÃ§a': 1.0,
+    'Maciça': 1.0,
     'Fungiforme': 0.85,
     'Aligeirada': 0.60,
     'Vigada': 0.50,
-    'PrÃ©-laje': 1.0
+    'Pré-laje': 1.0
   };
   return h * (coefs[tipo] || 1.0);
 }
@@ -285,60 +300,60 @@ function calculateEquivThickness(tipo, h) {
 
 ---
 
-### SecÃ§Ã£o 3: Elementos Base
+### Secção 3: Elementos Base
 
 **IDs HTML** (10 campos):
 ```
 arq, mep, escav, geotec, hidro, prosp, carac, insp, ensaios, orig
 ```
 
-**Tipo**: Textarea (histÃ³rico de documentos)
+**Tipo**: Textarea (histórico de documentos)
 
 ---
 
-### SecÃ§Ã£o 4: Condicionantes
+### Secção 4: Condicionantes
 
-#### 4.1 CondiÃ§Ãµes ArquitetÃ³nicas
+#### 4.1 Condições Arquitectónicas
 ```
 cond_arq  // Textarea
 ```
 
-#### 4.2 Condicionantes GeotÃ©cnicas
+#### 4.2 Condicionantes Geotécnicas
 ```
-geo_form            // FormaÃ§Ãµes geolÃ³gicas
+geo_form            // Formações geológicas
 geo_horiz           // Horizontes
 geo_sub             // Profundidade substrato
 geo_nat             // Natureza dos solos
-geo_tipo_sismo      // ðŸ”¥ CRÃTICO - Tipo solo EC8 (sync com sismo_terreno)
-geo_sigma_adm       // TensÃ£o admissÃ­vel
+geo_tipo_sismo      // 🔥 CRÍTICO - Tipo solo EC8 (sync com sismo_terreno)
+geo_sigma_adm       // Tensão admissível
 ```
 
-**Tabela DinÃ¢mica** (`geoHorizons`):
+**Tabela Dinâmica** (`geoHorizons`):
 - Renderizada por `renderGeoTable()`
 - Adicionada por `addGeoRow()`
 - Campos: horizonte, nspt, gamma, c, phi, e, sigma, escav
 
-#### 4.3 CondiÃ§Ãµes HidrogeolÃ³gicas
+#### 4.3 Condições Hidrogeológicas
 ```
-hidro_nf            // NÃ­vel freÃ¡tico
-hidro_col           // Coluna de Ã¡gua
+hidro_nf            // Nível freático
+hidro_col           // Coluna de água
 hidro_xa            // Agressividade (XA)
-hidro_obs           // ObservaÃ§Ãµes
+hidro_obs           // Observações
 ```
 
 ---
 
-### SecÃ§Ã£o 5: SoluÃ§Ã£o Estrutural
+### Secção 5: Solução Estrutural
 
 ```
-sol_desc            // Textarea - DescriÃ§Ã£o da soluÃ§Ã£o
+sol_desc            // Textarea - Descrição da solução
 ```
 
 ---
 
-### SecÃ§Ã£o 6: AÃ§Ãµes (Motor de CÃ¡lculo)
+### Secção 6: Ações (Motor de Cálculo)
 
-#### 6.1 SeleÃ§Ã£o de AÃ§Ãµes (Checkboxes)
+#### 6.1 Seleção de Ações (Checkboxes)
 ```javascript
 const actionsEnabled = {
   act_graviticas: true,     // Sempre true (hardcoded)
@@ -352,7 +367,7 @@ const actionsEnabled = {
 };
 ```
 
-**FunÃ§Ã£o de Toggle**:
+**Função de Toggle**:
 ```javascript
 function toggleActionSection(name, enabled) {
   const section = document.querySelector(`[data-action="${name}"]`);
@@ -364,18 +379,18 @@ function toggleActionSection(name, enabled) {
 }
 ```
 
-#### 6.2 ParÃ¢metros por AÃ§Ã£o
+#### 6.2 Parâmetros por Ação
 
-**A) AÃ§Ã£o SÃ­smica (EC8)**
+**A) Ação Sísmica (EC8)**
 ```
-sismo_zona          // Zona sÃ­smica (1.1 a 2.5)
-sismo_terreno       // ðŸ”¥ AUTO-SYNC com geo_tipo_sismo
-sismo_imp           // Coeficiente importÃ¢ncia
+sismo_zona          // Zona sísmica (1.1 a 2.5)
+sismo_terreno       // 🔥 AUTO-SYNC com geo_tipo_sismo
+sismo_imp           // Coeficiente importância
 sismo_q             // Coeficiente comportamento
 sismo_amort         // Amortecimento (%)
 ```
 
-**GrÃ¡ficos**:
+**Gráficos**:
 ```javascript
 function generateSeismicCharts() {
   const zona = parseFloat(document.getElementById('sismo_zona').value);
@@ -389,7 +404,7 @@ function generateSeismicCharts() {
 }
 ```
 
-**B) AÃ§Ã£o do Vento (EC1-1-4)**
+**B) Ação do Vento (EC1-1-4)**
 ```
 vento_zona, vento_vb0, vento_cat, vento_z0, vento_co, vento_cpi
 ```
@@ -399,7 +414,7 @@ vento_zona, vento_vb0, vento_cat, vento_z0, vento_co, vento_cpi
 impulsos_h, impulsos_gamma, impulsos_phi, impulsos_c, impulsos_k0, impulsos_q
 ```
 
-**D) RetraÃ§Ã£o/FluÃªncia**
+**D) Retração/Fluência**
 ```
 retracao_hr, retracao_t0, retracao_cimento, retracao_cura
 ```
@@ -414,19 +429,19 @@ temp_contracao, temp_expansao, temp_alfa, temp_tref
 neve_zona, neve_alt, neve_sk, neve_ce, neve_ct, neve_mu
 ```
 
-**G) Ãgua**
+**G) Água**
 ```
 agua_nivel, agua_gamma, agua_sub, agua_dren
 ```
 
 ---
 
-### SecÃ§Ã£o 7: Zonamento (Motor GrÃ¡fico)
+### Secção 7: Zonamento (Motor Gráfico)
 
-**Arquitetura**:
-- **Selector de Piso**: Dropdown dinÃ¢mico
+**Arquitectura**:
+- **Selector de Piso**: Dropdown dinâmico
 - **Viewer 2D**: Canvas com classe `FloorViewer`
-- **Modos de VisualizaÃ§Ã£o**: Estrutura, Sobrecargas, RCP, CombinaÃ§Ãµes, Sonda
+- **Modos de Visualização**: Estrutura, Sobrecargas, RCP, Combinações, Sonda
 
 **Classe FloorViewer** (linhas 3253-3791):
 
@@ -447,39 +462,42 @@ class FloorViewer {
     this.render();
   }
   
-  // MÃ©todos principais
+  // Métodos principais
   render()                           // Renderiza canvas completo
-  drawShapes()                       // Desenha polÃ­gonos das layers
-  calculatePointELU(point)           // ðŸ”¥ CRÃTICO - Calcula carga num ponto
-  displayZoneCombinations(info)      // Mostra combinaÃ§Ãµes ELU/ELS
+  drawShapes()                       // Desenha polígonos das layers
+  calculatePointELU(point)           // 🔥 CRÍTICO - Calcula carga num ponto
+  displayZoneCombinations(info)      // Mostra combinações ELU/ELS
   renderLoadTable(type)              // Tabela de sobrecargas/RCP
   
-  // MÃ©todos auxiliares
+  // Métodos auxiliares
   pointInPolygon(point, polygon)     // Ray-casting algorithm
-  polygonArea(points)                // CÃ¡lculo de Ã¡rea (mÂ²)
+  polygonArea(points)                // Cálculo de área (m²)
   getCategoryLoad(category)          // Tabela EC1 (qk por categoria)
 }
 ```
 
-**CÃ¡lculo de Cargas** (linha 3580-3640):
+**Cálculo de Cargas** (linha 3580-3640):
 ```javascript
 displayZoneCombinations(info) {
   const { worldPoint } = info;
   let G = 0, Q = 0, details = [];
-  let maxThicknessFound = 0;  // ðŸ”¥ v6 logic: Max-Thickness Rule
+  let maxThicknessFound = 0;  // 🔥 v6 logic: Max-Thickness Rule
   
   // Para cada layer
   for (let layerName in this.data.layers) {
     const zones = this.data.layers[layerName];
     zones.forEach(zone => {
-      if (zone.shapes && this.pointInPolygon(worldPoint, zone.shapes[0])) {
+      // 🔥 v11.0: Parse shapes JSON string
+      const shapes = JSON.parse(zone.shapes || '[]');
+      
+      if (shapes.length && this.pointInPolygon(worldPoint, shapes[0])) {
         
         // Lajes: apenas a MAIS ESPESSA conta
         if (layerName === 'Estrutura') {
           const h = parseFloat(zone.manualLoad) || 0;
           if (h > maxThicknessFound) {
             maxThicknessFound = h;
-            G = (h * 25) + 1.5;  // Î³=25 kN/mÂ³ + Revestimentos 1.5 kN/mÂ²
+            G = (h * 25) + 1.5;  // γ=25 kN/m³ + Revestimentos 1.5 kN/m²
           }
         }
         
@@ -496,13 +514,13 @@ displayZoneCombinations(info) {
     });
   }
   
-  // CombinaÃ§Ãµes EC0
+  // Combinações EC0
   const combinations = [
     { name: 'ELU Fund. 1', value: 1.35*G + 1.50*Q, formula: '1.35G + 1.50Q' },
-    { name: 'ELU Fund. 2', value: 1.35*G + 1.50*0.7*Q, formula: '1.35G + 1.50Ïˆâ‚€Q' },
+    { name: 'ELU Fund. 2', value: 1.35*G + 1.50*0.7*Q, formula: '1.35G + 1.50ψ₀Q' },
     { name: 'SLS Caract.', value: G + Q, formula: 'G + Q' },
-    { name: 'SLS Freq.', value: G + 0.5*Q, formula: 'G + Ïˆâ‚Q' },
-    { name: 'SLS Q-perm.', value: G + 0.3*Q, formula: 'G + Ïˆâ‚‚Q' }
+    { name: 'SLS Freq.', value: G + 0.5*Q, formula: 'G + ψ₁Q' },
+    { name: 'SLS Q-perm.', value: G + 0.3*Q, formula: 'G + ψ₂Q' }
   ];
   
   // Display na UI
@@ -514,11 +532,11 @@ displayZoneCombinations(info) {
 ```javascript
 getCategoryLoad(category) {
   const loads = {
-    'A': 2.0,   // HabitaÃ§Ã£o
-    'B': 3.0,   // EscritÃ³rios
+    'A': 2.0,   // Habitação
+    'B': 3.0,   // Escritórios
     'C': 4.0,   // Escolas/Restaurantes
-    'D': 5.0,   // ComÃ©rcio
-    'E': 7.5,   // ArmazÃ©m
+    'D': 5.0,   // Comércio
+    'E': 7.5,   // Armazém
     'F': 2.5,   // Garagem
     'H': 0.4    // Cobertura
   };
@@ -528,14 +546,14 @@ getCategoryLoad(category) {
 
 ---
 
-### SecÃ§Ã£o 8: CritÃ©rios e RelatÃ³rios
+### Secção 8: Critérios e Relatórios
 
 ```
-crit_reg            // RegulamentaÃ§Ã£o (textarea)
-crit_dim            // CritÃ©rios dimensionamento (textarea)
+crit_reg            // Regulamentação (textarea)
+crit_dim            // Critérios dimensionamento (textarea)
 ```
 
-**ExportaÃ§Ã£o**:
+**Exportação**:
 ```javascript
 function exportJSON() {
   const data = collectAllData();
@@ -568,24 +586,24 @@ function importJSON(event) {
 
 ---
 
-## 4. API INTERNA (FunÃ§Ãµes PÃºblicas)
+## 4. API INTERNA (Funções Públicas)
 
-### 4.1 Estado e PersistÃªncia
+### 4.1 Estado e Persistência
 
 #### `collectAllData()`
 **Assinatura**: `() => Object`  
-**Retorna**: JSON com todos os dados do formulÃ¡rio  
+**Retorna**: JSON com todos os dados do formulário  
 **Uso**: Chamada antes de exportar ou salvar
 
 ```javascript
 function collectAllData() {
   const data = {
-    // SecÃ§Ã£o 1: IDs fixos
+    // Secção 1: IDs fixos
     id_jsj: document.getElementById('id_jsj')?.value || '',
     nome_projeto: document.getElementById('nome_projeto')?.value || '',
     // ... (todos os 168 IDs catalogados)
     
-    // SecÃ§Ã£o 2: Estrutura dinÃ¢mica
+    // Secção 2: Estrutura dinâmica
     projectData: projectData
   };
   return data;
@@ -595,7 +613,7 @@ function collectAllData() {
 #### `loadAllData(data)`
 **Assinatura**: `(data: Object) => void`  
 **Efeito**: Repopula DOM e `projectData`  
-**ValidaÃ§Ãµes**: Nenhuma (assumes JSON vÃ¡lido)
+**Validações**: Nenhuma (assumes JSON válido)
 
 ```javascript
 function loadAllData(data) {
@@ -612,7 +630,7 @@ function loadAllData(data) {
     projectData = data.projectData;
   }
   
-  // 3. Re-renderiza UI dinÃ¢mica
+  // 3. Re-renderiza UI dinâmica
   renderFloors();
   renderGeoTable();
   updateKPIs();
@@ -647,7 +665,7 @@ function addFloor() {
 
 #### `deleteFloor(floorId)`
 **Assinatura**: `(floorId: number) => void`  
-**ValidaÃ§Ã£o**: Confirma se piso tem zonas
+**Validação**: Confirma se piso tem zonas
 
 ```javascript
 function deleteFloor(floorId) {
@@ -669,7 +687,7 @@ function deleteFloor(floorId) {
 
 #### `saveZone()`
 **Assinatura**: `() => void`  
-**Contexto**: LÃª dados do modal `#zoneModal`  
+**Contexto**: Lê dados do modal `#zoneModal`  
 **Efeito**: Cria ou atualiza zona no piso ativo
 
 ```javascript
@@ -702,7 +720,7 @@ function saveZone() {
 
 ---
 
-### 4.3 Motor GrÃ¡fico
+### 4.3 Motor Gráfico
 
 #### `initFloorViewer()`
 **Assinatura**: `() => void`  
@@ -752,12 +770,14 @@ function openZonesEditor(floorId) {
   window.addEventListener('message', (event) => {
     if (event.data.type === 'zonesData') {
       floor.actionsData = event.data.data;
+      saveCurrentProject();  // 🔥 v11.0: Persist to Firestore
       initFloorViewer();  // Atualiza viewer
     }
   });
 }
 ```
 
+---
 
 ## 5. FIREBASE BACKEND (v11.0+)
 
@@ -780,16 +800,216 @@ User → Firebase Auth → Firestore CRUD → Real-time Sync
 - Email whitelist enforced at login
 
 ### 5.4 Serialization
-- **Runtime**: Maps (floors, zones, geoHorizons)
-- **Firestore**: Arrays (serialized via firebase-data.js)
-- **Round-trip**: Validated in Task 5
+
+#### Maps to Arrays (Runtime → Firestore)
+```javascript
+// firebase-data.js
+function serializeFloorsMap(floorsMapOrArray) {
+  const floorsArray = Array.isArray(floorsMapOrArray) 
+    ? floorsMapOrArray 
+    : Array.from(floorsMapOrArray.values());
+  
+  return floorsArray.map(floor => {
+    const result = { ...floor };
+    
+    // Serialize zones Map → Array
+    if (floor.zones instanceof Map) {
+      result.zones = Array.from(floor.zones.values());
+    }
+    
+    // 🔥 CRITICAL: Sanitize nested arrays in actionsData
+    if (floor.actionsData) {
+      result.actionsData = sanitizeNestedArrays(floor.actionsData);
+    }
+    
+    return result;
+  });
+}
+```
+
+#### Nested Arrays Sanitization
+```javascript
+// firebase-data.js
+function sanitizeNestedArrays(value) {
+  if (Array.isArray(value)) {
+    // Check if array contains arrays → stringify
+    if (value.some(item => Array.isArray(item))) {
+      return JSON.stringify(value);
+    }
+    return value.map(item => sanitizeNestedArrays(item));
+  }
+  
+  if (value && typeof value === 'object') {
+    const sanitized = {};
+    for (const key in value) {
+      sanitized[key] = sanitizeNestedArrays(value[key]);
+    }
+    return sanitized;
+  }
+  
+  return value;
+}
+```
+
+#### Arrays to Maps (Firestore → Runtime)
+```javascript
+// firebase-data.js
+function deserializeFloorsArray(floorsArray) {
+  return floorsArray.map(floor => {
+    const result = { ...floor };
+    
+    // Deserialize zones Array → Map
+    if (Array.isArray(floor.zones)) {
+      result.zones = new Map(floor.zones.map(z => [z.id, z]));
+    }
+    
+    // 🔥 CRITICAL: Parse nested array strings
+    if (floor.actionsData) {
+      result.actionsData = deserializeNestedStrings(floor.actionsData);
+    }
+    
+    return result;
+  });
+}
+
+function deserializeNestedStrings(value) {
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {}
+    return value;
+  }
+  
+  if (Array.isArray(value)) {
+    return value.map(item => deserializeNestedStrings(item));
+  }
+  
+  if (value && typeof value === 'object') {
+    const deserialized = {};
+    for (const key in value) {
+      deserialized[key] = deserializeNestedStrings(value[key]);
+    }
+    return deserialized;
+  }
+  
+  return value;
+}
+```
+
+### 5.5 CRUD Operations
+
+#### Create Project
+```javascript
+// firebase-data.js
+async function createProjectInFirestore(projectData) {
+  const user = firebase.auth().currentUser;
+  if (!user) throw new Error('Not authenticated');
+  
+  const projectId = generateUUID();
+  const docRef = db.collection('projects').doc(projectId);
+  
+  const sanitized = {
+    ...projectData,
+    owner: user.uid,
+    floors: serializeFloorsMap(projectData.floors || []),
+    geoHorizons: Array.isArray(projectData.geoHorizons) 
+      ? projectData.geoHorizons 
+      : [],
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  
+  await docRef.set(sanitized);
+  return projectId;
+}
+```
+
+#### Real-time Subscribe
+```javascript
+// firebase-data.js
+function subscribeToProject(projectId, callback) {
+  const docRef = db.collection('projects').doc(projectId);
+  
+  const unsubscribe = docRef.onSnapshot(snapshot => {
+    if (!snapshot.exists) {
+      callback(null);
+      return;
+    }
+    
+    const data = snapshot.data();
+    
+    // Deserialize
+    const deserialized = {
+      ...data,
+      floors: deserializeFloorsArray(data.floors || []),
+      geoHorizons: data.geoHorizons || []
+    };
+    
+    callback(deserialized);
+  });
+  
+  return unsubscribe;  // 🔥 ALWAYS clean up in beforeunload!
+}
+```
+
+#### Auto-save (Index_v11.0.html)
+```javascript
+// Auto-save every 30s
+let autoSaveInterval;
+
+function startAutoSave() {
+  autoSaveInterval = setInterval(async () => {
+    await saveCurrentProject();
+  }, 30000);  // 30s
+}
+
+window.addEventListener('beforeunload', () => {
+  if (autoSaveInterval) clearInterval(autoSaveInterval);
+  if (unsubscribe) unsubscribe();
+});
+```
+
+### 5.6 Security Rules (Firestore)
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isJSJEmail() {
+      return request.auth.token.email.matches('.*@jsj[.]pt$');
+    }
+    
+    function isOwner(projectId) {
+      return get(/databases/$(database)/documents/projects/$(projectId)).data.owner == request.auth.uid;
+    }
+    
+    match /projects/{projectId} {
+      // Read: owner only
+      allow read: if isAuthenticated() && isJSJEmail() && isOwner(projectId);
+      
+      // Create: JSJ email + sets owner
+      allow create: if isAuthenticated() && isJSJEmail() 
+                    && request.resource.data.owner == request.auth.uid;
+      
+      // Update/Delete: owner only
+      allow update, delete: if isAuthenticated() && isJSJEmail() && isOwner(projectId);
+    }
+  }
+}
+```
 
 ---
-## 6. INTEGRAÃ‡ÃƒO GRÃFICA (Contrato zonas.html â†” Index)
+
+## 6. INTEGRAÇÃO GRÁFICA (Contrato zonas.html ↔ Index)
 
 ### 6.1 Protocolo `postMessage`
 
-**DireÃ§Ã£o**: Index â†’ zonas.html (init)
+**Direcção**: Index → zonas.html (init)
 ```javascript
 {
   type: 'initEditor',
@@ -805,13 +1025,13 @@ User → Firebase Auth → Firestore CRUD → Real-time Sync
 }
 ```
 
-**DireÃ§Ã£o**: zonas.html â†’ Index (retorno)
+**Direcção**: zonas.html → Index (retorno)
 ```javascript
 {
   type: 'zonesData',
   data: {
     blueprint: { scale: 1.0, imageData: "..." },
-    layers: { /* estrutura idÃªntica ao enviado */ }
+    layers: { /* estrutura idêntica ao enviado */ }
   }
 }
 ```
@@ -822,27 +1042,21 @@ User → Firebase Auth → Firestore CRUD → Real-time Sync
 {
   "NomeDaLayer": [
     {
-      id: 123,                    // Timestamp Ãºnico
-      design: "L1",               // DesignaÃ§Ã£o (ex: "L1", "Z-A")
+      id: 123,                    // Timestamp único
+      design: "L1",               // Designação (ex: "L1", "Z-A")
       uso: "B",                   // Categoria EC1 (apenas em Sobrecargas)
       manualLoad: "0.25",         // String! (espessura ou carga)
-      shapes: [                   // Array de polÃ­gonos
-        [                         // PolÃ­gono = array de {x, y}
-          {x: 100, y: 200},
-          {x: 300, y: 200},
-          {x: 300, y: 400}
-        ]
-      ]
+      shapes: "[[[{\"x\":100}]]]" // 🔥 v11.0: JSON string (nested arrays)
     }
   ]
 }
 ```
 
-### 6.3 Regras de NegÃ³cio
+### 6.3 Regras de Negócio
 
 #### Max-Thickness Rule (v6+)
 **Problema**: Lajes sobrepostas (ex: laje de piso + laje de varanda)  
-**SoluÃ§Ã£o**: Apenas a laje MAIS ESPESSA conta para cÃ¡lculo de G
+**Solução**: Apenas a laje MAIS ESPESSA conta para cálculo de G
 
 ```javascript
 // Em FloorViewer.displayZoneCombinations()
@@ -852,14 +1066,14 @@ for (layerName in layers) {
     const h = parseFloat(zone.manualLoad);
     if (h > maxThicknessFound) {
       maxThicknessFound = h;
-      // Sobrescreve G (nÃ£o acumula!)
+      // Sobrescreve G (não acumula!)
     }
   }
 }
 ```
 
-#### Ãrea em Metros Quadrados
-**ConversÃ£o**: Coordenadas estÃ£o em pixels, Ã¡rea em mÂ²
+#### Área em Metros Quadrados
+**Conversão**: Coordenadas estão em pixels, área em m²
 
 ```javascript
 polygonArea(points) {
@@ -877,14 +1091,14 @@ polygonArea(points) {
 
 ---
 
-## 7. PERSISTÃŠNCIA (Formato JSON)
+## 7. PERSISTÊNCIA (Formato JSON)
 
 ### 7.1 Schema de Export
 
 ```json
 {
   "id_jsj": "2024-001",
-  "nome_projeto": "EdifÃ­cio Exemplo",
+  "nome_projeto": "Edifício Exemplo",
   "cliente": "Cliente XYZ",
   "projectData": {
     "floors": [ /* ... */ ],
@@ -897,29 +1111,20 @@ polygonArea(points) {
 }
 ```
 
-### 7.2 Compatibilidade entre VersÃµes
+### 7.2 Compatibilidade entre Versões
 
-**Retrocompatibilidade**: âŒ NÃ£o garantida  
-**Motivo**: IDs podem mudar entre versÃµes
+**Retrocompatibilidade**: ❌ v11.0 incompatível com v10.2  
+**Motivo**: Dados em Firestore, não localStorage
 
-**MigraÃ§Ã£o Manual** (se ID mudou):
-```javascript
-// Exemplo: ID "id_antigo" renomeado para "id_novo"
-function loadAllData(data) {
-  // Fallback para JSONs antigos
-  if (data.id_antigo && !data.id_novo) {
-    data.id_novo = data.id_antigo;
-  }
-  
-  // ... resto da funÃ§Ã£o
-}
-```
+**Migração v10.2→v11.0**:
+- Manual: Import JSON v10.2 → Export → Upload Firestore
+- Automático: Script migrate-to-firebase.html (se presente)
 
 ---
 
-## 8. EVENT LISTENERS CRÃTICOS
+## 8. EVENT LISTENERS CRÍTICOS
 
-### 8.1 Sync GeotÃ©cnica â†” Sismo
+### 8.1 Sync Geotécnica ↔ Sismo
 
 ```javascript
 // Linhas 3805-3812
@@ -934,7 +1139,7 @@ if (geoSismo) {
 }
 ```
 
-### 8.2 NavegaÃ§Ã£o de SecÃ§Ãµes
+### 8.2 Navegação de Secções
 
 ```javascript
 function showSection(sectionId) {
@@ -950,10 +1155,19 @@ function showSection(sectionId) {
 }
 ```
 
-### 8.3 InicializaÃ§Ã£o (DOMContentLoaded)
+### 8.3 Inicialização (DOMContentLoaded)
 
 ```javascript
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+  // 🔥 v11.0: Auth guard
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+  
+  await initEditor(user);
+  
   updateKPIs();
   renderFloors();
   renderGeoTable();
@@ -961,49 +1175,59 @@ window.addEventListener('DOMContentLoaded', () => {
   initFloorViewer();
   populateZonamentoFloorSelector();
   
-  // Sync geo â†’ sismo (ver 7.1)
+  // Sync geo → sismo (ver 8.1)
+  
+  // 🔥 v11.0: Auto-save
+  startAutoSave();
 });
 ```
 
 ---
 
-## 9. DEPENDÃŠNCIAS EXTERNAS
+## 9. DEPENDÊNCIAS EXTERNAS
 
 ### 9.1 CDN Libraries
 
 ```html
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Firebase SDK v10.7.1 (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 ```
 
-**VersÃ£o**: Latest (nÃ£o fixada - risco de breaking changes)  
-**Uso**: GrÃ¡ficos sÃ­smicos (espectros EC8)
+**Versão**: Firebase 10.7.1 (fixada) ✅  
+**Versão**: Chart.js latest (não fixada - risco breaking changes) ⚠️
 
 ### 9.2 Browser APIs
 
-- **Canvas API**: Motor grÃ¡fico (FloorViewer)
+- **Canvas API**: Motor gráfico (FloorViewer)
 - **FileReader API**: Import de JSON
 - **Blob API**: Export de JSON
-- **postMessage API**: ComunicaÃ§Ã£o com zonas.html
+- **postMessage API**: Comunicação com zonas.html
 
 ---
 
-## 10. LIMITAÃ‡Ã•ES CONHECIDAS
+## 10. LIMITAÇÕES CONHECIDAS
 
-### 10.1 Arquiteturais
+### 10.1 Arquitecturais
 
-1. **Estado VolÃ¡til**: Dados perdidos ao fechar browser (sem auto-save)
-2. **Single-Project**: Apenas 1 projeto por sessÃ£o
-3. **No Undo/Redo**: AlteraÃ§Ãµes irreversÃ­veis (exceto re-import)
-4. **No Versionamento**: JSONs incompatÃ­veis entre versÃµes
+1. **Auth Obrigatória**: Sem Firebase Auth, app não funciona
+2. **Network Required**: Sem Firestore, sem dados (no offline mode)
+3. **No Undo/Redo**: Alterações irreversíveis (exceto re-load real-time)
+4. **No Versionamento**: Firestore sobrescreve (no Git-style history)
 
 ### 10.2 Performance
 
-- **MÃ¡ximo testado**: 20 pisos Ã— 10 zonas = 200 zonas
-- **Bottleneck**: Rendering de canvas com >1000 polÃ­gonos
+- **Máximo testado**: 20 pisos × 10 zonas = 200 zonas
+- **Bottleneck**: Rendering de canvas com >1000 polígonos
+- **Auto-save**: 30s interval (otimizado Spark plan, não customizável)
 
-### 10.3 ValidaÃ§Ã£o
+### 10.3 Validação
 
-- **Nenhuma validaÃ§Ã£o** de tipos em runtime
+- **Nenhuma validação** de tipos em runtime
 - **Assumes**: User insere dados corretos
 - **Fallback**: `parseFloat() || 0` (valor 0 como default)
 
@@ -1015,8 +1239,8 @@ Ver `@AGENTE_ROADMAP.md` para detalhes completos e cronograma.
 
 **Fase 1** (v10.0): ✅ COMPLETO - Refactor Arquitetural (UUID Maps, appState)  
 **Fase 2** (v10.2): ✅ COMPLETO - Multi-Projeto (Lobby, localStorage)  
+**Fase 3** (v11.0): ✅ COMPLETO - Firebase Backend (auth, Firestore sync)  
 **Fase 1.5** (v10.4): 🚧 EM PLANEAMENTO - Protótipo Color-Trace (OpenCV isolado)  
-**Fase 3** (v11.0): Firebase Básico (auth, Firestore sync)  
 **Fase 3.5** (v11.1): Schema Blocos (nova hierarquia Projeto→Blocos→Pisos)  
 **Fase 4** (v12.0): Speckle Live Sync (integração BIM)  
 **Fase 5** (v13.0): Automação (Cloud Functions, reports DOCX)  
@@ -1026,13 +1250,13 @@ Ver `@AGENTE_ROADMAP.md` para detalhes completos e cronograma.
 
 ---
 
-## APÃŠNDICES
+## APÊNDICES
 
-### A. Ãndice de IDs HTML
+### A. Índice de IDs HTML
 
 Ver `@AGENTE_RISCOS_v2.md` (168 IDs catalogados)
 
-### B. Ãndice de FunÃ§Ãµes JavaScript
+### B. Índice de Funções JavaScript
 
 ```
 // Estado
@@ -1057,7 +1281,7 @@ deleteZone(floorId, zoneId)
 closeZoneModal()
 renderZoneForm(zone)
 
-// CÃ¡lculos
+// Cálculos
 calculateEquivThickness(tipo, h)
 updateGeneralStats()
 
@@ -1065,14 +1289,14 @@ updateGeneralStats()
 addGeoRow()
 renderGeoTable()
 
-// AÃ§Ãµes
+// Ações
 toggleActionSection(name, enabled)
 updateActionsFloorTabs()
 selectActionsFloor(floorId, btn)
 generateSeismicCharts()
 generateSeismicChart(canvasId, zona, terreno, q, amort, type)
 
-// Motor GrÃ¡fico
+// Motor Gráfico
 initFloorViewer()
 populateZonamentoFloorSelector()
 openZonesEditor(floorId)
@@ -1084,25 +1308,49 @@ importJSON(event)
 exportMarkdown()
 generateMarkdownReport()
 
+// Firebase (v11.0+)
+initEditor(user)
+saveCurrentProject()
+backToLobby()
+createProjectInFirestore(data)
+loadAllProjectsFromFirestore()
+loadSingleProject(id)
+saveProjectToFirestore(id, data)
+deleteProjectFromFirestore(id)
+subscribeToProject(id, callback)
+
 // UI
 showSection(sectionId)
 toggleTipoObraCustom(value)
 closeModal(id)
 ```
 
-### C. Changelog v9.0 â†’ v9.1
+### C. Changelog v10.2 → v11.0
 
-**RemoÃ§Ãµes**:
-- FunÃ§Ã£o `updateTosco()` (cÃ³digo morto)
-- MÃ©todo `FloorViewer.getZoneCentroid()` (nÃ£o utilizado)
+**Adições**:
+- Firebase Authentication (@jsj.pt whitelist)
+- Firestore CRUD layer (firebase-data.js)
+- Real-time sync (onSnapshot listeners)
+- Auto-save 30s interval
+- Deep sanitization nested arrays (critical fix)
+- login.html (Auth UI)
+- Security Rules (owner-only + email validation)
 
-**CorreÃ§Ãµes**:
-- Tag `<title>` ainda diz v6.0 (deve ser v9.1)
+**Modificações**:
+- `saveCurrentProject()` → async (await required)
+- `backToLobby()` → async + save before redirect
+- `collectAllData()` → remove Firestore noise (project, metadata, legacyInputs)
+- `loadAllData()` → deserialize nested strings
 
-**AdiÃ§Ãµes**:
-- Nenhuma (apenas limpeza)
+**Remoções**:
+- localStorage dependency (deprecated, legacy calls remain for debug)
+
+**Breaking Changes**:
+- Auth obrigatória (sem login, sem acesso)
+- localStorage → Firestore (incompatível v10.2 JSONs)
+- Network required (sem offline mode)
 
 ---
 
-**Fim da EspecificaÃ§Ã£o TÃ©cnica v9.1**  
-**PrÃ³ximo passo**: Ver `GUIDELINES.md` para padrÃµes de desenvolvimento
+**Fim da Especificação Técnica v11.0**  
+**Próximo passo**: Ver `GUIDELINES.md` para padrões de desenvolvimento
