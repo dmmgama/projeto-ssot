@@ -4,9 +4,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Template Edifício JSJ · v10.2</title>
+  <title>Template Edifício JSJ · v11.0</title>
   <script src="shared.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Firebase SDKs v10.7.1 -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-data.js"></script>
+  
   <style>
     :root {
       --bg: #0f1115;
@@ -1822,30 +1830,38 @@
     });
 
     // Funções de Navegação Lobby
-    function backToLobby() {
-      saveCurrentProject();
+    async function backToLobby() {
+      await saveCurrentProject(); // Ensure save before leaving
       window.location.href = 'lobby.html';
     }
 
-    function saveCurrentProject() {
+    async function saveCurrentProject() {
       if (!appState.activeProjectId) return;
       
       const project = appState.activeProject;
       if (!project) return;
 
-      // Atualizar timestamp
-      project.updated_at = new Date().toISOString();
-
       // Capturar dados dos inputs legacy
       project.id_jsj = document.getElementById('id_jsj')?.value || '';
       project.nome_projeto = document.getElementById('nome_projeto')?.value || 'Projeto Sem Nome';
       project.cliente = document.getElementById('cliente')?.value || '';
+      
+      // Capturar todos os dados do formulário
+      const formData = collectAllData();
+      const updatedProject = {
+        ...project,
+        ...formData,
+        floors: project.floors,
+        geoHorizons: project.geoHorizons
+      };
 
-      // Guardar em localStorage
-      const allProjects = loadProjectsFromStorage();
-      allProjects[appState.activeProjectId] = project;
-      saveProjectsToStorage(allProjects);
-      saveActiveProjectId(appState.activeProjectId);
+      try {
+        await saveProjectToFirestore(updatedProject);
+        console.log('✅ [Index] Saved to Firestore');
+      } catch (error) {
+        console.error('❌ [Index] Save error:', error);
+        // Don't block UI - just log
+      }
     }
 
     // Legacy Bridge (Proxy)
@@ -4046,115 +4062,117 @@
       }
     }
 
-    // ==================== INIT ====================
-    // ==================== INIT ====================
-    window.addEventListener('DOMContentLoaded', () => {
-      // Ler URL params
+    // ==================== FIREBASE AUTH & INIT ====================
+    let firestoreUnsubscribe = null; // Real-time listener cleanup
+
+    // Firebase Auth Guard - MUST be FIRST
+    document.body.style.display = 'none';
+    
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+      document.body.style.display = 'block';
+      initEditor(user);
+    });
+
+    async function initEditor(user) {
       const urlParams = new URLSearchParams(window.location.search);
-      const projectParam = urlParams.get('project');
-      const idParam = urlParams.get('id');
+      const projectId = urlParams.get('project');
 
       // Sem parâmetro project = redirigir para lobby
-      if (!projectParam) {
-        console.log('Sem parâmetro project, redirecionando para lobby...');
+      if (!projectId) {
+        console.log('[Index] Sem parâmetro project, redirecionando...');
         window.location.href = 'lobby.html';
         return;
       }
 
-      // project=new: criar novo projeto
-      if (projectParam === 'new' && idParam) {
-        const allProjects = loadProjectsFromStorage();
+      try {
+        console.log('[Index] Loading project from Firestore:', projectId);
         
-        if (allProjects[idParam]) {
-          // Projeto já existe, carregar
-          appState.projects[idParam] = allProjects[idParam];
-          appState.activeProjectId = idParam;
-        } else {
-          // Criar novo projeto
-          const newProject = {
-            id: idParam,
-            id_jsj: '',
-            nome_projeto: 'Novo Projeto',
-            cliente: '',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            floors: new Map(),
-            geoHorizons: new Map(),
-            actionsEnabled: {
-              graviticas: true,
-              sismo: false,
-              vento: false,
-              impulsos: false,
-              retracao: false,
-              temperatura: false,
-              neve: false,
-              agua: false
-            }
-          };
-          
-          appState.projects[idParam] = newProject;
-          appState.activeProjectId = idParam;
-          
-          // Guardar em localStorage
-          allProjects[idParam] = newProject;
-          saveProjectsToStorage(allProjects);
-          saveActiveProjectId(idParam);
-        }
-      } else {
-        // Carregar projeto existente por ID
-        const allProjects = loadProjectsFromStorage();
-        const project = allProjects[projectParam];
+        // Load project from Firestore
+        const project = await loadSingleProject(projectId);
         
-        if (!project) {
-          alert('⚠️ Projeto não encontrado!');
-          window.location.href = 'lobby.html';
-          return;
-        }
-        
-        appState.projects[projectParam] = project;
-        appState.activeProjectId = projectParam;
-        saveActiveProjectId(projectParam);
+        // Populate appState
+        appState.activeProjectId = projectId;
+        appState.projects[projectId] = project;
 
-        // Preencher inputs com dados do projeto
+        // Populate DOM with project data
         if (project.id_jsj) document.getElementById('id_jsj').value = project.id_jsj;
         if (project.nome_projeto) document.getElementById('nome_projeto').value = project.nome_projeto;
         if (project.cliente) document.getElementById('cliente').value = project.cliente;
-      }
+        
+        // Load all form data if available
+        if (project) {
+          loadAllData(project);
+        }
 
-      // Renderizar UI
-      updateKPIs();
-      renderFloors();
-      renderGeoTable();
-      updateActionsFloorTabs();
-      initFloorViewer();
-      populateZonamentoFloorSelector();
+        // Renderizar UI
+        updateKPIs();
+        renderFloors();
+        renderGeoTable();
+        updateActionsFloorTabs();
+        initFloorViewer();
+        populateZonamentoFloorSelector();
 
-      // Auto-preencher tipo terreno sismo quando mudar geotécnica
-      const geoSismo = document.getElementById('geo_tipo_sismo');
-      if (geoSismo) {
-        const sismoTerreno = document.getElementById('sismo_terreno');
-        sismoTerreno.value = geoSismo.value;
-        geoSismo.addEventListener('change', () => {
+        // Auto-preencher tipo terreno sismo quando mudar geotécnica
+        const geoSismo = document.getElementById('geo_tipo_sismo');
+        if (geoSismo) {
+          const sismoTerreno = document.getElementById('sismo_terreno');
           sismoTerreno.value = geoSismo.value;
-        });
-      }
-
-      console.log('[Index_v10.1.html] Projeto carregado:', appState.activeProjectId);
-      
-      // DEBUG: Validar actionsData após carregamento
-      if (appState.activeProject) {
-        console.log('=== DEBUG: Validação actionsData ao carregar ===');
-        for (const [fId, floor] of appState.activeProject.floors.entries()) {
-          console.log(`Floor ${floor.name} (${fId}):`, {
-            hasActionsData: !!floor.actionsData,
-            layersCount: Object.keys(floor.actionsData?.layers || {}).length
+          geoSismo.addEventListener('change', () => {
+            sismoTerreno.value = geoSismo.value;
           });
         }
-      }
-    });
 
-    // Auto-save ao sair da página
+        console.log('[Index v11.0] Project loaded from Firestore:', projectId);
+        console.log('[Index] User:', user.email);
+        
+        // Real-time listener for collaborative editing
+        firestoreUnsubscribe = subscribeToProject(projectId, (updatedProject) => {
+          if (!updatedProject) {
+            console.warn('[Index] Project deleted or access revoked');
+            return;
+          }
+          
+          console.log('🔄 [Index] Real-time update received');
+          
+          // Update local state
+          appState.projects[projectId] = updatedProject;
+          
+          // Re-render only if window not focused (change from another tab/user)
+          if (!document.hasFocus()) {
+            console.log('🔄 [Index] Reloading UI with remote changes');
+            loadAllData(updatedProject);
+            updateKPIs();
+            renderFloors();
+            renderGeoTable();
+            updateActionsFloorTabs();
+          }
+        });
+        
+      } catch (error) {
+        console.error('[Index] Load error:', error);
+        alert('❌ Erro ao carregar projeto: ' + error.message);
+        window.location.href = 'lobby.html';
+      }
+    }
+
+    // Auto-save interval (every 30 seconds)
+    setInterval(() => {
+      if (appState.activeProjectId) {
+        saveCurrentProject();
+      }
+    }, 30000);
+
+    // Save before leaving page
     window.addEventListener('beforeunload', () => {
+      if (firestoreUnsubscribe) {
+        firestoreUnsubscribe();
+      }
+      // Note: Can't use async/await in beforeunload
+      // User might lose last few seconds of work if they close too fast
       saveCurrentProject();
     });
   </script>
