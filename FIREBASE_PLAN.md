@@ -718,6 +718,14 @@ service cloud.firestore {
 - [ ] Page load < 3 seconds (with internet)
 - [ ] Auto-save doesn't block UI
 
+POST-v11.0 CLEANUP (After Task 10)
+Add to list:
+
+Renomear Index_v10.2.html → Index_v11.0.html
+Update lobby.html redirects
+Update backToLobby() links
+Fix toggleActionSection timing
+Remove localStorage logs (shared.js)
 ---
 
 ## POST-IMPLEMENTATION
