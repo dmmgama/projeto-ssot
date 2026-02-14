@@ -231,27 +231,32 @@ function flattenProjectData(projectData) {
   // Flatten nested arrays in actionsData.layers
   const flattenedFloors = floorsArray.map(floor => {
     if (floor.actionsData?.layers) {
-      const flattenedLayers = floor.actionsData.layers.map(layer => {
-        // Flatten shapes: [[{x,y}]] → [{points: [{x,y}]}]
-        if (layer.shapes && Array.isArray(layer.shapes)) {
-          const flattenedShapes = layer.shapes.map(shape => {
-            if (Array.isArray(shape) && shape.length > 0 && Array.isArray(shape[0])) {
-              // Nested array detected: [[{x,y}]] → {points: [{x,y}]}
-              return {
-                points: shape[0] || []
-              };
-            }
-            // Already flattened or object format
-            return shape;
-          });
-          
-          return {
-            ...layer,
-            shapes: flattenedShapes
-          };
-        }
-        return layer;
-      });
+      // layers is an Object, not Array: { layerName: zones[] }
+      const flattenedLayers = Object.entries(floor.actionsData.layers).reduce((acc, [layerName, zones]) => {
+        // Process each zone array in the layer
+        acc[layerName] = Array.isArray(zones) ? zones.map(zone => {
+          // Flatten shapes: [[{x,y}]] → [{points: [{x,y}]}]
+          if (zone.shapes && Array.isArray(zone.shapes)) {
+            const flattenedShapes = zone.shapes.map(shape => {
+              if (Array.isArray(shape) && shape.length > 0 && Array.isArray(shape[0])) {
+                // Nested array detected: [[{x,y}]] → {points: [{x,y}]}
+                return {
+                  points: shape[0] || []
+                };
+              }
+              // Already flattened or object format
+              return shape;
+            });
+            
+            return {
+              ...zone,
+              shapes: flattenedShapes
+            };
+          }
+          return zone;
+        }) : zones;
+        return acc;
+      }, {});
       
       return {
         ...floor,
@@ -355,25 +360,30 @@ function deserializeFloorsArray(floorsArray) {
     let processedFloor = { ...floor, zones: zonesMap };
     
     if (floor.actionsData?.layers) {
-      const unflatttenedLayers = floor.actionsData.layers.map(layer => {
-        // Unflatten shapes: [{points: [{x,y}]}] → [[{x,y}]]
-        if (layer.shapes && Array.isArray(layer.shapes)) {
-          const unflattenedShapes = layer.shapes.map(shape => {
-            if (shape.points && Array.isArray(shape.points)) {
-              // Flattened format detected: {points: [...]} → [[...]]
-              return [shape.points];
-            }
-            // Already in nested array format or other format
-            return shape;
-          });
-          
-          return {
-            ...layer,
-            shapes: unflattenedShapes
-          };
-        }
-        return layer;
-      });
+      // layers is an Object, not Array: { layerName: zones[] }
+      const unflatttenedLayers = Object.entries(floor.actionsData.layers).reduce((acc, [layerName, zones]) => {
+        // Process each zone array in the layer
+        acc[layerName] = Array.isArray(zones) ? zones.map(zone => {
+          // Unflatten shapes: [{points: [{x,y}]}] → [[{x,y}]]
+          if (zone.shapes && Array.isArray(zone.shapes)) {
+            const unflattenedShapes = zone.shapes.map(shape => {
+              if (shape.points && Array.isArray(shape.points)) {
+                // Flattened format detected: {points: [...]} → [[...]]
+                return [shape.points];
+              }
+              // Already in nested array format or other format
+              return shape;
+            });
+            
+            return {
+              ...zone,
+              shapes: unflattenedShapes
+            };
+          }
+          return zone;
+        }) : zones;
+        return acc;
+      }, {});
       
       processedFloor = {
         ...processedFloor,
