@@ -1,5 +1,5 @@
 /**
- * SSOT JSJ Template - Shared Utilities (v10.1)
+ * SSOT JSJ Template - Shared Utilities (v10.2)
  * Funções partilhadas entre lobby.html e index.html
  */
 
