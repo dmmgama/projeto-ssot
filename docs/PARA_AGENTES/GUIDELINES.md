@@ -1,8 +1,8 @@
 # SSOT JSJ - Guidelines de Desenvolvimento v9.1
 
-**Versão:** 9.1  
-**Público-Alvo:** Developers, Code Agents (Claude Code, Cursor)  
-**Objetivo:** Padrões e boas práticas para manter consistência no código
+**VersÃ£o:** 9.1  
+**PÃºblico-Alvo:** Developers, Code Agents (Claude Code, Cursor)  
+**Objetivo:** PadrÃµes e boas prÃ¡ticas para manter consistÃªncia no cÃ³digo
 
 ---
 
@@ -10,42 +10,42 @@
 
 ### 1.1 IDs HTML
 
-**Padrão**: `snake_case` (obrigatório)
+**PadrÃ£o**: `snake_case` (obrigatÃ³rio)
 
 ```html
-<!-- ✅ CORRETO -->
+<!-- âœ… CORRETO -->
 <input id="id_jsj" />
 <input id="geo_tipo_sismo" />
 <input id="sismo_terreno" />
 
-<!-- ❌ ERRADO -->
+<!-- âŒ ERRADO -->
 <input id="idJsj" />
 <input id="GeoTipoSismo" />
 <input id="sismo-terreno" />
 ```
 
-**IDs Dinâmicos** (gerados por JS):
+**IDs DinÃ¢micos** (gerados por JS):
 ```javascript
-// Padrão: {tipo}_{id}
+// PadrÃ£o: {tipo}_{id}
 const inputId = `floor_name_${floorId}`;
 const zoneId = `zone_uso_${zoneId}`;
 ```
 
-**REGRA CRÍTICA**: IDs são chave de persistência. **Nunca** alterar sem migração.
+**REGRA CRÃTICA**: IDs sÃ£o chave de persistÃªncia. **Nunca** alterar sem migraÃ§Ã£o.
 
 ---
 
-### 1.2 Variáveis JavaScript
+### 1.2 VariÃ¡veis JavaScript
 
-**Padrão**: `camelCase`
+**PadrÃ£o**: `camelCase`
 
 ```javascript
-// ✅ CORRETO
+// âœ… CORRETO
 let projectData = {};
 const floorId = Date.now();
 function updateKPIs() {}
 
-// ❌ ERRADO
+// âŒ ERRADO
 let project_data = {};
 const floor_id = Date.now();
 function update_kpis() {}
@@ -62,14 +62,14 @@ const DEFAULT_SLAB_THICKNESS = 0.25;
 
 ### 1.3 Classes
 
-**Padrão**: `PascalCase`
+**PadrÃ£o**: `PascalCase`
 
 ```javascript
-// ✅ CORRETO
+// âœ… CORRETO
 class FloorViewer {}
 class ZoneCalculator {}
 
-// ❌ ERRADO
+// âŒ ERRADO
 class floorViewer {}
 class zone_calculator {}
 ```
@@ -78,15 +78,15 @@ class zone_calculator {}
 
 ### 1.4 CSS Classes
 
-**Padrão**: `kebab-case`
+**PadrÃ£o**: `kebab-case`
 
 ```css
-/* ✅ CORRETO */
+/* âœ… CORRETO */
 .zone-modal {}
 .btn-primary {}
 .load-breakdown-item {}
 
-/* ❌ ERRADO */
+/* âŒ ERRADO */
 .zoneModal {}
 .btn_primary {}
 .loadBreakdownItem {}
@@ -94,19 +94,19 @@ class zone_calculator {}
 
 ---
 
-## 2. ESTRUTURA DE CÓDIGO
+## 2. ESTRUTURA DE CÃ“DIGO
 
-### 2.1 Ordem de Declaração (Template)
+### 2.1 Ordem de DeclaraÃ§Ã£o (Template)
 
 ```javascript
 // 0. IMPORTS (v10.1+)
 <script src="shared.js"></script>  // UUID + localStorage utilities
 
-// 1. VARIÁVEIS GLOBAIS
+// 1. VARIÃVEIS GLOBAIS
 let projectData = { floors: [], geoHorizons: [] };
 
 // 2. CONSTANTES
-const SLAB_TYPES = ['Maciça', 'Fungiforme', ...];
+const SLAB_TYPES = ['MaciÃ§a', 'Fungiforme', ...];
 
 // 3. CLASSES
 class FloorViewer {
@@ -114,15 +114,15 @@ class FloorViewer {
   render() {}
 }
 
-// 4. FUNÇÕES DE ESTADO (CORE)
+// 4. FUNÃ‡Ã•ES DE ESTADO (CORE)
 function collectAllData() {}
 function loadAllData(data) {}
 
-// 5. FUNÇÕES DE UI (DINÂMICA)
+// 5. FUNÃ‡Ã•ES DE UI (DINÃ‚MICA)
 function renderFloors() {}
 function updateKPIs() {}
 
-// 6. FUNÇÕES DE CÁLCULO
+// 6. FUNÃ‡Ã•ES DE CÃLCULO
 function calculateEquivThickness() {}
 
 // 7. EVENT LISTENERS (ao fim)
@@ -133,19 +133,19 @@ window.addEventListener('DOMContentLoaded', () => {
 
 ---
 
-### 2.2 Indentação e Espaçamento
+### 2.2 IndentaÃ§Ã£o e EspaÃ§amento
 
-**Indentação**: 2 espaços (não tabs)
+**IndentaÃ§Ã£o**: 2 espaÃ§os (nÃ£o tabs)
 
 ```javascript
-// ✅ CORRETO
+// âœ… CORRETO
 function example() {
   if (condition) {
     doSomething();
   }
 }
 
-// ❌ ERRADO (4 espaços ou tabs)
+// âŒ ERRADO (4 espaÃ§os ou tabs)
 function example() {
     if (condition) {
         doSomething();
@@ -153,14 +153,14 @@ function example() {
 }
 ```
 
-**Espaçamento**:
+**EspaÃ§amento**:
 ```javascript
-// ✅ CORRETO
+// âœ… CORRETO
 const total = (a + b) * c;
 if (x > 0) { ... }
 for (let i = 0; i < 10; i++) { ... }
 
-// ❌ ERRADO (sem espaços)
+// âŒ ERRADO (sem espaÃ§os)
 const total=(a+b)*c;
 if(x>0){...}
 for(let i=0;i<10;i++){...}
@@ -168,32 +168,32 @@ for(let i=0;i<10;i++){...}
 
 ---
 
-### 2.3 Comentários Obrigatórios
+### 2.3 ComentÃ¡rios ObrigatÃ³rios
 
-**Funções Críticas** (lista em `@AGENTE_RISCOS_v2.md`):
+**FunÃ§Ãµes CrÃ­ticas** (lista em `@AGENTE_RISCOS_v2.md`):
 
 ```javascript
 /**
- * Serializa todo o estado da aplicação para JSON
+ * Serializa todo o estado da aplicaÃ§Ã£o para JSON
  * @returns {Object} JSON com campos fixos + projectData
- * 🔥 CRÍTICO: Não alterar sem validar compatibilidade JSONs antigos
+ * ðŸ”¥ CRÃTICO: NÃ£o alterar sem validar compatibilidade JSONs antigos
  */
 function collectAllData() {
   // ...
 }
 ```
 
-**Cálculos EC1/EC8**:
+**CÃ¡lculos EC1/EC8**:
 ```javascript
-// Categoria B: Escritórios (EC1-1-1 Tabela 6.2)
-// qk = 3.0 kN/m², ψ0 = 0.7, ψ1 = 0.5, ψ2 = 0.3
+// Categoria B: EscritÃ³rios (EC1-1-1 Tabela 6.2)
+// qk = 3.0 kN/mÂ², Ïˆ0 = 0.7, Ïˆ1 = 0.5, Ïˆ2 = 0.3
 const qk = this.getCategoryLoad('B');
 ```
 
 **Workarounds/Hacks**:
 ```javascript
 // v6 WORKAROUND: Max-thickness rule para lajes sobrepostas
-// Apenas a laje MAIS ESPESSA conta (não soma)
+// Apenas a laje MAIS ESPESSA conta (nÃ£o soma)
 if (h > maxThicknessFound) {
   maxThicknessFound = h;
 }
@@ -201,25 +201,25 @@ if (h > maxThicknessFound) {
 
 ---
 
-## 3. BOAS PRÁTICAS
+## 3. BOAS PRÃTICAS
 
 ### 3.1 SSOT (Single Source of Truth)
 
 **v10.1 Update**: 
-- `appState.projects[projectId]` é SSOT
-- `appState.activeProject` é Proxy (getter para projeto activo)
-- localStorage é cache persistente (não fonte de verdade em runtime)
+- `appState.projects[projectId]` Ã© SSOT
+- `appState.activeProject` Ã© Proxy (getter para projeto activo)
+- localStorage Ã© cache persistente (nÃ£o fonte de verdade em runtime)
 
-**REGRA DE OURO**: Nunca ler do DOM para cálculos.
+**REGRA DE OURO**: Nunca ler do DOM para cÃ¡lculos.
 
 ```javascript
-// ❌ ERRADO - Lê do DOM
+// âŒ ERRADO - LÃª do DOM
 function calculateTotal() {
   const area = parseFloat(document.getElementById('zone_area').value);
   return area * 25;
 }
 
-// ✅ CORRETO - Lê de projectData
+// âœ… CORRETO - LÃª de projectData
 function calculateTotal(zoneId) {
   const zone = projectData.floors
     .flatMap(f => f.zones)
@@ -228,37 +228,37 @@ function calculateTotal(zoneId) {
 }
 ```
 
-**Exceções** (leitura do DOM permitida):
-1. `collectAllData()` - serialização
-2. `updateKPIs()` - display apenas (não cálculo)
+**ExceÃ§Ãµes** (leitura do DOM permitida):
+1. `collectAllData()` - serializaÃ§Ã£o
+2. `updateKPIs()` - display apenas (nÃ£o cÃ¡lculo)
 
 ---
 
-### 3.2 Validação de Inputs
+### 3.2 ValidaÃ§Ã£o de Inputs
 
 **Sempre** usar fallbacks com `||`:
 
 ```javascript
-// ✅ CORRETO
+// âœ… CORRETO
 const area = parseFloat(input.value) || 0;
 const name = input.value.trim() || '';
 const count = parseInt(input.value, 10) || 0;
 
-// ❌ ERRADO (crash se vazio)
+// âŒ ERRADO (crash se vazio)
 const area = parseFloat(input.value);  // NaN se vazio
 const name = input.value;              // Pode ser undefined
 ```
 
-**Validação de Objetos**:
+**ValidaÃ§Ã£o de Objetos**:
 ```javascript
-// ✅ CORRETO
+// âœ… CORRETO
 const floor = projectData.floors.find(f => f.id === floorId);
 if (!floor) {
-  console.error('Piso não encontrado:', floorId);
+  console.error('Piso nÃ£o encontrado:', floorId);
   return;
 }
 
-// ❌ ERRADO (crash se não existir)
+// âŒ ERRADO (crash se nÃ£o existir)
 const floor = projectData.floors.find(f => f.id === floorId);
 floor.zones.push(newZone);  // TypeError se floor === undefined
 ```
@@ -278,23 +278,23 @@ function importJSON(event) {
     try {
       const data = JSON.parse(e.target.result);
       loadAllData(data);
-      alert('✅ Dados importados com sucesso!');
+      alert('âœ… Dados importados com sucesso!');
     } catch (err) {
       console.error('Erro ao importar:', err);
-      alert('❌ Ficheiro inválido: ' + err.message);
+      alert('âŒ Ficheiro invÃ¡lido: ' + err.message);
     }
   };
   reader.readAsText(file);
 }
 ```
 
-**Operações Destrutivas** (confirmação):
+**OperaÃ§Ãµes Destrutivas** (confirmaÃ§Ã£o):
 ```javascript
 function deleteFloor(floorId) {
   const floor = projectData.floors.find(f => f.id === floorId);
   if (!floor) return;
   
-  // ✅ Confirma se tem zonas
+  // âœ… Confirma se tem zonas
   if (floor.zones.length > 0) {
     const msg = `Piso "${floor.name}" tem ${floor.zones.length} zona(s). Apagar?`;
     if (!confirm(msg)) return;
@@ -311,14 +311,14 @@ function deleteFloor(floorId) {
 
 **DOM Manipulation**:
 ```javascript
-// ❌ ERRADO - Múltiplas manipulações (slow)
+// âŒ ERRADO - MÃºltiplas manipulaÃ§Ãµes (slow)
 for (let i = 0; i < 100; i++) {
   const div = document.createElement('div');
   div.textContent = i;
-  container.appendChild(div);  // Reflow a cada iteração
+  container.appendChild(div);  // Reflow a cada iteraÃ§Ã£o
 }
 
-// ✅ CORRETO - Batch com innerHTML
+// âœ… CORRETO - Batch com innerHTML
 const html = [];
 for (let i = 0; i < 100; i++) {
   html.push(`<div>${i}</div>`);
@@ -326,15 +326,15 @@ for (let i = 0; i < 100; i++) {
 container.innerHTML = html.join('');
 ```
 
-**Event Delegation** (para listas dinâmicas):
+**Event Delegation** (para listas dinÃ¢micas):
 ```javascript
-// ❌ ERRADO - Event listener em cada item
+// âŒ ERRADO - Event listener em cada item
 floors.forEach(floor => {
   document.getElementById(`delete_${floor.id}`)
     .addEventListener('click', () => deleteFloor(floor.id));
 });
 
-// ✅ CORRETO - Listener único no container
+// âœ… CORRETO - Listener Ãºnico no container
 document.getElementById('floorsList').addEventListener('click', (e) => {
   if (e.target.classList.contains('delete-btn')) {
     const floorId = parseInt(e.target.dataset.floorId);
@@ -345,24 +345,24 @@ document.getElementById('floorsList').addEventListener('click', (e) => {
 
 ---
 
-## 4. PROTOCOLOS DE ALTERAÇÃO
+## 4. PROTOCOLOS DE ALTERAÃ‡ÃƒO
 
-### 4.1 Checklist Pré-Alteração
+### 4.1 Checklist PrÃ©-AlteraÃ§Ã£o
 
-Antes de mexer em código, **SEMPRE** verifica:
+Antes de mexer em cÃ³digo, **SEMPRE** verifica:
 
-- [ ] ID está em `@AGENTE_RISCOS_v2.md`? → Consulta secção relevante
-- [ ] Função tem 0 callers? → Procura por nome (pode ser callback string)
-- [ ] Mudança afecta `projectData`? → Valida schema em `ESPECIFICACAO.md`
-- [ ] Mudança afecta `actionsData`? → Testa com `zonas.html`
-- [ ] Mudança em cálculo EC1? → Atualiza **2 lugares** (tabela + gráfico)
-- [ ] Listener será removido? → Valida se não quebra sync
+- [ ] ID estÃ¡ em `@AGENTE_RISCOS_v2.md`? â†’ Consulta secÃ§Ã£o relevante
+- [ ] FunÃ§Ã£o tem 0 callers? â†’ Procura por nome (pode ser callback string)
+- [ ] MudanÃ§a afecta `projectData`? â†’ Valida schema em `ESPECIFICACAO.md`
+- [ ] MudanÃ§a afecta `actionsData`? â†’ Testa com `zonas.html`
+- [ ] MudanÃ§a em cÃ¡lculo EC1? â†’ Atualiza **2 lugares** (tabela + grÃ¡fico)
+- [ ] Listener serÃ¡ removido? â†’ Valida se nÃ£o quebra sync
 
 ---
 
-### 4.2 Alteração de IDs HTML
+### 4.2 AlteraÃ§Ã£o de IDs HTML
 
-**Cenário**: Renomear `id_antigo` → `id_novo`
+**CenÃ¡rio**: Renomear `id_antigo` â†’ `id_novo`
 
 **Procedimento**:
 ```javascript
@@ -371,14 +371,14 @@ Antes de mexer em código, **SEMPRE** verifica:
 
 // 2. JS: Adiciona fallback em loadAllData()
 function loadAllData(data) {
-  // ... código existente ...
+  // ... cÃ³digo existente ...
   
-  // MIGRAÇÃO v9.1 → v10: ID renomeado
+  // MIGRAÃ‡ÃƒO v9.1 â†’ v10: ID renomeado
   if (data.id_antigo && !data.id_novo) {
     data.id_novo = data.id_antigo;
   }
   
-  // ... resto da função ...
+  // ... resto da funÃ§Ã£o ...
 }
 
 // 3. DOCS: Actualiza @AGENTE_RISCOS_v2.md
@@ -387,9 +387,9 @@ function loadAllData(data) {
 
 ---
 
-### 4.3 Alteração de Estrutura `projectData`
+### 4.3 AlteraÃ§Ã£o de Estrutura `projectData`
 
-**Cenário**: Adicionar campo `floor.tipo`
+**CenÃ¡rio**: Adicionar campo `floor.tipo`
 
 **Procedimento**:
 ```javascript
@@ -398,18 +398,18 @@ function addFloor() {
   const floor = {
     id: Date.now(),
     name: `Piso ${projectData.floors.length}`,
-    tipo: 'Corrente',  // 🆕 Novo campo
+    tipo: 'Corrente',  // ðŸ†• Novo campo
     // ... campos existentes ...
   };
   projectData.floors.push(floor);
 }
 
-// 2. Migração: loadAllData() preenche default
+// 2. MigraÃ§Ã£o: loadAllData() preenche default
 function loadAllData(data) {
   if (data.projectData) {
     projectData = data.projectData;
     
-    // MIGRAÇÃO v10: Adiciona campo tipo se não existir
+    // MIGRAÃ‡ÃƒO v10: Adiciona campo tipo se nÃ£o existir
     projectData.floors.forEach(floor => {
       if (!floor.tipo) floor.tipo = 'Corrente';
     });
@@ -418,18 +418,18 @@ function loadAllData(data) {
 }
 
 // 3. UI: Adiciona input em renderFloors()
-// 4. DOCS: Actualiza ESPECIFICACAO.md secção 2.1
+// 4. DOCS: Actualiza ESPECIFICACAO.md secÃ§Ã£o 2.1
 // 5. TESTE: Importa JSON v9.1 (sem campo tipo)
 ```
 
 ---
 
-### 4.4 Duplicação de Lógica (EC1)
+### 4.4 DuplicaÃ§Ã£o de LÃ³gica (EC1)
 
-**ATENÇÃO**: Cálculo de cargas existe em **2 lugares**:
+**ATENÃ‡ÃƒO**: CÃ¡lculo de cargas existe em **2 lugares**:
 
-1. **Tabela Analítica** (função fictícia - não existe no código real)
-2. **FloorViewer** (método `displayZoneCombinations()`)
+1. **Tabela AnalÃ­tica** (funÃ§Ã£o fictÃ­cia - nÃ£o existe no cÃ³digo real)
+2. **FloorViewer** (mÃ©todo `displayZoneCombinations()`)
 
 **Protocolo** se alterares valores EC1:
 
@@ -437,25 +437,25 @@ function loadAllData(data) {
 // 1. Altera tabela em FloorViewer.getCategoryLoad()
 getCategoryLoad(category) {
   const loads = {
-    'B': 3.5,  // ✏️ Mudou de 3.0 para 3.5
+    'B': 3.5,  // âœï¸ Mudou de 3.0 para 3.5
     // ...
   };
   return loads[category] || 3.0;
 }
 
-// 2. VALIDAÇÃO: Procura por "categoria B" ou "3.0" no código
-//    e garante que não há outra cópia da tabela
+// 2. VALIDAÃ‡ÃƒO: Procura por "categoria B" ou "3.0" no cÃ³digo
+//    e garante que nÃ£o hÃ¡ outra cÃ³pia da tabela
 
-// 3. TESTE: Abre Secção 7, clica em zona tipo B, valida qk = 3.5
+// 3. TESTE: Abre SecÃ§Ã£o 7, clica em zona tipo B, valida qk = 3.5
 ```
 
 ---
 
-## 5. TESTES OBRIGATÓRIOS
+## 5. TESTES OBRIGATÃ“RIOS
 
 Ver `@AGENTE_TESTES.md` para suite completa.
 
-**Mínimo** após qualquer alteração:
+**MÃ­nimo** apÃ³s qualquer alteraÃ§Ã£o:
 
 ### 5.1 Smoke Test (2 min)
 
@@ -472,13 +472,13 @@ Ver `@AGENTE_TESTES.md` para suite completa.
 ### 5.2 Regression Test (5 min)
 
 ```bash
-1. Preenche Secção 1 (ID, Nome)
-2. Adiciona 1 piso em Secção 2
-3. Adiciona 1 zona (Uso: B, Laje: Maciça 0.25m)
+1. Preenche SecÃ§Ã£o 1 (ID, Nome)
+2. Adiciona 1 piso em SecÃ§Ã£o 2
+3. Adiciona 1 zona (Uso: B, Laje: MaciÃ§a 0.25m)
 4. Exporta JSON
-5. Recarrega página (F5)
+5. Recarrega pÃ¡gina (F5)
 6. Importa JSON
-7. Valida: Dados idênticos
+7. Valida: Dados idÃªnticos
 8. Console: 0 erros
 ```
 
@@ -487,36 +487,36 @@ Ver `@AGENTE_TESTES.md` para suite completa.
 ### 5.3 Integration Test (10 min)
 
 ```bash
-1. Preenche Secções 1-5 (completo)
-2. Activa "Ação Sísmica" (Secção 6)
-3. Preenche parâmetros sísmicos (Zona 1.3, q=3.0)
-4. Secção 7: Seleciona piso criado
-5. Valida: Gráfico sísmico renderiza
+1. Preenche SecÃ§Ãµes 1-5 (completo)
+2. Activa "AÃ§Ã£o SÃ­smica" (SecÃ§Ã£o 6)
+3. Preenche parÃ¢metros sÃ­smicos (Zona 1.3, q=3.0)
+4. SecÃ§Ã£o 7: Seleciona piso criado
+5. Valida: GrÃ¡fico sÃ­smico renderiza
 6. Modo "Sonda": Clica em zona
-7. Valida: Mostra combinações ELU/ELS
+7. Valida: Mostra combinaÃ§Ãµes ELU/ELS
 8. Exporta JSON + Markdown
 ```
 
 ---
 
-## 6. DOCUMENTAÇÃO OBRIGATÓRIA
+## 6. DOCUMENTAÃ‡ÃƒO OBRIGATÃ“RIA
 
 ### 6.1 Quando Actualizar `@AGENTE_RISCOS_v2.md`
 
 **Triggers**:
 - Adicionar ID HTML novo
-- Adicionar função crítica (estado, cálculo, IO)
+- Adicionar funÃ§Ã£o crÃ­tica (estado, cÃ¡lculo, IO)
 - Adicionar event listener com side-effects
 - Alterar estrutura `projectData` ou `actionsData`
 
 **Template**:
 ```markdown
-### X.Y Novo ID/Função
+### X.Y Novo ID/FunÃ§Ã£o
 
 #### ID: `novo_campo`
 **Tipo**: Input text
-**Usado em**: Secção Z, cálculo de ABC
-**Dependências**: Listener em `outro_campo`
+**Usado em**: SecÃ§Ã£o Z, cÃ¡lculo de ABC
+**DependÃªncias**: Listener em `outro_campo`
 ```
 
 ---
@@ -524,27 +524,27 @@ Ver `@AGENTE_TESTES.md` para suite completa.
 ### 6.2 Quando Actualizar `@AGENTE_MIGRACAO.md`
 
 **Triggers**:
-- Incremento de versão (vX → vY)
-- Alteração arquitectural (ex: adicionar classe nova)
-- Breaking change (ex: remover função pública)
+- Incremento de versÃ£o (vX â†’ vY)
+- AlteraÃ§Ã£o arquitectural (ex: adicionar classe nova)
+- Breaking change (ex: remover funÃ§Ã£o pÃºblica)
 
 **Template**:
 ```markdown
-### [v9.1 → v10.0] - DD/MM/AAAA
+### [v9.1 â†’ v10.0] - DD/MM/AAAA
 **Autor**: Nome do Dev/Agent
 **Resumo**: Adiciona funcionalidade X
 
-**Alterações**:
+**AlteraÃ§Ãµes**:
 - Novo campo `floor.tipo` em projectData
-- Nova função `calculateTipo()`
-- Removido método `FloorViewer.oldMethod()` (deprecated)
+- Nova funÃ§Ã£o `calculateTipo()`
+- Removido mÃ©todo `FloorViewer.oldMethod()` (deprecated)
 
 **Breaking Changes**:
-- JSONs v9.1 precisam migração (ver loadAllData())
+- JSONs v9.1 precisam migraÃ§Ã£o (ver loadAllData())
 
 **Testes**:
-- ✅ Import/Export v9.1 → v10.0
-- ✅ Todos os regression tests passam
+- âœ… Import/Export v9.1 â†’ v10.0
+- âœ… Todos os regression tests passam
 ```
 
 ---
@@ -552,38 +552,38 @@ Ver `@AGENTE_TESTES.md` para suite completa.
 ### 6.3 Quando Actualizar `ESPECIFICACAO.md`
 
 **Triggers**:
-- Alteração de schema (projectData, actionsData)
-- Nova API pública (função que outros devs usam)
-- Mudança de protocolo (postMessage, JSON format)
+- AlteraÃ§Ã£o de schema (projectData, actionsData)
+- Nova API pÃºblica (funÃ§Ã£o que outros devs usam)
+- MudanÃ§a de protocolo (postMessage, JSON format)
 
-**Secções afectadas**:
-- Secção 2: Schema
-- Secção 4: API Interna
-- Secção 5: Integração zonas.html
-- Apêndice C: Changelog
+**SecÃ§Ãµes afectadas**:
+- SecÃ§Ã£o 2: Schema
+- SecÃ§Ã£o 4: API Interna
+- SecÃ§Ã£o 5: IntegraÃ§Ã£o zonas.html
+- ApÃªndice C: Changelog
 
 ---
 
 ## 7. CODE STYLE
 
-### 7.1 Variáveis
+### 7.1 VariÃ¡veis
 
-**Preferir `const`** quando possível:
+**Preferir `const`** quando possÃ­vel:
 ```javascript
-// ✅ CORRETO
+// âœ… CORRETO
 const floorId = Date.now();
 const zones = floor.zones.filter(z => z.area > 10);
 
-// ❌ ERRADO (let desnecessário)
-let floorId = Date.now();  // Nunca reatribuído
+// âŒ ERRADO (let desnecessÃ¡rio)
+let floorId = Date.now();  // Nunca reatribuÃ­do
 let zones = floor.zones.filter(...);
 ```
 
-**Usar `let`** apenas se reatribuição:
+**Usar `let`** apenas se reatribuiÃ§Ã£o:
 ```javascript
 let total = 0;
 for (const zone of zones) {
-  total += zone.area;  // Reatribuição necessária
+  total += zone.area;  // ReatribuiÃ§Ã£o necessÃ¡ria
 }
 ```
 
@@ -591,13 +591,13 @@ for (const zone of zones) {
 
 ### 7.2 Template Literals
 
-**Preferir** `backticks` para strings com variáveis:
+**Preferir** `backticks` para strings com variÃ¡veis:
 
 ```javascript
-// ✅ CORRECTO
+// âœ… CORRECTO
 const msg = `Piso "${floor.name}" tem ${floor.zones.length} zonas`;
 
-// ❌ ERRADO (concatenação)
+// âŒ ERRADO (concatenaÃ§Ã£o)
 const msg = 'Piso "' + floor.name + '" tem ' + floor.zones.length + ' zonas';
 ```
 
@@ -608,25 +608,25 @@ const msg = 'Piso "' + floor.name + '" tem ' + floor.zones.length + ' zonas';
 **Usar** para callbacks curtos:
 
 ```javascript
-// ✅ CORRETO
+// âœ… CORRETO
 floors.forEach(f => updateFloor(f));
 zones.map(z => z.area);
 zones.filter(z => z.uso === 'B');
 
-// ❌ ERRADO (function desnecessário)
+// âŒ ERRADO (function desnecessÃ¡rio)
 floors.forEach(function(f) { updateFloor(f); });
 ```
 
-**NÃO usar** para métodos de classe:
+**NÃƒO usar** para mÃ©todos de classe:
 
 ```javascript
 class FloorViewer {
-  // ✅ CORRETO
+  // âœ… CORRETO
   render() {
     this.ctx.clearRect(0, 0, this.width, this.height);
   }
   
-  // ❌ ERRADO (arrow não tem `this` próprio)
+  // âŒ ERRADO (arrow nÃ£o tem `this` prÃ³prio)
   render = () => {
     this.ctx.clearRect(0, 0, this.width, this.height);
   }
@@ -637,14 +637,14 @@ class FloorViewer {
 
 ### 7.4 Destructuring
 
-**Usar** quando acede a múltiplos campos:
+**Usar** quando acede a mÃºltiplos campos:
 
 ```javascript
-// ✅ CORRETO
+// âœ… CORRETO
 const { name, area, cota } = floor;
 console.log(name, area, cota);
 
-// ❌ ERRADO (repetição)
+// âŒ ERRADO (repetiÃ§Ã£o)
 console.log(floor.name, floor.area, floor.cota);
 ```
 
@@ -655,10 +655,10 @@ console.log(floor.name, floor.area, floor.cota);
 ### 8.1 Global Pollution
 
 ```javascript
-// ❌ ERRADO - Variável global desnecessária
+// âŒ ERRADO - VariÃ¡vel global desnecessÃ¡ria
 window.tempData = { ... };
 
-// ✅ CORRETO - Scoped
+// âœ… CORRETO - Scoped
 function processData() {
   const tempData = { ... };
   // Usa tempData localmente
@@ -670,12 +670,12 @@ function processData() {
 ### 8.2 Magic Numbers
 
 ```javascript
-// ❌ ERRADO
+// âŒ ERRADO
 const peso = espessura * 25 + 1.5;
 
-// ✅ CORRETO
-const GAMMA_BETAO = 25;  // kN/m³
-const REVESTIMENTOS = 1.5;  // kN/m²
+// âœ… CORRETO
+const GAMMA_BETAO = 25;  // kN/mÂ³
+const REVESTIMENTOS = 1.5;  // kN/mÂ²
 const peso = espessura * GAMMA_BETAO + REVESTIMENTOS;
 ```
 
@@ -684,7 +684,7 @@ const peso = espessura * GAMMA_BETAO + REVESTIMENTOS;
 ### 8.3 Deep Nesting
 
 ```javascript
-// ❌ ERRADO (pirâmide da desgraça)
+// âŒ ERRADO (pirÃ¢mide da desgraÃ§a)
 function example() {
   if (condition1) {
     if (condition2) {
@@ -695,7 +695,7 @@ function example() {
   }
 }
 
-// ✅ CORRETO (early returns)
+// âœ… CORRETO (early returns)
 function example() {
   if (!condition1) return;
   if (!condition2) return;
@@ -706,15 +706,15 @@ function example() {
 
 ---
 
-### 8.4 Mutação de Parâmetros
+### 8.4 MutaÃ§Ã£o de ParÃ¢metros
 
 ```javascript
-// ❌ ERRADO
+// âŒ ERRADO
 function addZone(floor, zone) {
-  floor.zones.push(zone);  // Mutação directa
+  floor.zones.push(zone);  // MutaÃ§Ã£o directa
 }
 
-// ✅ CORRETO
+// âœ… CORRETO
 function addZone(floor, zone) {
   return {
     ...floor,
@@ -723,13 +723,13 @@ function addZone(floor, zone) {
 }
 ```
 
-**Exceção**: Estruturas `projectData` (estado global mutável por design)
+**ExceÃ§Ã£o**: Estruturas `projectData` (estado global mutÃ¡vel por design)
 
 ---
 
 ## 9. GIT WORKFLOW (Futuro)
 
-**Ainda não implementado**, mas para quando migrarmos:
+**Ainda nÃ£o implementado**, mas para quando migrarmos:
 
 ### 9.1 Branch Naming
 
@@ -748,8 +748,8 @@ docs/atualiza-especificacao-v10
 
 ```
 feat(pisos): adiciona campo tipo
-fix(ec1): corrige qk categoria B (3.0 → 3.5)
-refactor(viewer): extrai método calculateLoads()
+fix(ec1): corrige qk categoria B (3.0 â†’ 3.5)
+refactor(viewer): extrai mÃ©todo calculateLoads()
 docs(spec): actualiza schema projectData
 test(io): adiciona teste import JSON v9.1
 ```
@@ -762,8 +762,8 @@ test(io): adiciona teste import JSON v9.1
 ## Objectivo
 [O que esta PR faz]
 
-## Alterações
-- [ ] Código
+## AlteraÃ§Ãµes
+- [ ] CÃ³digo
 - [ ] Testes
 - [ ] Docs
 
@@ -776,7 +776,7 @@ test(io): adiciona teste import JSON v9.1
 - [ ] Integration test
 
 ## Checklist
-- [ ] Actualizado @AGENTE_RISCOS_v2.md (se aplicável)
+- [ ] Actualizado @AGENTE_RISCOS_v2.md (se aplicÃ¡vel)
 - [ ] Actualizado @AGENTE_MIGRACAO.md
 - [ ] Actualizado ESPECIFICACAO.md (se schema mudou)
 - [ ] Console sem erros
@@ -786,18 +786,18 @@ test(io): adiciona teste import JSON v9.1
 
 ## 10. TROUBLESHOOTING COMUM
 
-### 10.1 "Dados não carregam após import"
+### 10.1 "Dados nÃ£o carregam apÃ³s import"
 
 **Sintomas**: JSON importa mas campos ficam vazios
 
 **Causas**:
-1. ID mudou entre versões
-2. `loadAllData()` não processa novo campo
-3. JSON corrupto (sintaxe inválida)
+1. ID mudou entre versÃµes
+2. `loadAllData()` nÃ£o processa novo campo
+3. JSON corrupto (sintaxe invÃ¡lida)
 
 **Debug**:
 ```javascript
-// Cola na console após import
+// Cola na console apÃ³s import
 const data = collectAllData();
 console.log('IDs no JSON:', Object.keys(data));
 console.log('IDs no DOM:', 
@@ -809,11 +809,11 @@ console.log('IDs no DOM:',
 
 ### 10.2 "Canvas fica em branco"
 
-**Sintomas**: Secção 7 (Zonamento) não mostra nada
+**Sintomas**: SecÃ§Ã£o 7 (Zonamento) nÃ£o mostra nada
 
 **Causas**:
 1. `actionsData` vazio ou undefined
-2. Imagem não carregou (`imageData` vazio)
+2. Imagem nÃ£o carregou (`imageData` vazio)
 3. Escala incorrecta (`scale = 0`)
 
 **Debug**:
@@ -826,32 +826,32 @@ console.log('Blueprint:', floor.actionsData?.blueprint);
 
 ---
 
-### 10.3 "Cálculos EC1 errados"
+### 10.3 "CÃ¡lculos EC1 errados"
 
 **Sintomas**: Sonda mostra valor diferente da tabela
 
-**Causa**: Duplicação de lógica dessincronizada
+**Causa**: DuplicaÃ§Ã£o de lÃ³gica dessincronizada
 
 **Debug**:
 ```javascript
-// Compara ambas as implementações
+// Compara ambas as implementaÃ§Ãµes
 const category = 'B';
 
 // 1. FloorViewer
 const viewer = window.currentFloorViewer;
 const qk1 = viewer.getCategoryLoad(category);
 
-// 2. Verifica se há outra função com mesma lógica
-// (procura por "case 'B':" no código)
+// 2. Verifica se hÃ¡ outra funÃ§Ã£o com mesma lÃ³gica
+// (procura por "case 'B':" no cÃ³digo)
 ```
 
-### 10.4 "Dados não aparecem após voltar ao lobby"
+### 10.4 "Dados nÃ£o aparecem apÃ³s voltar ao lobby"
 
-**Sintomas**: Editar projeto → Voltar lobby → Reabrir → Campos vazios
+**Sintomas**: Editar projeto â†’ Voltar lobby â†’ Reabrir â†’ Campos vazios
 
 **Causas**:
-1. `saveCurrentProject()` não chamado ao voltar
-2. `loadProjectsFromStorage()` não reconstrói Maps
+1. `saveCurrentProject()` nÃ£o chamado ao voltar
+2. `loadProjectsFromStorage()` nÃ£o reconstrÃ³i Maps
 
 **Debug**:
 ```javascript
@@ -866,19 +866,19 @@ console.log('Guardado:', saved[appState.activeProjectId].floors.length);
 
 ---
 
-## 11. RECURSOS ÚTEIS
+## 11. RECURSOS ÃšTEIS
 
 ### 11.1 Docs Internas
 - `ESPECIFICACAO.md` - Schema e API
-- `@AGENTE_RISCOS_v2.md` - IDs e funções críticas
+- `@AGENTE_RISCOS_v2.md` - IDs e funÃ§Ãµes crÃ­ticas
 - `@AGENTE_TESTES.md` - Suite de testes
-- `@AGENTE_ROADMAP.md` - Evolução futura
+- `@AGENTE_ROADMAP.md` - EvoluÃ§Ã£o futura
 
-### 11.2 Normas (Referência)
+### 11.2 Normas (ReferÃªncia)
 - EC0: Bases de projecto
-- EC1: Acções em estruturas
-- EC2: Projecto de estruturas de betão
-- EC8: Projecto de estruturas para resistência aos sismos
+- EC1: AcÃ§Ãµes em estruturas
+- EC2: Projecto de estruturas de betÃ£o
+- EC8: Projecto de estruturas para resistÃªncia aos sismos
 
 ### 11.3 Bibliotecas
 - Chart.js: https://www.chartjs.org/docs/
@@ -886,18 +886,19 @@ console.log('Guardado:', saved[appState.activeProjectId].floors.length);
 
 ---
 
-## 12. GLOSSÁRIO
+## 12. GLOSSÃRIO
 
-**SSOT**: Single Source of Truth - `projectData` é a única fonte de verdade  
-**ELU**: Estado Limite Último (Ultimate Limit State)  
-**ELS**: Estado Limite de Serviço (Serviceability Limit State)  
-**qk**: Sobrecarga característica (kN/m²)  
-**EC1/EC8**: Eurocódigo 1 (Ações) / Eurocódigo 8 (Sismo)  
+**SSOT**: Single Source of Truth - `projectData` Ã© a Ãºnica fonte de verdade  
+**ELU**: Estado Limite Ãšltimo (Ultimate Limit State)  
+**ELS**: Estado Limite de ServiÃ§o (Serviceability Limit State)  
+**qk**: Sobrecarga caracterÃ­stica (kN/mÂ²)  
+**EC1/EC8**: EurocÃ³digo 1 (AÃ§Ãµes) / EurocÃ³digo 8 (Sismo)  
 **RCP**: Revestimentos, Cargas Permanentes  
-**γ**: Peso volúmico (kN/m³)  
-**ψ0, ψ1, ψ2**: Coeficientes de combinação EC0
+**Î³**: Peso volÃºmico (kN/mÂ³)  
+**Ïˆ0, Ïˆ1, Ïˆ2**: Coeficientes de combinaÃ§Ã£o EC0
 
 ---
 
-**Fim das Guidelines v9.1**  
-**Próxima leitura**: `ESPECIFICACAO.md` para detalhes técnicos completos
+**Fim das Guidelines v10.2**  
+**Versão atual**: Fase 2 Completa (Multi-Projeto)  
+**Próxima leitura**: `ESPECIFICACAO.md` para detalhes técnicos completos, `@AGENTE_ROADMAP.md` para evolução futura

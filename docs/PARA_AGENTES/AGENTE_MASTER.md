@@ -2,7 +2,7 @@
 
 **Status:** Documentação Viva (Version Agnostic)
 **Objetivo:** Guia central para Agentes de Código e Developers.
-**Última Atualização:** Integração v9.0
+**Última Atualização:** v10.2 (Fase 2 Completa)
 
 ## 🚨 PROTOCOLO DE INICIALIZAÇÃO (Boot Sequence)
 Sempre que iniciares uma sessão ou fores instruído a trabalhar neste projeto, deves seguir esta ordem estrita:
@@ -16,7 +16,7 @@ Sempre que iniciares uma sessão ou fores instruído a trabalhar neste projeto, 
    * `@AGENTE_TESTES.md`: Casos de teste obrigatórios.
    * `GUIDELINES.md`: Padrões de código e boas práticas.
    * `@AGENTE_MIGRACAO.md`: Histórico de versões (contexto).
-   * `@AGENTE_ROADMAP.md`: Objetivos futuros (opcional para contexto estratégico)..
+   * `@AGENTE_ROADMAP.md`: Objetivos futuros (opcional para contexto estratégico).
    
    
 ## 🧭 Princípios de Desenvolvimento
@@ -24,10 +24,14 @@ Sempre que iniciares uma sessão ou fores instruído a trabalhar neste projeto, 
 2.  **Continuidade Gráfica:** Qualquer alteração na estrutura de `floors` ou `zones` tem de ser validada contra o `zonas.html` (Editor Gráfico) via `postMessage`.
 3.  **Preservação de IDs:** O sistema de Import/Export JSON depende dos `id` dos inputs HTML. Não alterar sem migração.
 4.  **Registo Obrigatório:** Após qualquer alteração significativa, **OBRIGATÓRIO** registar o log em `@AGENTE_MIGRACAO.md`.
+5.  **Protótipos Isolados:** Quando validar tecnologia nova (ex: OpenCV), criar ficheiro standalone FORA do SSOT. Evita refactor duplo se schema mudar.
 
 ## 🗺️ Mapa de Ficheiros
 * **Core App:** `Index_vX.html` (UI + Lógica + Estado).
+* **Lobby:** `lobby.html` (Gestão multi-projeto, v10.2+).
+* **Utilities:** `shared.js` (UUID, localStorage, v10.2+).
 * **Motor Gráfico:** `zonas.html` (Editor Canvas isolado).
+* **Protótipos:** `color-trace-prototype.html` (v10.4, não integra).
 * **Documentação:** Todos os ficheiros `@AGENTE_*.md` e `MANUAL_FUNCIONAL.md`.
 
 ---

@@ -1,56 +1,56 @@
-# SSOT JSJ Template - Especificação Técnica v9.1
+# SSOT JSJ Template - EspecificaÃ§Ã£o TÃ©cnica v9.1
 
-**Versão:** 9.1  
+**VersÃ£o:** 9.1  
 **Data:** Fevereiro 2026  
-**Tipo:** Aplicação Web Standalone (HTML + Vanilla JS)  
-**Objetivo:** Sistema unificado de gestão de projetos de engenharia estrutural
+**Tipo:** AplicaÃ§Ã£o Web Standalone (HTML + Vanilla JS)  
+**Objetivo:** Sistema unificado de gestÃ£o de projetos de engenharia estrutural
 
 ---
 
-## 1. VISÃO GERAL
+## 1. VISÃƒO GERAL
 
 ### 1.1 Arquitetura
 - **Tipo**: Multi-Page Application (lobby.html + index.html)
-- **Estado**: localStorage (persistência automática)
-- **Navegação**: lobby.html (lista) → index.html?project=<uuid> (editor)
+- **Estado**: localStorage (persistÃªncia automÃ¡tica)
+- **NavegaÃ§Ã£o**: lobby.html (lista) â†’ index.html?project=<uuid> (editor)
 - **UI Lobby**: Grid de projetos com CRUD
-- **UI Editor**: 8 secções (inalteradas vs v9.1)
+- **UI Editor**: 8 secÃ§Ãµes (inalteradas vs v9.1)
 
 ### 1.2 Componentes Principais
 ```
 Index_v9.1.html (3817 linhas)
-├── CSS (linhas 9-1220): Sistema de design dark theme
-├── HTML (linhas 1221-2062): Estrutura das 8 secções
-└── JavaScript (linhas 2063-3814): Lógica + Motor Gráfico
+â”œâ”€â”€ CSS (linhas 9-1220): Sistema de design dark theme
+â”œâ”€â”€ HTML (linhas 1221-2062): Estrutura das 8 secÃ§Ãµes
+â””â”€â”€ JavaScript (linhas 2063-3814): LÃ³gica + Motor GrÃ¡fico
 ```
 
 ### 1.3 Fluxo de Dados (SSOT Principle)
 ```
-User Input (DOM) → updateKPIs() → projectData (Global State)
-                                       ↓
-                            collectAllData() → JSON Export
-                                       ↓
-                            loadAllData(JSON) → Repopulate DOM
+User Input (DOM) â†’ updateKPIs() â†’ projectData (Global State)
+                                       â†“
+                            collectAllData() â†’ JSON Export
+                                       â†“
+                            loadAllData(JSON) â†’ Repopulate DOM
 ```
 
-**REGRA CRÍTICA**: Nunca ler do DOM para cálculos. Sempre usar `projectData`.
+**REGRA CRÃTICA**: Nunca ler do DOM para cÃ¡lculos. Sempre usar `projectData`.
 
 ### 1.4 Fluxo Multi-Projeto
 ```
-User → lobby.html (ponto de entrada)
-    ↓
+User â†’ lobby.html (ponto de entrada)
+    â†“
 Clicar "Novo Projeto"
-    ↓
+    â†“
 index.html?project=new (cria UUID, abre vazio)
-    ↓
-Preencher Secções 1-8
-    ↓
-"🏠 Voltar ao Lobby"
-    ↓
+    â†“
+Preencher SecÃ§Ãµes 1-8
+    â†“
+"ðŸ  Voltar ao Lobby"
+    â†“
 lobby.html (projeto aparece no grid)
-    ↓
+    â†“
 Clicar "Abrir"
-    ↓
+    â†“
 index.html?project=<uuid> (carrega dados)
 ```
 
@@ -61,7 +61,7 @@ index.html?project=<uuid> (carrega dados)
     "uuid-1": {
       "id": "uuid-1",
       "id_jsj": "2026-001",
-      "nome_projeto": "Edifício A",
+      "nome_projeto": "EdifÃ­cio A",
       "floors": [{"id": "...", "name": "..."}],
       "zones": [{"id": "...", "name": "..."}],
       "geoHorizons": [{"horizonte": "..."}]
@@ -77,35 +77,35 @@ index.html?project=<uuid> (carrega dados)
 
 ### 2.1 Estrutura Global `projectData`
 
-**NOTA v10.1**: Em runtime, `floors/zones/geoHorizons` são Maps.
-No localStorage, são serializados como Arrays.
-Conversão automática em `shared.js` (saveProjectsToStorage / loadProjectsFromStorage).
+**NOTA v10.1**: Em runtime, `floors/zones/geoHorizons` sÃ£o Maps.
+No localStorage, sÃ£o serializados como Arrays.
+ConversÃ£o automÃ¡tica em `shared.js` (saveProjectsToStorage / loadProjectsFromStorage).
 
 ```javascript
 let projectData = {
   floors: [
     {
-      id: 1234567890,              // Timestamp único (number)
+      id: 1234567890,              // Timestamp Ãºnico (number)
       name: "Piso 0",              // string
       cota: 0.00,                  // float (m)
-      area: 150.00,                // float (m²)
+      area: 150.00,                // float (mÂ²)
       imageData: "",               // Base64 string (PNG/JPG) - planta do piso
       zones: [
         {
-          id: 9876543210,          // Timestamp único (number)
+          id: 9876543210,          // Timestamp Ãºnico (number)
           name: "Zona A",          // string
-          area: 50.00,             // float (m²)
+          area: 50.00,             // float (mÂ²)
           cotaLimpo: 0.00,         // float (m)
           acabamento: 50,          // int (mm)
           uso: "B",                // string - Categoria EC1 (A-H)
-          tipoLaje: "Maciça",      // string - Tipo estrutural
+          tipoLaje: "MaciÃ§a",      // string - Tipo estrutural
           espessura: 0.25,         // float (m)
           vaoMax: 6.0,             // float (m)
           permanentes: [],         // Array<{nome: string, valor: float, tipo: string}>
           walls: []                // Array<{comprimento: float, espessura: float, altura: float, gamma: float}>
         }
       ],
-      actionsData: {               // 🔥 CRÍTICO - Do zonas.html (editor gráfico)
+      actionsData: {               // ðŸ”¥ CRÃTICO - Do zonas.html (editor grÃ¡fico)
         blueprint: {
           scale: 1.0,              // Escala m/px
           imageData: ""            // Base64 (duplicado por sync)
@@ -117,8 +117,8 @@ let projectData = {
               design: "L1",
               uso: "B",
               manualLoad: "0.25",  // Espessura em m (string!)
-              shapes: [            // Array de polígonos
-                [                  // Polígono = array de pontos
+              shapes: [            // Array de polÃ­gonos
+                [                  // PolÃ­gono = array de pontos
                   {x: 100, y: 200},
                   {x: 300, y: 200},
                   {x: 300, y: 400},
@@ -137,7 +137,7 @@ let projectData = {
           "Paredes_RP": [          // Layer de RCP (Revestimentos/Paredes)
             {
               id: 125,
-              manualLoad: "1.5",   // kN/m² (string!)
+              manualLoad: "1.5",   // kN/mÂ² (string!)
               shapes: [...]
             }
           ]
@@ -149,57 +149,57 @@ let projectData = {
     {
       horizonte: "H1",             // string
       nspt: 10,                    // int
-      gamma: 18.0,                 // float (kN/m³)
+      gamma: 18.0,                 // float (kN/mÂ³)
       c: 5,                        // float (kPa)
       phi: 30,                     // float (graus)
       e: 50,                       // float (MPa)
       sigma: 200,                  // float (kPa)
-      escav: "Fácil"               // string
+      escav: "FÃ¡cil"               // string
     }
   ]
 };
 ```
 
-### 2.2 Validações e Restrições
+### 2.2 ValidaÃ§Ãµes e RestriÃ§Ãµes
 
-#### IDs Únicos
-- **Método**: `Date.now()` (timestamp em ms)
-- **Colisão**: Improvável (user não clica 2x no mesmo ms)
-- **Validação**: Nenhuma (assumes unicidade)
+#### IDs Ãšnicos
+- **MÃ©todo**: `Date.now()` (timestamp em ms)
+- **ColisÃ£o**: ImprovÃ¡vel (user nÃ£o clica 2x no mesmo ms)
+- **ValidaÃ§Ã£o**: Nenhuma (assumes unicidade)
 
 #### Tipos de Dados
 ```javascript
-// Conversões críticas
-parseFloat(input.value) || 0     // Números com fallback 0
+// ConversÃµes crÃ­ticas
+parseFloat(input.value) || 0     // NÃºmeros com fallback 0
 parseInt(input.value, 10) || 0   // Inteiros
 input.value.trim() || ""         // Strings
 ```
 
 #### Categorias EC1 (Uso)
 ```javascript
-// Valores válidos para zone.uso
+// Valores vÃ¡lidos para zone.uso
 const VALID_CATEGORIES = ['A', 'B', 'C', 'D', 'E', 'F', 'H'];
-// A: 2.0 kN/m² (Habitação)
-// B: 3.0 kN/m² (Escritórios)
-// C: 4.0 kN/m² (Escolas/Restaurantes)
-// D: 5.0 kN/m² (Comércio)
-// E: 7.5 kN/m² (Armazém)
-// F: 2.5 kN/m² (Garagem)
-// H: 0.4 kN/m² (Cobertura)
+// A: 2.0 kN/mÂ² (HabitaÃ§Ã£o)
+// B: 3.0 kN/mÂ² (EscritÃ³rios)
+// C: 4.0 kN/mÂ² (Escolas/Restaurantes)
+// D: 5.0 kN/mÂ² (ComÃ©rcio)
+// E: 7.5 kN/mÂ² (ArmazÃ©m)
+// F: 2.5 kN/mÂ² (Garagem)
+// H: 0.4 kN/mÂ² (Cobertura)
 ```
 
 #### Tipos de Laje
 ```javascript
-const SLAB_TYPES = ['Maciça', 'Fungiforme', 'Aligeirada', 'Vigada', 'Pré-laje'];
+const SLAB_TYPES = ['MaciÃ§a', 'Fungiforme', 'Aligeirada', 'Vigada', 'PrÃ©-laje'];
 ```
 
 ---
 
-## 3. SECÇÕES FUNCIONAIS (Níveis 1-8)
+## 3. SECÃ‡Ã•ES FUNCIONAIS (NÃ­veis 1-8)
 
-### Secção 1: Identificação do Projeto
+### SecÃ§Ã£o 1: IdentificaÃ§Ã£o do Projeto
 
-**IDs HTML Críticos** (23 campos):
+**IDs HTML CrÃ­ticos** (23 campos):
 ```
 id_jsj, nome_projeto, cliente, designacao, localizacao,
 tipologia, especialidade, tipo_obra, tipo_obra_custom, fase_atual,
@@ -212,14 +212,14 @@ resp_tecnico, equipa_eng, bim, gestao_projeto, fiscalizacao
 - `kpiID`, `kpiNome`, `kpiFase` (read-only displays)
 - `kpiImplant`, `kpiABC`, `kpiPisos`, `kpiAltura` (calculados)
 
-**Função de Atualização**:
+**FunÃ§Ã£o de AtualizaÃ§Ã£o**:
 ```javascript
 function updateKPIs() {
   document.getElementById('kpiID').textContent = 
     document.getElementById('id_jsj').value || '---';
   // ... (idem para nome, fase)
   
-  // Cálculo de KPIs geométricos
+  // CÃ¡lculo de KPIs geomÃ©tricos
   let totalImplant = 0, totalABC = 0, maxCota = 0, minCota = 0;
   projectData.floors.forEach(f => {
     totalImplant = Math.max(totalImplant, f.area || 0);
@@ -237,16 +237,16 @@ function updateKPIs() {
 
 ---
 
-### Secção 2: Caracterização Geral da Obra
+### SecÃ§Ã£o 2: CaracterizaÃ§Ã£o Geral da Obra
 
-**Estrutura Dinâmica**:
+**Estrutura DinÃ¢mica**:
 - Lista de pisos (renderizada por `renderFloors()`)
-- Cada piso contém zonas (expandível)
+- Cada piso contÃ©m zonas (expandÃ­vel)
 - Modal para criar/editar zonas
 
-**IDs Dinâmicos** (gerados por JS):
+**IDs DinÃ¢micos** (gerados por JS):
 ```javascript
-// Padrão: {tipo}_{id do piso/zona}
+// PadrÃ£o: {tipo}_{id do piso/zona}
 floor_name_1234567890
 floor_cota_1234567890
 floor_area_1234567890
@@ -256,7 +256,7 @@ zone_tipoLaje_9876543210
 // ... etc
 ```
 
-**Funções Críticas**:
+**FunÃ§Ãµes CrÃ­ticas**:
 ```javascript
 addFloor()                    // Adiciona piso ao array + renderiza
 deleteFloor(floorId)          // Remove piso (valida se tem zonas)
@@ -269,15 +269,15 @@ saveZone()                    // Salva zona (create ou update)
 deleteZone(floorId, zoneId)
 ```
 
-**Cálculo de Espessura Equivalente**:
+**CÃ¡lculo de Espessura Equivalente**:
 ```javascript
 function calculateEquivThickness(tipo, h) {
   const coefs = {
-    'Maciça': 1.0,
+    'MaciÃ§a': 1.0,
     'Fungiforme': 0.85,
     'Aligeirada': 0.60,
     'Vigada': 0.50,
-    'Pré-laje': 1.0
+    'PrÃ©-laje': 1.0
   };
   return h * (coefs[tipo] || 1.0);
 }
@@ -285,60 +285,60 @@ function calculateEquivThickness(tipo, h) {
 
 ---
 
-### Secção 3: Elementos Base
+### SecÃ§Ã£o 3: Elementos Base
 
 **IDs HTML** (10 campos):
 ```
 arq, mep, escav, geotec, hidro, prosp, carac, insp, ensaios, orig
 ```
 
-**Tipo**: Textarea (histórico de documentos)
+**Tipo**: Textarea (histÃ³rico de documentos)
 
 ---
 
-### Secção 4: Condicionantes
+### SecÃ§Ã£o 4: Condicionantes
 
-#### 4.1 Condições Arquitetónicas
+#### 4.1 CondiÃ§Ãµes ArquitetÃ³nicas
 ```
 cond_arq  // Textarea
 ```
 
-#### 4.2 Condicionantes Geotécnicas
+#### 4.2 Condicionantes GeotÃ©cnicas
 ```
-geo_form            // Formações geológicas
+geo_form            // FormaÃ§Ãµes geolÃ³gicas
 geo_horiz           // Horizontes
 geo_sub             // Profundidade substrato
 geo_nat             // Natureza dos solos
-geo_tipo_sismo      // 🔥 CRÍTICO - Tipo solo EC8 (sync com sismo_terreno)
-geo_sigma_adm       // Tensão admissível
+geo_tipo_sismo      // ðŸ”¥ CRÃTICO - Tipo solo EC8 (sync com sismo_terreno)
+geo_sigma_adm       // TensÃ£o admissÃ­vel
 ```
 
-**Tabela Dinâmica** (`geoHorizons`):
+**Tabela DinÃ¢mica** (`geoHorizons`):
 - Renderizada por `renderGeoTable()`
 - Adicionada por `addGeoRow()`
 - Campos: horizonte, nspt, gamma, c, phi, e, sigma, escav
 
-#### 4.3 Condições Hidrogeológicas
+#### 4.3 CondiÃ§Ãµes HidrogeolÃ³gicas
 ```
-hidro_nf            // Nível freático
-hidro_col           // Coluna de água
+hidro_nf            // NÃ­vel freÃ¡tico
+hidro_col           // Coluna de Ã¡gua
 hidro_xa            // Agressividade (XA)
-hidro_obs           // Observações
+hidro_obs           // ObservaÃ§Ãµes
 ```
 
 ---
 
-### Secção 5: Solução Estrutural
+### SecÃ§Ã£o 5: SoluÃ§Ã£o Estrutural
 
 ```
-sol_desc            // Textarea - Descrição da solução
+sol_desc            // Textarea - DescriÃ§Ã£o da soluÃ§Ã£o
 ```
 
 ---
 
-### Secção 6: Ações (Motor de Cálculo)
+### SecÃ§Ã£o 6: AÃ§Ãµes (Motor de CÃ¡lculo)
 
-#### 6.1 Seleção de Ações (Checkboxes)
+#### 6.1 SeleÃ§Ã£o de AÃ§Ãµes (Checkboxes)
 ```javascript
 const actionsEnabled = {
   act_graviticas: true,     // Sempre true (hardcoded)
@@ -352,7 +352,7 @@ const actionsEnabled = {
 };
 ```
 
-**Função de Toggle**:
+**FunÃ§Ã£o de Toggle**:
 ```javascript
 function toggleActionSection(name, enabled) {
   const section = document.querySelector(`[data-action="${name}"]`);
@@ -364,18 +364,18 @@ function toggleActionSection(name, enabled) {
 }
 ```
 
-#### 6.2 Parâmetros por Ação
+#### 6.2 ParÃ¢metros por AÃ§Ã£o
 
-**A) Ação Sísmica (EC8)**
+**A) AÃ§Ã£o SÃ­smica (EC8)**
 ```
-sismo_zona          // Zona sísmica (1.1 a 2.5)
-sismo_terreno       // 🔥 AUTO-SYNC com geo_tipo_sismo
-sismo_imp           // Coeficiente importância
+sismo_zona          // Zona sÃ­smica (1.1 a 2.5)
+sismo_terreno       // ðŸ”¥ AUTO-SYNC com geo_tipo_sismo
+sismo_imp           // Coeficiente importÃ¢ncia
 sismo_q             // Coeficiente comportamento
 sismo_amort         // Amortecimento (%)
 ```
 
-**Gráficos**:
+**GrÃ¡ficos**:
 ```javascript
 function generateSeismicCharts() {
   const zona = parseFloat(document.getElementById('sismo_zona').value);
@@ -389,7 +389,7 @@ function generateSeismicCharts() {
 }
 ```
 
-**B) Ação do Vento (EC1-1-4)**
+**B) AÃ§Ã£o do Vento (EC1-1-4)**
 ```
 vento_zona, vento_vb0, vento_cat, vento_z0, vento_co, vento_cpi
 ```
@@ -399,7 +399,7 @@ vento_zona, vento_vb0, vento_cat, vento_z0, vento_co, vento_cpi
 impulsos_h, impulsos_gamma, impulsos_phi, impulsos_c, impulsos_k0, impulsos_q
 ```
 
-**D) Retração/Fluência**
+**D) RetraÃ§Ã£o/FluÃªncia**
 ```
 retracao_hr, retracao_t0, retracao_cimento, retracao_cura
 ```
@@ -414,19 +414,19 @@ temp_contracao, temp_expansao, temp_alfa, temp_tref
 neve_zona, neve_alt, neve_sk, neve_ce, neve_ct, neve_mu
 ```
 
-**G) Água**
+**G) Ãgua**
 ```
 agua_nivel, agua_gamma, agua_sub, agua_dren
 ```
 
 ---
 
-### Secção 7: Zonamento (Motor Gráfico)
+### SecÃ§Ã£o 7: Zonamento (Motor GrÃ¡fico)
 
 **Arquitetura**:
-- **Selector de Piso**: Dropdown dinâmico
+- **Selector de Piso**: Dropdown dinÃ¢mico
 - **Viewer 2D**: Canvas com classe `FloorViewer`
-- **Modos de Visualização**: Estrutura, Sobrecargas, RCP, Combinações, Sonda
+- **Modos de VisualizaÃ§Ã£o**: Estrutura, Sobrecargas, RCP, CombinaÃ§Ãµes, Sonda
 
 **Classe FloorViewer** (linhas 3253-3791):
 
@@ -447,26 +447,26 @@ class FloorViewer {
     this.render();
   }
   
-  // Métodos principais
+  // MÃ©todos principais
   render()                           // Renderiza canvas completo
-  drawShapes()                       // Desenha polígonos das layers
-  calculatePointELU(point)           // 🔥 CRÍTICO - Calcula carga num ponto
-  displayZoneCombinations(info)      // Mostra combinações ELU/ELS
+  drawShapes()                       // Desenha polÃ­gonos das layers
+  calculatePointELU(point)           // ðŸ”¥ CRÃTICO - Calcula carga num ponto
+  displayZoneCombinations(info)      // Mostra combinaÃ§Ãµes ELU/ELS
   renderLoadTable(type)              // Tabela de sobrecargas/RCP
   
-  // Métodos auxiliares
+  // MÃ©todos auxiliares
   pointInPolygon(point, polygon)     // Ray-casting algorithm
-  polygonArea(points)                // Cálculo de área (m²)
+  polygonArea(points)                // CÃ¡lculo de Ã¡rea (mÂ²)
   getCategoryLoad(category)          // Tabela EC1 (qk por categoria)
 }
 ```
 
-**Cálculo de Cargas** (linha 3580-3640):
+**CÃ¡lculo de Cargas** (linha 3580-3640):
 ```javascript
 displayZoneCombinations(info) {
   const { worldPoint } = info;
   let G = 0, Q = 0, details = [];
-  let maxThicknessFound = 0;  // 🔥 v6 logic: Max-Thickness Rule
+  let maxThicknessFound = 0;  // ðŸ”¥ v6 logic: Max-Thickness Rule
   
   // Para cada layer
   for (let layerName in this.data.layers) {
@@ -479,7 +479,7 @@ displayZoneCombinations(info) {
           const h = parseFloat(zone.manualLoad) || 0;
           if (h > maxThicknessFound) {
             maxThicknessFound = h;
-            G = (h * 25) + 1.5;  // γ=25 kN/m³ + Revestimentos 1.5 kN/m²
+            G = (h * 25) + 1.5;  // Î³=25 kN/mÂ³ + Revestimentos 1.5 kN/mÂ²
           }
         }
         
@@ -496,13 +496,13 @@ displayZoneCombinations(info) {
     });
   }
   
-  // Combinações EC0
+  // CombinaÃ§Ãµes EC0
   const combinations = [
     { name: 'ELU Fund. 1', value: 1.35*G + 1.50*Q, formula: '1.35G + 1.50Q' },
-    { name: 'ELU Fund. 2', value: 1.35*G + 1.50*0.7*Q, formula: '1.35G + 1.50ψ₀Q' },
+    { name: 'ELU Fund. 2', value: 1.35*G + 1.50*0.7*Q, formula: '1.35G + 1.50Ïˆâ‚€Q' },
     { name: 'SLS Caract.', value: G + Q, formula: 'G + Q' },
-    { name: 'SLS Freq.', value: G + 0.5*Q, formula: 'G + ψ₁Q' },
-    { name: 'SLS Q-perm.', value: G + 0.3*Q, formula: 'G + ψ₂Q' }
+    { name: 'SLS Freq.', value: G + 0.5*Q, formula: 'G + Ïˆâ‚Q' },
+    { name: 'SLS Q-perm.', value: G + 0.3*Q, formula: 'G + Ïˆâ‚‚Q' }
   ];
   
   // Display na UI
@@ -514,11 +514,11 @@ displayZoneCombinations(info) {
 ```javascript
 getCategoryLoad(category) {
   const loads = {
-    'A': 2.0,   // Habitação
-    'B': 3.0,   // Escritórios
+    'A': 2.0,   // HabitaÃ§Ã£o
+    'B': 3.0,   // EscritÃ³rios
     'C': 4.0,   // Escolas/Restaurantes
-    'D': 5.0,   // Comércio
-    'E': 7.5,   // Armazém
+    'D': 5.0,   // ComÃ©rcio
+    'E': 7.5,   // ArmazÃ©m
     'F': 2.5,   // Garagem
     'H': 0.4    // Cobertura
   };
@@ -528,14 +528,14 @@ getCategoryLoad(category) {
 
 ---
 
-### Secção 8: Critérios e Relatórios
+### SecÃ§Ã£o 8: CritÃ©rios e RelatÃ³rios
 
 ```
-crit_reg            // Regulamentação (textarea)
-crit_dim            // Critérios dimensionamento (textarea)
+crit_reg            // RegulamentaÃ§Ã£o (textarea)
+crit_dim            // CritÃ©rios dimensionamento (textarea)
 ```
 
-**Exportação**:
+**ExportaÃ§Ã£o**:
 ```javascript
 function exportJSON() {
   const data = collectAllData();
@@ -568,24 +568,24 @@ function importJSON(event) {
 
 ---
 
-## 4. API INTERNA (Funções Públicas)
+## 4. API INTERNA (FunÃ§Ãµes PÃºblicas)
 
-### 4.1 Estado e Persistência
+### 4.1 Estado e PersistÃªncia
 
 #### `collectAllData()`
 **Assinatura**: `() => Object`  
-**Retorna**: JSON com todos os dados do formulário  
+**Retorna**: JSON com todos os dados do formulÃ¡rio  
 **Uso**: Chamada antes de exportar ou salvar
 
 ```javascript
 function collectAllData() {
   const data = {
-    // Secção 1: IDs fixos
+    // SecÃ§Ã£o 1: IDs fixos
     id_jsj: document.getElementById('id_jsj')?.value || '',
     nome_projeto: document.getElementById('nome_projeto')?.value || '',
     // ... (todos os 168 IDs catalogados)
     
-    // Secção 2: Estrutura dinâmica
+    // SecÃ§Ã£o 2: Estrutura dinÃ¢mica
     projectData: projectData
   };
   return data;
@@ -595,7 +595,7 @@ function collectAllData() {
 #### `loadAllData(data)`
 **Assinatura**: `(data: Object) => void`  
 **Efeito**: Repopula DOM e `projectData`  
-**Validações**: Nenhuma (assumes JSON válido)
+**ValidaÃ§Ãµes**: Nenhuma (assumes JSON vÃ¡lido)
 
 ```javascript
 function loadAllData(data) {
@@ -612,7 +612,7 @@ function loadAllData(data) {
     projectData = data.projectData;
   }
   
-  // 3. Re-renderiza UI dinâmica
+  // 3. Re-renderiza UI dinÃ¢mica
   renderFloors();
   renderGeoTable();
   updateKPIs();
@@ -647,7 +647,7 @@ function addFloor() {
 
 #### `deleteFloor(floorId)`
 **Assinatura**: `(floorId: number) => void`  
-**Validação**: Confirma se piso tem zonas
+**ValidaÃ§Ã£o**: Confirma se piso tem zonas
 
 ```javascript
 function deleteFloor(floorId) {
@@ -669,7 +669,7 @@ function deleteFloor(floorId) {
 
 #### `saveZone()`
 **Assinatura**: `() => void`  
-**Contexto**: Lê dados do modal `#zoneModal`  
+**Contexto**: LÃª dados do modal `#zoneModal`  
 **Efeito**: Cria ou atualiza zona no piso ativo
 
 ```javascript
@@ -702,7 +702,7 @@ function saveZone() {
 
 ---
 
-### 4.3 Motor Gráfico
+### 4.3 Motor GrÃ¡fico
 
 #### `initFloorViewer()`
 **Assinatura**: `() => void`  
@@ -760,11 +760,11 @@ function openZonesEditor(floorId) {
 
 ---
 
-## 5. INTEGRAÇÃO GRÁFICA (Contrato zonas.html ↔ Index)
+## 5. INTEGRAÃ‡ÃƒO GRÃFICA (Contrato zonas.html â†” Index)
 
 ### 5.1 Protocolo `postMessage`
 
-**Direção**: Index → zonas.html (init)
+**DireÃ§Ã£o**: Index â†’ zonas.html (init)
 ```javascript
 {
   type: 'initEditor',
@@ -780,13 +780,13 @@ function openZonesEditor(floorId) {
 }
 ```
 
-**Direção**: zonas.html → Index (retorno)
+**DireÃ§Ã£o**: zonas.html â†’ Index (retorno)
 ```javascript
 {
   type: 'zonesData',
   data: {
     blueprint: { scale: 1.0, imageData: "..." },
-    layers: { /* estrutura idêntica ao enviado */ }
+    layers: { /* estrutura idÃªntica ao enviado */ }
   }
 }
 ```
@@ -797,12 +797,12 @@ function openZonesEditor(floorId) {
 {
   "NomeDaLayer": [
     {
-      id: 123,                    // Timestamp único
-      design: "L1",               // Designação (ex: "L1", "Z-A")
+      id: 123,                    // Timestamp Ãºnico
+      design: "L1",               // DesignaÃ§Ã£o (ex: "L1", "Z-A")
       uso: "B",                   // Categoria EC1 (apenas em Sobrecargas)
       manualLoad: "0.25",         // String! (espessura ou carga)
-      shapes: [                   // Array de polígonos
-        [                         // Polígono = array de {x, y}
+      shapes: [                   // Array de polÃ­gonos
+        [                         // PolÃ­gono = array de {x, y}
           {x: 100, y: 200},
           {x: 300, y: 200},
           {x: 300, y: 400}
@@ -813,11 +813,11 @@ function openZonesEditor(floorId) {
 }
 ```
 
-### 5.3 Regras de Negócio
+### 5.3 Regras de NegÃ³cio
 
 #### Max-Thickness Rule (v6+)
 **Problema**: Lajes sobrepostas (ex: laje de piso + laje de varanda)  
-**Solução**: Apenas a laje MAIS ESPESSA conta para cálculo de G
+**SoluÃ§Ã£o**: Apenas a laje MAIS ESPESSA conta para cÃ¡lculo de G
 
 ```javascript
 // Em FloorViewer.displayZoneCombinations()
@@ -827,14 +827,14 @@ for (layerName in layers) {
     const h = parseFloat(zone.manualLoad);
     if (h > maxThicknessFound) {
       maxThicknessFound = h;
-      // Sobrescreve G (não acumula!)
+      // Sobrescreve G (nÃ£o acumula!)
     }
   }
 }
 ```
 
-#### Área em Metros Quadrados
-**Conversão**: Coordenadas estão em pixels, área em m²
+#### Ãrea em Metros Quadrados
+**ConversÃ£o**: Coordenadas estÃ£o em pixels, Ã¡rea em mÂ²
 
 ```javascript
 polygonArea(points) {
@@ -852,14 +852,14 @@ polygonArea(points) {
 
 ---
 
-## 6. PERSISTÊNCIA (Formato JSON)
+## 6. PERSISTÃŠNCIA (Formato JSON)
 
 ### 6.1 Schema de Export
 
 ```json
 {
   "id_jsj": "2024-001",
-  "nome_projeto": "Edifício Exemplo",
+  "nome_projeto": "EdifÃ­cio Exemplo",
   "cliente": "Cliente XYZ",
   "projectData": {
     "floors": [ /* ... */ ],
@@ -872,12 +872,12 @@ polygonArea(points) {
 }
 ```
 
-### 6.2 Compatibilidade entre Versões
+### 6.2 Compatibilidade entre VersÃµes
 
-**Retrocompatibilidade**: ❌ Não garantida  
-**Motivo**: IDs podem mudar entre versões
+**Retrocompatibilidade**: âŒ NÃ£o garantida  
+**Motivo**: IDs podem mudar entre versÃµes
 
-**Migração Manual** (se ID mudou):
+**MigraÃ§Ã£o Manual** (se ID mudou):
 ```javascript
 // Exemplo: ID "id_antigo" renomeado para "id_novo"
 function loadAllData(data) {
@@ -886,15 +886,15 @@ function loadAllData(data) {
     data.id_novo = data.id_antigo;
   }
   
-  // ... resto da função
+  // ... resto da funÃ§Ã£o
 }
 ```
 
 ---
 
-## 7. EVENT LISTENERS CRÍTICOS
+## 7. EVENT LISTENERS CRÃTICOS
 
-### 7.1 Sync Geotécnica ↔ Sismo
+### 7.1 Sync GeotÃ©cnica â†” Sismo
 
 ```javascript
 // Linhas 3805-3812
@@ -909,7 +909,7 @@ if (geoSismo) {
 }
 ```
 
-### 7.2 Navegação de Secções
+### 7.2 NavegaÃ§Ã£o de SecÃ§Ãµes
 
 ```javascript
 function showSection(sectionId) {
@@ -925,7 +925,7 @@ function showSection(sectionId) {
 }
 ```
 
-### 7.3 Inicialização (DOMContentLoaded)
+### 7.3 InicializaÃ§Ã£o (DOMContentLoaded)
 
 ```javascript
 window.addEventListener('DOMContentLoaded', () => {
@@ -936,13 +936,13 @@ window.addEventListener('DOMContentLoaded', () => {
   initFloorViewer();
   populateZonamentoFloorSelector();
   
-  // Sync geo → sismo (ver 7.1)
+  // Sync geo â†’ sismo (ver 7.1)
 });
 ```
 
 ---
 
-## 8. DEPENDÊNCIAS EXTERNAS
+## 8. DEPENDÃŠNCIAS EXTERNAS
 
 ### 8.1 CDN Libraries
 
@@ -950,35 +950,35 @@ window.addEventListener('DOMContentLoaded', () => {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 ```
 
-**Versão**: Latest (não fixada - risco de breaking changes)  
-**Uso**: Gráficos sísmicos (espectros EC8)
+**VersÃ£o**: Latest (nÃ£o fixada - risco de breaking changes)  
+**Uso**: GrÃ¡ficos sÃ­smicos (espectros EC8)
 
 ### 8.2 Browser APIs
 
-- **Canvas API**: Motor gráfico (FloorViewer)
+- **Canvas API**: Motor grÃ¡fico (FloorViewer)
 - **FileReader API**: Import de JSON
 - **Blob API**: Export de JSON
-- **postMessage API**: Comunicação com zonas.html
+- **postMessage API**: ComunicaÃ§Ã£o com zonas.html
 
 ---
 
-## 9. LIMITAÇÕES CONHECIDAS
+## 9. LIMITAÃ‡Ã•ES CONHECIDAS
 
 ### 9.1 Arquiteturais
 
-1. **Estado Volátil**: Dados perdidos ao fechar browser (sem auto-save)
-2. **Single-Project**: Apenas 1 projeto por sessão
-3. **No Undo/Redo**: Alterações irreversíveis (exceto re-import)
-4. **No Versionamento**: JSONs incompatíveis entre versões
+1. **Estado VolÃ¡til**: Dados perdidos ao fechar browser (sem auto-save)
+2. **Single-Project**: Apenas 1 projeto por sessÃ£o
+3. **No Undo/Redo**: AlteraÃ§Ãµes irreversÃ­veis (exceto re-import)
+4. **No Versionamento**: JSONs incompatÃ­veis entre versÃµes
 
 ### 9.2 Performance
 
-- **Máximo testado**: 20 pisos × 10 zonas = 200 zonas
-- **Bottleneck**: Rendering de canvas com >1000 polígonos
+- **MÃ¡ximo testado**: 20 pisos Ã— 10 zonas = 200 zonas
+- **Bottleneck**: Rendering de canvas com >1000 polÃ­gonos
 
-### 9.3 Validação
+### 9.3 ValidaÃ§Ã£o
 
-- **Nenhuma validação** de tipos em runtime
+- **Nenhuma validaÃ§Ã£o** de tipos em runtime
 - **Assumes**: User insere dados corretos
 - **Fallback**: `parseFloat() || 0` (valor 0 como default)
 
@@ -986,23 +986,28 @@ window.addEventListener('DOMContentLoaded', () => {
 
 ## 10. ROADMAP (Próximas Versões)
 
-Ver `@AGENTE_ROADMAP.md` para detalhes.
+Ver `@AGENTE_ROADMAP.md` para detalhes completos e cronograma.
 
-**Fase 1** (v10): Refactor + Modularização  
-**Fase 2** (v11): Multi-Projeto (Lobby)  
-**Fase 3** (v12): Backend Firebase  
-**Fase 4** (v13): Automação (Cloud Functions)  
-**Fase 5** (v14): Framework Reativo (Vue/React)
+**Fase 1** (v10.0): ✅ COMPLETO - Refactor Arquitetural (UUID Maps, appState)  
+**Fase 2** (v10.2): ✅ COMPLETO - Multi-Projeto (Lobby, localStorage)  
+**Fase 1.5** (v10.4): 🚧 EM PLANEAMENTO - Protótipo Color-Trace (OpenCV isolado)  
+**Fase 3** (v11.0): Firebase Básico (auth, Firestore sync)  
+**Fase 3.5** (v11.1): Schema Blocos (nova hierarquia Projeto→Blocos→Pisos)  
+**Fase 4** (v12.0): Speckle Live Sync (integração BIM)  
+**Fase 5** (v13.0): Automação (Cloud Functions, reports DOCX)  
+**Fase 6** (v14.0): React Migration (componentização, escalabilidade)
+
+**Cronograma Total**: ~3 meses (tempo parcial)
 
 ---
 
-## APÊNDICES
+## APÃŠNDICES
 
-### A. Índice de IDs HTML
+### A. Ãndice de IDs HTML
 
 Ver `@AGENTE_RISCOS_v2.md` (168 IDs catalogados)
 
-### B. Índice de Funções JavaScript
+### B. Ãndice de FunÃ§Ãµes JavaScript
 
 ```
 // Estado
@@ -1027,7 +1032,7 @@ deleteZone(floorId, zoneId)
 closeZoneModal()
 renderZoneForm(zone)
 
-// Cálculos
+// CÃ¡lculos
 calculateEquivThickness(tipo, h)
 updateGeneralStats()
 
@@ -1035,14 +1040,14 @@ updateGeneralStats()
 addGeoRow()
 renderGeoTable()
 
-// Ações
+// AÃ§Ãµes
 toggleActionSection(name, enabled)
 updateActionsFloorTabs()
 selectActionsFloor(floorId, btn)
 generateSeismicCharts()
 generateSeismicChart(canvasId, zona, terreno, q, amort, type)
 
-// Motor Gráfico
+// Motor GrÃ¡fico
 initFloorViewer()
 populateZonamentoFloorSelector()
 openZonesEditor(floorId)
@@ -1060,19 +1065,19 @@ toggleTipoObraCustom(value)
 closeModal(id)
 ```
 
-### C. Changelog v9.0 → v9.1
+### C. Changelog v9.0 â†’ v9.1
 
-**Remoções**:
-- Função `updateTosco()` (código morto)
-- Método `FloorViewer.getZoneCentroid()` (não utilizado)
+**RemoÃ§Ãµes**:
+- FunÃ§Ã£o `updateTosco()` (cÃ³digo morto)
+- MÃ©todo `FloorViewer.getZoneCentroid()` (nÃ£o utilizado)
 
-**Correções**:
+**CorreÃ§Ãµes**:
 - Tag `<title>` ainda diz v6.0 (deve ser v9.1)
 
-**Adições**:
+**AdiÃ§Ãµes**:
 - Nenhuma (apenas limpeza)
 
 ---
 
-**Fim da Especificação Técnica v9.1**  
-**Próximo passo**: Ver `GUIDELINES.md` para padrões de desenvolvimento
+**Fim da EspecificaÃ§Ã£o TÃ©cnica v9.1**  
+**PrÃ³ximo passo**: Ver `GUIDELINES.md` para padrÃµes de desenvolvimento

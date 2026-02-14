@@ -20,9 +20,45 @@ Este documento serve de "Memória de Longo Prazo" do projeto.
 
 ## 📅 Histórico de Versões
 
-### [v10.0 → v10.1] - 13/02/2026
+### [v10.2 → v10.4] - 14/02/2026
+**Autor**: David + Claude Estratégico
+**Resumo**: Fase 1.5 - Protótipo Color-Trace isolado (pré-Firebase)
+
+**Decisão Estratégica**:
+- Criar ficheiro standalone `color-trace-prototype.html` (não integra SSOT)
+- Validar conceito OpenCV.js antes de schema Blocos v11.1
+- Protótipo será adaptado/reescrito em v11.5 (Editor Integrado)
+
+**Funcionalidades Protótipo**:
+- Color-trace PNG → Auto-detecção elementos (lajes/vigas/pilares)
+- OpenCV.js findContours
+- Regras: Cor → Tipo elemento
+- DXF parser básico (teste)
+- PDF calibração escala (teste)
+
+**Arquitetura**:
+- Ficheiro isolado (sem dependências SSOT)
+- Não persiste dados (demo técnico)
+- Canvas imperativo (Vanilla JS)
+
+**Motivação**:
+- Schema v10 vai mudar drasticamente em v11.1 (Blocos)
+- Evita refactor duplo (integrar agora + refactor depois)
+- Permite aprendizagem OpenCV sem risco
+
+**Compatibilidade**:
+- ✅ Não afeta SSOT v10.2 (ficheiros separados)
+- ✅ Código reutilizável em v11.5
+
+**Próximos Passos**: Firebase v11.0 (mantém schema v10)
+
+**Status**: 🚧 Planeado (1 semana dev)
+
+---
+
+### [v10.0 → v10.2] - 13/02/2026
 **Autor**: David + Claude Estratégico + Claude Code
-**Resumo**: Fase 2 - UI Lobby multi-projeto com arquitectura separada
+**Resumo**: Fase 2 - Arquitetura Multi-Projeto COMPLETO
 
 **Alterações Arquitecturais**:
 - Novo ficheiro `lobby.html` (gestão projetos)
@@ -55,7 +91,7 @@ Este documento serve de "Memória de Longo Prazo" do projeto.
 
 **Breaking Changes**:
 - `index.html` sem URL param redirige para lobby.html
-- JSONs v10.1 incompatíveis com Index_v9.html (estrutura diferente)
+- JSONs v10.2 incompatíveis com Index_v9.html (estrutura diferente)
 
 **Compatibilidade**:
 - ✅ Secções 1-8 inalteradas (funcionam igual)
@@ -70,7 +106,7 @@ Este documento serve de "Memória de Longo Prazo" do projeto.
 **Ficheiros Modificados**:
 - `Index_v10.html` (+ URL param logic, + botão lobby, + auto-save)
 
-**Próximos Passos**: Fase 3 (Backend Firebase)
+**Próximos Passos**: Fase 1.5 (Protótipo Color-Trace v10.4)
 
 **Status**: ✅ Production Ready
 
@@ -101,7 +137,7 @@ Este documento serve de "Memória de Longo Prazo" do projeto.
 - ✅ zonas.html não afectado
 
 **Status**: ✅ Production Ready
-**Próximos Passos**: Fase 2 (UI Lobby) agora segura para implementar
+**Próximos Passos**: Fase 2 (UI Lobby v10.2) agora segura para implementar
 
 
 [v9.1] - Documentação Técnica Completa - 13/02/2026
@@ -150,7 +186,11 @@ Resumo: Refinamento da Secção 1 (Identificação) e estrutura visual.
 Resumo: MVP inicial do formulário.
 
 🔄 Guias de Migração Futura
-Para v10 (Planeado)
-Verificar @AGENTE_ROADMAP.md para instruções sobre a criação da "Secção 0".
+Para v11.1 (Planeado - Schema Blocos)
+**BREAKING CHANGE CRÍTICO**: 
+- Estrutura `zones` será deprecada
+- Nova hierarquia: Projeto → Blocos → Tipologias → Pisos
+- Geotecnia e Ações passam a ser por Bloco (não global)
+- Migração automática v11.0→v11.1 requerida
 
-Ao migrar para Firebase, criar script para converter os JSONs atuais em documentos NoSQL.
+Ao migrar para Firebase (v11.0), criar script para converter localStorage em documentos Firestore.
