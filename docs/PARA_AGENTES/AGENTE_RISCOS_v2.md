@@ -298,6 +298,34 @@ closeModal(id)                // Fecha modal genérico
 showStatus(msg, type)         // Notificação UI (assumido)
 ```
 
+### 3.7 Funções Críticas v11.0 (Firebase Backend)
+```javascript
+// firebase-data.js - CRUD Layer
+createProjectInFirestore()    // 🔥 CRÍTICO: Cria projeto em Firestore
+loadAllProjectsFromFirestore() // 🔥 CRÍTICO: Load projetos (lobby)
+loadSingleProject()           // 🔥 CRÍTICO: Load projeto individual (editor)
+saveProjectToFirestore()      // 🔥 CRÍTICO: Salva projeto async
+deleteProjectFromFirestore()  // 🔥 CRÍTICO: Delete projeto
+subscribeToProject()          // 🔥 CRÍTICO: Real-time listener (memory leak se não limpar)
+
+// Index_v11.0.html
+initEditor(user)              // 🔥 CRÍTICO: Auth guard + init. Sem isto app não abre
+saveCurrentProject()          // 🔥 CRÍTICO: Agora async. Data integrity depende disto
+backToLobby()                 // 🔥 CRÍTICO: Agora async. Save before redirect
+
+// lobby.html
+loadProjects()                // 🔥 CRÍTICO: Load projetos de Firestore
+createProject()               // 🔥 CRÍTICO: Cria projeto + redireciona
+deleteProject(id)             // 🔥 CRÍTICO: Delete com confirmação
+```
+
+**⚠️ REGRAS CRÍTICAS v11.0:**
+- `saveCurrentProject()` é **async** agora - sempre usar `await`
+- `subscribeToProject()` retorna unsubscribe - **SEMPRE** limpar em beforeunload
+- `initEditor(user)` depende de auth - não chamar se user null
+- Real-time listener só re-renderiza se `!document.hasFocus()` (evita overwrite)
+- Auto-save 30s interval - não reduzir (custo Firestore)
+
 ---
 
 ## 4. EVENT LISTENERS CRÍTICOS

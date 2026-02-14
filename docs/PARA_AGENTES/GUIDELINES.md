@@ -650,7 +650,57 @@ console.log(floor.name, floor.area, floor.cota);
 
 ---
 
-## 8. ANTI-PATTERNS (Evitar)
+## 8. FIREBASE PATTERNS (v11.0+)
+
+### 8.1 Async/Await Obrigatório
+```javascript
+// ✅ CORRETO
+async function saveProject() {
+  await saveProjectToFirestore(data);
+  console.log('Saved');
+}
+
+// ❌ ERRADO
+function saveProject() {
+  saveProjectToFirestore(data); // Não aguarda
+  console.log('Saved'); // Executa antes do save
+}
+```
+
+### 8.2 Maps Serialization
+```javascript
+// Runtime (Maps)
+const floors = new Map([[id, {id, name, zones: new Map()}]]);
+
+// Firestore (Arrays)
+const serialized = Array.from(floors.values()).map(f => ({
+  ...f,
+  zones: Array.from(f.zones.values())
+}));
+```
+
+### 8.3 Real-time Listener Cleanup
+```javascript
+// Sempre guardar unsubscribe
+let unsubscribe = subscribeToProject(id, callback);
+
+// Limpar ao sair
+window.addEventListener('beforeunload', () => {
+  if (unsubscribe) unsubscribe();
+});
+```
+
+### 8.4 Focus-Aware Updates
+```javascript
+// Não re-renderizar se user está a editar
+if (!document.hasFocus()) {
+  loadAllData(updatedData);
+}
+```
+
+---
+
+## 9. ANTI-PATTERNS (Evitar)
 
 ### 8.1 Global Pollution
 
@@ -742,7 +792,7 @@ docs/atualiza-especificacao-v10
 
 ---
 
-### 9.2 Commit Messages
+### 10.2 Commit Messages
 
 **Formato**: `tipo(scope): mensagem`
 
@@ -756,7 +806,7 @@ test(io): adiciona teste import JSON v9.1
 
 ---
 
-### 9.3 Pull Request Template
+### 10.3 Pull Request Template
 
 ```markdown
 ## Objectivo

@@ -1,6 +1,6 @@
-# SSOT JSJ Template - EspecificaÃ§Ã£o TÃ©cnica v9.1
+﻿# SSOT JSJ Template - EspecificaÃ§Ã£o TÃ©cnica v11.0
 
-**VersÃ£o:** 9.1  
+**VersÃ£o:** 11.0  
 **Data:** Fevereiro 2026  
 **Tipo:** AplicaÃ§Ã£o Web Standalone (HTML + Vanilla JS)  
 **Objetivo:** Sistema unificado de gestÃ£o de projetos de engenharia estrutural
@@ -758,11 +758,36 @@ function openZonesEditor(floorId) {
 }
 ```
 
+
+## 5. FIREBASE BACKEND (v11.0+)
+
+### 5.1 Arquitetura
+- **Auth**: Firebase Authentication (whitelist @jsj.pt)
+- **Database**: Cloud Firestore (projects collection)
+- **Real-time**: onSnapshot listeners
+- **Files**: firebase-config.js, firebase-data.js, login.html
+
+### 5.2 Data Flow
+```
+User → Firebase Auth → Firestore CRUD → Real-time Sync
+                           ↓
+                Auto-save (30s interval)
+```
+
+### 5.3 Security
+- Rules: Owner-only access (isOwner() + isJSJEmail())
+- Auth required for all operations
+- Email whitelist enforced at login
+
+### 5.4 Serialization
+- **Runtime**: Maps (floors, zones, geoHorizons)
+- **Firestore**: Arrays (serialized via firebase-data.js)
+- **Round-trip**: Validated in Task 5
+
 ---
+## 6. INTEGRAÃ‡ÃƒO GRÃFICA (Contrato zonas.html â†” Index)
 
-## 5. INTEGRAÃ‡ÃƒO GRÃFICA (Contrato zonas.html â†” Index)
-
-### 5.1 Protocolo `postMessage`
+### 6.1 Protocolo `postMessage`
 
 **DireÃ§Ã£o**: Index â†’ zonas.html (init)
 ```javascript
@@ -791,7 +816,7 @@ function openZonesEditor(floorId) {
 }
 ```
 
-### 5.2 Estrutura de Layer (Schema)
+### 6.2 Estrutura de Layer (Schema)
 
 ```javascript
 {
@@ -813,7 +838,7 @@ function openZonesEditor(floorId) {
 }
 ```
 
-### 5.3 Regras de NegÃ³cio
+### 6.3 Regras de NegÃ³cio
 
 #### Max-Thickness Rule (v6+)
 **Problema**: Lajes sobrepostas (ex: laje de piso + laje de varanda)  
@@ -852,9 +877,9 @@ polygonArea(points) {
 
 ---
 
-## 6. PERSISTÃŠNCIA (Formato JSON)
+## 7. PERSISTÃŠNCIA (Formato JSON)
 
-### 6.1 Schema de Export
+### 7.1 Schema de Export
 
 ```json
 {
@@ -872,7 +897,7 @@ polygonArea(points) {
 }
 ```
 
-### 6.2 Compatibilidade entre VersÃµes
+### 7.2 Compatibilidade entre VersÃµes
 
 **Retrocompatibilidade**: âŒ NÃ£o garantida  
 **Motivo**: IDs podem mudar entre versÃµes
@@ -892,9 +917,9 @@ function loadAllData(data) {
 
 ---
 
-## 7. EVENT LISTENERS CRÃTICOS
+## 8. EVENT LISTENERS CRÃTICOS
 
-### 7.1 Sync GeotÃ©cnica â†” Sismo
+### 8.1 Sync GeotÃ©cnica â†” Sismo
 
 ```javascript
 // Linhas 3805-3812
@@ -909,7 +934,7 @@ if (geoSismo) {
 }
 ```
 
-### 7.2 NavegaÃ§Ã£o de SecÃ§Ãµes
+### 8.2 NavegaÃ§Ã£o de SecÃ§Ãµes
 
 ```javascript
 function showSection(sectionId) {
@@ -925,7 +950,7 @@ function showSection(sectionId) {
 }
 ```
 
-### 7.3 InicializaÃ§Ã£o (DOMContentLoaded)
+### 8.3 InicializaÃ§Ã£o (DOMContentLoaded)
 
 ```javascript
 window.addEventListener('DOMContentLoaded', () => {
@@ -942,9 +967,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
 ---
 
-## 8. DEPENDÃŠNCIAS EXTERNAS
+## 9. DEPENDÃŠNCIAS EXTERNAS
 
-### 8.1 CDN Libraries
+### 9.1 CDN Libraries
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -953,7 +978,7 @@ window.addEventListener('DOMContentLoaded', () => {
 **VersÃ£o**: Latest (nÃ£o fixada - risco de breaking changes)  
 **Uso**: GrÃ¡ficos sÃ­smicos (espectros EC8)
 
-### 8.2 Browser APIs
+### 9.2 Browser APIs
 
 - **Canvas API**: Motor grÃ¡fico (FloorViewer)
 - **FileReader API**: Import de JSON
@@ -962,21 +987,21 @@ window.addEventListener('DOMContentLoaded', () => {
 
 ---
 
-## 9. LIMITAÃ‡Ã•ES CONHECIDAS
+## 10. LIMITAÃ‡Ã•ES CONHECIDAS
 
-### 9.1 Arquiteturais
+### 10.1 Arquiteturais
 
 1. **Estado VolÃ¡til**: Dados perdidos ao fechar browser (sem auto-save)
 2. **Single-Project**: Apenas 1 projeto por sessÃ£o
 3. **No Undo/Redo**: AlteraÃ§Ãµes irreversÃ­veis (exceto re-import)
 4. **No Versionamento**: JSONs incompatÃ­veis entre versÃµes
 
-### 9.2 Performance
+### 10.2 Performance
 
 - **MÃ¡ximo testado**: 20 pisos Ã— 10 zonas = 200 zonas
 - **Bottleneck**: Rendering de canvas com >1000 polÃ­gonos
 
-### 9.3 ValidaÃ§Ã£o
+### 10.3 ValidaÃ§Ã£o
 
 - **Nenhuma validaÃ§Ã£o** de tipos em runtime
 - **Assumes**: User insere dados corretos
@@ -984,7 +1009,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 ---
 
-## 10. ROADMAP (Próximas Versões)
+## 11. ROADMAP (Próximas Versões)
 
 Ver `@AGENTE_ROADMAP.md` para detalhes completos e cronograma.
 

@@ -57,81 +57,36 @@ Este documento serve de "Memória de Longo Prazo" do projeto.
 ---
 
 ### [v10.2 → v11.0] - 14/02/2026
-**Autor**: David + GitHub Copilot (Claude Sonnet 4.5)
-**Resumo**: Fase 3 - Firebase Backend Implementation (Auth + Firestore + Real-time Sync)
-
-**Decisão Estratégica**:
-- Migração completa localStorage → Firebase Firestore
-- Autenticação obrigatória (@jsj.pt whitelist)
-- Real-time collaboration entre utilizadores
-- Mantém schema v10 (Blocos adiado para v11.1+)
+**Autor**: David + Claude Strategic + IDE Agent
+**Resumo**: Firebase Backend Integration COMPLETO
 
 **Alterações Arquiteturais**:
-- Novo `firebase-config.js` (Firebase initialization + whitelist)
-- Novo `login.html` (UI autenticação dark theme)
-- Novo `firebase-data.js` (CRUD abstraction: 6 funções core)
-- `lobby.html` → Auth guard + Firestore integration
-- `Index_v10.2.html` → `Index_v11.0.html` (Firebase Auth + Real-time + Auto-save)
+- Firebase Auth (login/logout/whitelist @jsj.pt)
+- Firestore CRUD (substitui localStorage)
+- Real-time sync (subscribeToProject)
+- Auto-save 30s
+- Security Rules (owner-only access)
 
-**Funcionalidades Novas**:
-- **Authentication**: Login/logout com Firebase Auth
-- **Authorization**: Firestore Security Rules (@jsj.pt domain + owner validation)
-- **CRUD Firestore**: createProject, loadProjects, saveProject, deleteProject, subscribeToProject
-- **Map Serialization**: Automática (Maps ↔ Arrays) em firebase-data.js
-- **Real-time Sync**: onSnapshot listener com re-render inteligente (só quando window não focused)
-- **Auto-save**: Intervalo 30s + save before navigation
-- **Audit Metadata**: owner, createdAt, updatedAt em todos os documentos
-
-**Persistência**:
-- Firebase Firestore collection: `projects`
-- Estrutura: `{ id, owner, createdAt, updatedAt, floors: [], zones: [], ... }`
-- Security Rules: 3 layers (auth, email domain, ownership)
-
-**Migration Path**:
-- `migrate-to-firebase.html` (temporário - não incluído em v11.0 final)
-- v10.2 localStorage → v11.0 Firestore (opcional, manual)
-- v11.0 incompatível com v10.2 (storages separados)
-
-**Breaking Changes**:
-- **REQUER LOGIN**: Todas as páginas redirecionam para login.html se não autenticado
-- **@jsj.pt only**: Whitelist enforced em firebase-config.js + Firestore Rules
-- **Namespace change**: `Index_v10.2.html` → `Index_v11.0.html`
-- **No backwards compatibility**: Projetos v10.2 não aparecem em v11.0 (diferentes backends)
-
-**Bugs Conhecidos (não-bloqueantes)**:
-- toggleActionSection: elemento não encontrado (cosmético, adicionar a backlog)
-- localStorage logs legacy em shared.js (cosmético, limpar em v12+)
-
-**Ficheiros Novos**:
-- `firebase-config.js` (~30 linhas)
-- `login.html` (~280 linhas)
-- `firebase-data.js` (~280 linhas)
-- `REPORT_TASK2.md` → `REPORT_TASK9.md` (documentação tasks)
+**Ficheiros Criados**:
+- firebase-config.js (config + whitelist)
+- firebase-data.js (CRUD layer)
+- login.html (auth UI)
 
 **Ficheiros Modificados**:
-- `lobby.html` (+ Firebase Auth guard, + Firestore calls)
-- `Index_v10.2.html` → `Index_v11.0.html` (+ Firebase integration, + real-time listener, + auto-save)
+- Index_v10.2.html → Index_v11.0.html (auth + real-time)
+- lobby.html (auth guard + Firestore integration)
 
-**Ficheiros Eliminados**:
-- `migrate-to-firebase.html` (utilitário temporário, não usado)
+**Breaking Changes**:
+- Requer Firebase Auth obrigatório
+- localStorage descontinuado para projetos
+- JSONs v10.2 incompatíveis (dados em Firestore agora)
 
-**Git Workflow**:
-- Branch: `V3-Firebase-Backend-V11`
-- 10 commits sequenciais (Task 2 → Task 10)
-- Final commit: `1021a46` (Task 10 complete)
+**Bugs Conhecidos** (não-bloqueantes):
+- toggleActionSection timing (cosmético)
+- localStorage logs legacy em shared.js
 
-**Compatibilidade**:
-- ✅ Secções 1-8 inalteradas (funcionam igual)
-- ✅ zonas.html compatível (postMessage mantido)
-- ✅ shared.js reutilizado (UUID + utilities)
-- ❌ v10.2 projetos NÃO carregam em v11.0 (backends diferentes)
-
-**Próximos Passos**: 
-- v11.1: Schema Blocos (BREAKING - requer nova migração)
-- v12.0: Loading spinners + UX improvements
-- Backlog: Offline mode, User guide engenheiros JSJ
-
-**Status**: ✅ Production Ready (Firebase v10.7.1, Spark plan)
+**Status**: ✅ Production Ready
+**Próximos Passos**: v11.1 Schema Blocos (ver AGENTE_ROADMAP.md)
 
 ---
 
