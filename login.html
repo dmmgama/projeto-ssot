@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🏛️ SSOT JSJ - Login</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #161a22;
+      --ink: #e8ecf1;
+      --muted: #9aa5b1;
+      --accent: #3aa3ff;
+      --bad: #e74c3c;
+      --line: #242936;
+      --rad: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, system-ui, sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--rad);
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      color: var(--accent);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    input {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      padding: 12px 16px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(58, 163, 255, 0.1);
+    }
+
+    input::placeholder {
+      color: var(--muted);
+      opacity: 0.6;
+    }
+
+    button[type="submit"] {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+
+    button[type="submit"]:hover:not(:disabled) {
+      background: #5bb3ff;
+      transform: translateY(-1px);
+    }
+
+    button[type="submit"]:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .error {
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid var(--bad);
+      color: var(--bad);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 16px;
+      display: none;
+      animation: slideDown 0.3s ease;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      padding: 20px;
+      font-size: 14px;
+    }
+
+    .loading::after {
+      content: '...';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60% { content: '...'; }
+      80%, 100% { content: ''; }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1>🏛️ SSOT JSJ Template</h1>
+    <p class="subtitle">Sistema de gestão de projetos estruturais</p>
+    
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          placeholder="utilizador@jsj.pt" 
+          required
+          autocomplete="email"
+        >
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          type="password" 
+          id="password" 
+          placeholder="••••••••" 
+          required
+          autocomplete="current-password"
+        >
+      </div>
+      
+      <button type="submit" id="submitBtn">Entrar</button>
+    </form>
+    
+    <div id="error" class="error"></div>
+  </div>
+
+  <!-- Firebase SDKs v10.7.1 -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorDiv = document.getElementById('error');
+
+    // Check if already logged in
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        // User is signed in, redirect to lobby
+        window.location.href = 'lobby.html';
+      }
+    });
+
+    // Error messages mapping (Portuguese)
+    const errorMessages = {
+      'auth/user-not-found': 'Utilizador não encontrado',
+      'auth/wrong-password': 'Password incorrecta',
+      'auth/invalid-email': 'Email inválido',
+      'auth/invalid-credential': 'Credenciais inválidas',
+      'auth/too-many-requests': 'Muitas tentativas. Aguarda 5 minutos.',
+      'auth/network-request-failed': 'Erro de rede. Verifica a tua ligação.',
+      'auth/user-disabled': 'Utilizador desativado',
+      'default': 'Erro ao autenticar. Tenta novamente.'
+    };
+
+    // Show error message
+    function showError(message) {
+      errorDiv.textContent = message;
+      errorDiv.classList.add('show');
+      setTimeout(() => {
+        errorDiv.classList.remove('show');
+      }, 5000);
+    }
+
+    // Login form handler
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      // Clear previous errors
+      errorDiv.classList.remove('show');
+
+      // Validate whitelist
+      if (!isJSJEmail(email)) {
+        showError('❌ Acesso restrito a emails @jsj.pt');
+        return;
+      }
+
+      // Disable form during login
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'A autenticar...';
+
+      try {
+        // Authenticate with Firebase
+        await auth.signInWithEmailAndPassword(email, password);
+        // Redirect handled by onAuthStateChanged
+      } catch (error) {
+        console.error('Login error:', error);
+        
+        // Get user-friendly error message
+        const errorMessage = errorMessages[error.code] || errorMessages['default'];
+        showError(`❌ ${errorMessage}`);
+        
+        // Re-enable form
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Entrar';
+      }
+    });
+  </script>
+</body>
+</html>
