@@ -18,14 +18,17 @@ async function createProjectInFirestore(projectData, userId) {
   try {
     const now = new Date().toISOString();
     
-    // Serialize Maps to Arrays for Firestore storage
+    // Destructure to remove formData noise (project, metadata, legacyInputs)
+    const { floors, geoHorizons, project, metadata, legacyInputs, ...cleanData } = projectData;
+    
+    // Serialize Maps/Objects to Arrays for Firestore storage
     const serializedData = {
-      ...projectData,
+      ...cleanData,
       owner: userId,
       createdAt: now,
       updatedAt: now,
-      floors: serializeFloorsMap(projectData.floors),
-      geoHorizons: serializeGeoHorizonsMap(projectData.geoHorizons)
+      floors: serializeFloorsMap(floors),
+      geoHorizons: serializeGeoHorizonsMap(geoHorizons)
     };
     
     // Save to Firestore
@@ -101,12 +104,16 @@ async function saveProjectToFirestore(projectData) {
   try {
     const now = new Date().toISOString();
     
-    // Serialize Maps to Arrays
+    // Destructure to remove formData noise (project, metadata, legacyInputs)
+    // These come from collectAllData() spread and contain unserialized nested data
+    const { floors, geoHorizons, project, metadata, legacyInputs, ...cleanData } = projectData;
+    
+    // Serialize Maps/Objects to Arrays
     const serializedData = {
-      ...projectData,
+      ...cleanData,
       updatedAt: now,
-      floors: serializeFloorsMap(projectData.floors),
-      geoHorizons: serializeGeoHorizonsMap(projectData.geoHorizons)
+      floors: serializeFloorsMap(floors),
+      geoHorizons: serializeGeoHorizonsMap(geoHorizons)
     };
     
     // Update in Firestore
@@ -171,67 +178,98 @@ function subscribeToProject(projectId, callback) {
 // ==================== SERIALIZATION HELPERS ====================
 
 /**
- * Serializes floors Map to Array for Firestore
- * Handles nested zones Map within each floor
- * @param {Map} floorsMap - Map of floors
- * @returns {Array} - Array of floor objects
+ * Deep sanitizer: recursively walks an object and JSON.stringify's any
+ * nested arrays (arrays that contain arrays) so Firestore won't reject them.
+ * @param {*} value - Any value to sanitize
+ * @returns {*} - Sanitized value safe for Firestore
  */
-function serializeFloorsMap(floorsMap) {
-  if (!floorsMap || !(floorsMap instanceof Map)) {
-    return [];
+function sanitizeNestedArrays(value) {
+  if (value === null || value === undefined) return value;
+  if (typeof value !== 'object') return value;
+  
+  if (Array.isArray(value)) {
+    // If any element is itself an array → stringify the whole thing
+    const hasNestedArray = value.some(item => Array.isArray(item));
+    if (hasNestedArray) {
+      return JSON.stringify(value);
+    }
+    // Otherwise sanitize each element
+    return value.map(item => sanitizeNestedArrays(item));
   }
   
-  const floorsArray = Array.from(floorsMap.values()).map(floor => {
-    const zonesArray = floor.zones instanceof Map 
-      ? Array.from(floor.zones.values())
-      : [];
-    
-    // FIX: Serialize actionsData.layers (stringify shapes to avoid nested arrays)
-    let serializedActionsData = floor.actionsData;
-    if (floor.actionsData?.layers) {
-      serializedActionsData = {
-        blueprint: floor.actionsData.blueprint,
-        layers: {}
-      };
-      
-      // Process each layer
-      for (const [layerName, zones] of Object.entries(floor.actionsData.layers)) {
-        if (Array.isArray(zones)) {
-          serializedActionsData.layers[layerName] = zones.map(zone => {
-            if (!zone) return zone;
-            
-            return {
-              ...zone,
-              shapes: Array.isArray(zone.shapes) ? JSON.stringify(zone.shapes) : zone.shapes
-            };
-          });
-        } else {
-          serializedActionsData.layers[layerName] = zones;
-        }
-      }
-    }
-    
-    return {
-      ...floor,
-      zones: zonesArray,
-      actionsData: serializedActionsData
-    };
-  });
-  
-  return floorsArray;
+  // Plain object: sanitize each property
+  const result = {};
+  for (const [key, val] of Object.entries(value)) {
+    result[key] = sanitizeNestedArrays(val);
+  }
+  return result;
 }
 
 /**
- * Serializes geoHorizons Map to Array for Firestore
- * @param {Map} geoHorizonsMap - Map of geo horizons
- * @returns {Array} - Array of geo horizon objects
+ * Serializes floors (Map OR Object) to Array for Firestore.
+ * Handles nested zones (Map or Object), and stringifies nested arrays
+ * inside actionsData.layers[].shapes.
+ * @param {Map|Object} floorsInput - Map or Object of floors
+ * @returns {Array} - Array of floor objects safe for Firestore
  */
-function serializeGeoHorizonsMap(geoHorizonsMap) {
-  if (!geoHorizonsMap || !(geoHorizonsMap instanceof Map)) {
+function serializeFloorsMap(floorsInput) {
+  // Accept Map or Object
+  let floorsArray;
+  if (floorsInput instanceof Map) {
+    floorsArray = Array.from(floorsInput.values());
+  } else if (floorsInput && typeof floorsInput === 'object' && !Array.isArray(floorsInput)) {
+    floorsArray = Object.values(floorsInput);
+  } else {
+    console.warn('[firebase-data] serializeFloorsMap: unexpected input type', typeof floorsInput);
     return [];
   }
   
-  return Array.from(geoHorizonsMap.values());
+  return floorsArray.map(floor => {
+    if (!floor) return floor;
+    
+    // Handle zones — could be Map, Object, or Array
+    let zonesArray;
+    if (floor.zones instanceof Map) {
+      zonesArray = Array.from(floor.zones.values());
+    } else if (floor.zones && typeof floor.zones === 'object' && !Array.isArray(floor.zones)) {
+      zonesArray = Object.values(floor.zones);
+    } else if (Array.isArray(floor.zones)) {
+      zonesArray = floor.zones;
+    } else {
+      zonesArray = [];
+    }
+    
+    // Serialize actionsData — sanitize all nested arrays recursively
+    let serializedActionsData = floor.actionsData
+      ? sanitizeNestedArrays(floor.actionsData)
+      : undefined;
+    
+    const result = {
+      ...floor,
+      zones: zonesArray,
+    };
+    
+    // Only include actionsData if it exists
+    if (serializedActionsData !== undefined) {
+      result.actionsData = serializedActionsData;
+    }
+    
+    return result;
+  });
+}
+
+/**
+ * Serializes geoHorizons (Map OR Object) to Array for Firestore.
+ * @param {Map|Object} geoInput - Map or Object of geo horizons
+ * @returns {Array} - Array of geo horizon objects
+ */
+function serializeGeoHorizonsMap(geoInput) {
+  if (geoInput instanceof Map) {
+    return Array.from(geoInput.values());
+  } else if (geoInput && typeof geoInput === 'object' && !Array.isArray(geoInput)) {
+    return Object.values(geoInput);
+  }
+  return [];
 }
 
 // ==================== DESERIALIZATION HELPERS ====================
@@ -264,6 +302,7 @@ function deserializeFloorsArray(floorsArray) {
   }
   
   floorsArray.forEach(floor => {
+    // Deserialize zones Array → Map
     const zonesMap = new Map();
     if (floor.zones && Array.isArray(floor.zones)) {
       floor.zones.forEach(zone => {
@@ -271,41 +310,10 @@ function deserializeFloorsArray(floorsArray) {
       });
     }
     
-    // FIX: Deserialize actionsData.layers (parse stringified shapes)
-    let deserializedActionsData = floor.actionsData;
-    if (floor.actionsData?.layers) {
-      deserializedActionsData = {
-        blueprint: floor.actionsData.blueprint,
-        layers: {}
-      };
-      
-      // Process each layer
-      for (const [layerName, zones] of Object.entries(floor.actionsData.layers)) {
-        if (Array.isArray(zones)) {
-          deserializedActionsData.layers[layerName] = zones.map(zone => {
-            if (!zone) return zone;
-            
-            // Parse shapes if they're strings
-            let parsedShapes = zone.shapes;
-            if (typeof zone.shapes === 'string') {
-              try {
-                parsedShapes = JSON.parse(zone.shapes);
-              } catch (e) {
-                console.error('[Deserialize] Failed to parse shapes:', e);
-                parsedShapes = [];
-              }
-            }
-            
-            return {
-              ...zone,
-              shapes: parsedShapes
-            };
-          });
-        } else {
-          deserializedActionsData.layers[layerName] = zones;
-        }
-      }
-    }
+    // Deserialize actionsData — parse any stringified arrays back
+    let deserializedActionsData = floor.actionsData
+      ? deserializeNestedStrings(floor.actionsData)
+      : undefined;
     
     floorsMap.set(floor.id, {
       ...floor,
@@ -315,6 +323,42 @@ function deserializeFloorsArray(floorsArray) {
   });
   
   return floorsMap;
+}
+
+/**
+ * Reverse of sanitizeNestedArrays: recursively walks an object and
+ * JSON.parse's any string values that look like JSON arrays.
+ * @param {*} value - Any value to deserialize
+ * @returns {*} - Deserialized value with arrays restored
+ */
+function deserializeNestedStrings(value) {
+  if (value === null || value === undefined) return value;
+  
+  // If it's a string that looks like a JSON array, try to parse it
+  if (typeof value === 'string') {
+    if (value.startsWith('[')) {
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        console.warn('[firebase-data] Failed to parse string as JSON:', e);
+        return value;
+      }
+    }
+    return value;
+  }
+  
+  if (typeof value !== 'object') return value;
+  
+  if (Array.isArray(value)) {
+    return value.map(item => deserializeNestedStrings(item));
+  }
+  
+  // Plain object: deserialize each property
+  const result = {};
+  for (const [key, val] of Object.entries(value)) {
+    result[key] = deserializeNestedStrings(val);
+  }
+  return result;
 }
 
 /**
