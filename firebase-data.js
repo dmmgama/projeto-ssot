@@ -1,15 +1,18 @@
 /**
- * SSOT JSJ Template - Firebase Firestore Data Layer (v11.0)
+ * SSOT JSJ Template - Firebase Firestore Data Layer (v11.1)
  * Abstraction layer for Firestore CRUD operations
  * Handles Map serialization/deserialization for projectData structure
+ * v11.1: Firebase Storage integration + Flatten nested arrays
  */
 
 // Assumes firebase-config.js is already loaded (provides 'db' global)
+// Assumes firebase-storage.js is already loaded (provides Storage functions)
 
 // ==================== CREATE ====================
 
 /**
  * Creates a new project in Firestore with audit metadata
+ * v11.1: Upload images to Storage before saving
  * @param {Object} projectData - Project data with Maps (floors, zones, geoHorizons)
  * @param {string} userId - Firebase user UID (owner)
  * @returns {Promise<string>} - Project ID
@@ -18,15 +21,16 @@ async function createProjectInFirestore(projectData, userId) {
   try {
     const now = new Date().toISOString();
     
-    // Serialize Maps to Arrays for Firestore storage
-    const serializedData = {
+    // v11.1: Upload Base64 images to Storage
+    await uploadFloorImagesToStorage(projectData);
+    
+    // Serialize Maps to Arrays + Flatten nested arrays
+    const serializedData = flattenProjectData({
       ...projectData,
       owner: userId,
       createdAt: now,
-      updatedAt: now,
-      floors: serializeFloorsMap(projectData.floors),
-      geoHorizons: serializeGeoHorizonsMap(projectData.geoHorizons)
-    };
+      updatedAt: now
+    });
     
     // Save to Firestore
     await db.collection('projects').doc(projectData.id).set(serializedData);
@@ -94,6 +98,7 @@ async function loadSingleProject(projectId) {
 
 /**
  * Updates existing project in Firestore
+ * v11.1: Upload images to Storage before saving
  * @param {Object} projectData - Project data with Maps
  * @returns {Promise<void>}
  */
@@ -101,13 +106,14 @@ async function saveProjectToFirestore(projectData) {
   try {
     const now = new Date().toISOString();
     
-    // Serialize Maps to Arrays
-    const serializedData = {
+    // v11.1: Upload Base64 images to Storage
+    await uploadFloorImagesToStorage(projectData);
+    
+    // Serialize Maps to Arrays + Flatten nested arrays
+    const serializedData = flattenProjectData({
       ...projectData,
-      updatedAt: now,
-      floors: serializeFloorsMap(projectData.floors),
-      geoHorizons: serializeGeoHorizonsMap(projectData.geoHorizons)
-    };
+      updatedAt: now
+    });
     
     // Update in Firestore
     await db.collection('projects').doc(projectData.id).update(serializedData);
@@ -166,6 +172,103 @@ function subscribeToProject(projectId, callback) {
   );
   
   return unsubscribe;
+}
+
+// ==================== STORAGE INTEGRATION (v11.1) ====================
+
+/**
+ * Upload floor images from Base64 to Firebase Storage
+ * Replaces imageData with imageUrl in actionsData.blueprint
+ * @param {Object} projectData - Project data with floors Map
+ * @returns {Promise<void>}
+ */
+async function uploadFloorImagesToStorage(projectData) {
+  if (!projectData.floors || !(projectData.floors instanceof Map)) {
+    return;
+  }
+  
+  const uploadPromises = [];
+  
+  for (const [floorId, floor] of projectData.floors.entries()) {
+    // Check if floor has Base64 image data
+    if (floor.actionsData?.blueprint?.imageData?.startsWith('data:image')) {
+      const uploadPromise = (async () => {
+        try {
+          // Convert Base64 to Blob
+          const blob = base64ToBlob(floor.actionsData.blueprint.imageData);
+          
+          // Upload to Storage
+          const url = await uploadFloorImage(projectData.id, floorId, blob);
+          
+          // Replace imageData with imageUrl
+          floor.actionsData.blueprint.imageUrl = url;
+          delete floor.actionsData.blueprint.imageData;
+          
+          console.log(`[firebase-data] Uploaded image for floor ${floorId}`);
+        } catch (error) {
+          console.error(`[firebase-data] Failed to upload image for floor ${floorId}:`, error);
+          // Keep imageData if upload fails (fallback)
+        }
+      })();
+      
+      uploadPromises.push(uploadPromise);
+    }
+  }
+  
+  // Wait for all uploads to complete
+  await Promise.all(uploadPromises);
+}
+
+/**
+ * Flatten project data for Firestore storage
+ * Converts Maps to Arrays and flattens nested arrays in shapes
+ * @param {Object} projectData - Project data with Maps
+ * @returns {Object} - Flattened data ready for Firestore
+ */
+function flattenProjectData(projectData) {
+  const floorsArray = serializeFloorsMap(projectData.floors);
+  
+  // Flatten nested arrays in actionsData.layers
+  const flattenedFloors = floorsArray.map(floor => {
+    if (floor.actionsData?.layers) {
+      const flattenedLayers = floor.actionsData.layers.map(layer => {
+        // Flatten shapes: [[{x,y}]] → [{points: [{x,y}]}]
+        if (layer.shapes && Array.isArray(layer.shapes)) {
+          const flattenedShapes = layer.shapes.map(shape => {
+            if (Array.isArray(shape) && shape.length > 0 && Array.isArray(shape[0])) {
+              // Nested array detected: [[{x,y}]] → {points: [{x,y}]}
+              return {
+                points: shape[0] || []
+              };
+            }
+            // Already flattened or object format
+            return shape;
+          });
+          
+          return {
+            ...layer,
+            shapes: flattenedShapes
+          };
+        }
+        return layer;
+      });
+      
+      return {
+        ...floor,
+        actionsData: {
+          ...floor.actionsData,
+          layers: flattenedLayers
+        }
+      };
+    }
+    return floor;
+  });
+  
+  return {
+    ...projectData,
+    floors: flattenedFloors,
+    geoHorizons: serializeGeoHorizonsMap(projectData.geoHorizons)
+  };
 }
 
 // ==================== SERIALIZATION HELPERS ====================
@@ -228,6 +331,7 @@ function deserializeProject(data) {
 /**
  * Deserializes floors Array to Map
  * Handles nested zones Array → Map conversion
+ * v11.1: Unflatten shapes back to nested arrays
  * @param {Array} floorsArray - Array of floor objects
  * @returns {Map} - Map of floors with zones Maps
  */
@@ -247,10 +351,40 @@ function deserializeFloorsArray(floorsArray) {
       });
     }
     
-    floorsMap.set(floor.id, {
-      ...floor,
-      zones: zonesMap
-    });
+    // v11.1: Unflatten shapes in actionsData.layers
+    let processedFloor = { ...floor, zones: zonesMap };
+    
+    if (floor.actionsData?.layers) {
+      const unflatttenedLayers = floor.actionsData.layers.map(layer => {
+        // Unflatten shapes: [{points: [{x,y}]}] → [[{x,y}]]
+        if (layer.shapes && Array.isArray(layer.shapes)) {
+          const unflattenedShapes = layer.shapes.map(shape => {
+            if (shape.points && Array.isArray(shape.points)) {
+              // Flattened format detected: {points: [...]} → [[...]]
+              return [shape.points];
+            }
+            // Already in nested array format or other format
+            return shape;
+          });
+          
+          return {
+            ...layer,
+            shapes: unflattenedShapes
+          };
+        }
+        return layer;
+      });
+      
+      processedFloor = {
+        ...processedFloor,
+        actionsData: {
+          ...floor.actionsData,
+          layers: unflatttenedLayers
+        }
+      };
+    }
+    
+    floorsMap.set(floor.id, processedFloor);
   });
   
   return floorsMap;
