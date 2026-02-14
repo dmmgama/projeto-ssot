@@ -452,7 +452,7 @@
         showStatus('A criar projeto...', 'ok');
         await createProjectInFirestore(newProject, user.uid);
         // Redirect to editor
-        window.location.href = `Index_v10.2.html?project=${projectId}`;
+        window.location.href = `Index_v11.0.html?project=${projectId}`;
       } catch (error) {
         console.error('Erro ao criar projeto:', error);
         showStatus('❌ Erro ao criar projeto: ' + error.message, 'bad');
@@ -466,7 +466,7 @@
       }
       
       // Redirect to editor with project ID
-      window.location.href = `Index_v10.2.html?project=${projectId}`;
+      window.location.href = `Index_v11.0.html?project=${projectId}`;
     }
 
     async function deleteProject(projectId, event) {
