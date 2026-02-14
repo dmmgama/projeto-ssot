@@ -12,7 +12,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="firebase-storage.js"></script>
   <script src="firebase-data.js"></script>
   
   <style>
@@ -2597,14 +2599,14 @@
       console.log("Ficheiro selecionado:", file.name);
 
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = async e => {
         console.log("FileReader onload disparado");
         try {
           console.log("A fazer parse do JSON...");
           const data = JSON.parse(e.target.result);
           console.log("JSON parsed com sucesso, data:", data);
           console.log("A chamar loadAllData...");
-          loadAllData(data);
+          await loadAllData(data);
           console.log("loadAllData retornou");
           showStatus('Dados importados com sucesso', 'ok');
         } catch (err) {
@@ -2614,6 +2616,32 @@
       };
       reader.readAsText(file);
       console.log("FileReader.readAsText iniciado");
+    }
+
+    /**
+     * Convert image URL to Base64 string
+     * v11.1: Load images from Firebase Storage
+     * @param {string} url - Image URL from Storage
+     * @returns {Promise<string>} Base64 encoded image
+     */
+    async function urlToBase64(url) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const blob = await response.blob();
+        
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch (error) {
+        console.error('[Index] Error converting URL to Base64:', error);
+        throw error;
+      }
     }
 
     function collectAllData() {
@@ -2660,9 +2688,34 @@
       return data;
     }
 
-    function loadAllData(data) {
+    async function loadAllData(data) {
       console.log("=== loadAllData CHAMADA ===");
       console.log("Dados recebidos:", data);
+      
+      // v11.1: Load images from Storage (imageUrl → imageData for runtime)
+      if (data.floors && data.floors instanceof Map) {
+        console.log('[Index v11.1] Converting Storage URLs to Base64...');
+        const imageConversionPromises = [];
+        
+        for (const [floorId, floor] of data.floors.entries()) {
+          if (floor.actionsData?.blueprint?.imageUrl && !floor.actionsData.blueprint.imageData) {
+            const conversionPromise = (async () => {
+              try {
+                const base64 = await urlToBase64(floor.actionsData.blueprint.imageUrl);
+                floor.actionsData.blueprint.imageData = base64;
+                console.log(`✅ [Index] Converted image for floor ${floorId}`);
+              } catch (error) {
+                console.error(`❌ [Index] Failed to load image for floor ${floorId}:`, error);
+              }
+            })();
+            imageConversionPromises.push(conversionPromise);
+          }
+        }
+        
+        // Wait for all image conversions
+        await Promise.all(imageConversionPromises);
+        console.log('[Index v11.1] Image conversions complete');
+      }
       
       // Detect V9 (legacy)
       if (Array.isArray(data.projectData?.floors)) {
@@ -4105,7 +4158,7 @@
         
         // Load all form data if available
         if (project) {
-          loadAllData(project);
+          await loadAllData(project);
         }
 
         // Renderizar UI
@@ -4144,7 +4197,7 @@
           // Re-render only if window not focused (change from another tab/user)
           if (!document.hasFocus()) {
             console.log('🔄 [Index] Reloading UI with remote changes');
-            loadAllData(updatedProject);
+            await loadAllData(updatedProject);
             updateKPIs();
             renderFloors();
             renderGeoTable();
