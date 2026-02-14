@@ -182,25 +182,32 @@ function serializeFloorsMap(floorsMap) {
   }
   
   const floorsArray = Array.from(floorsMap.values()).map(floor => {
-    // Serialize nested zones Map
     const zonesArray = floor.zones instanceof Map 
       ? Array.from(floor.zones.values())
       : [];
     
-    // Serialize actionsData layers (fix nested arrays)
+    // FIX: Serialize actionsData.layers (stringify shapes to avoid nested arrays)
     let serializedActionsData = floor.actionsData;
     if (floor.actionsData?.layers) {
       serializedActionsData = {
-        ...floor.actionsData,
+        blueprint: floor.actionsData.blueprint,
         layers: {}
       };
       
-      // Stringify shapes in each layer
-      for (const [layerName, layerZones] of Object.entries(floor.actionsData.layers)) {
-        serializedActionsData.layers[layerName] = layerZones.map(zone => ({
-          ...zone,
-          shapes: zone.shapes ? JSON.stringify(zone.shapes) : null
-        }));
+      // Process each layer
+      for (const [layerName, zones] of Object.entries(floor.actionsData.layers)) {
+        if (Array.isArray(zones)) {
+          serializedActionsData.layers[layerName] = zones.map(zone => {
+            if (!zone) return zone;
+            
+            return {
+              ...zone,
+              shapes: Array.isArray(zone.shapes) ? JSON.stringify(zone.shapes) : zone.shapes
+            };
+          });
+        } else {
+          serializedActionsData.layers[layerName] = zones;
+        }
       }
     }
     
@@ -250,14 +257,13 @@ function deserializeProject(data) {
  * @returns {Map} - Map of floors with zones Maps
  */
 function deserializeFloorsArray(floorsArray) {
-  if (!floorsArray || !Array.isArray(floorsArray)) {
-    return new Map();
-  }
-  
   const floorsMap = new Map();
   
+  if (!Array.isArray(floorsArray)) {
+    return floorsMap;
+  }
+  
   floorsArray.forEach(floor => {
-    // Deserialize nested zones Array to Map
     const zonesMap = new Map();
     if (floor.zones && Array.isArray(floor.zones)) {
       floor.zones.forEach(zone => {
@@ -265,22 +271,39 @@ function deserializeFloorsArray(floorsArray) {
       });
     }
     
-    // Deserialize actionsData layers (parse shapes)
+    // FIX: Deserialize actionsData.layers (parse stringified shapes)
     let deserializedActionsData = floor.actionsData;
     if (floor.actionsData?.layers) {
       deserializedActionsData = {
-        ...floor.actionsData,
+        blueprint: floor.actionsData.blueprint,
         layers: {}
       };
       
-      // Parse shapes in each layer
-      for (const [layerName, layerZones] of Object.entries(floor.actionsData.layers)) {
-        deserializedActionsData.layers[layerName] = layerZones.map(zone => ({
-          ...zone,
-          shapes: zone.shapes && typeof zone.shapes === 'string' 
-            ? JSON.parse(zone.shapes) 
-            : (zone.shapes || [])
-        }));
+      // Process each layer
+      for (const [layerName, zones] of Object.entries(floor.actionsData.layers)) {
+        if (Array.isArray(zones)) {
+          deserializedActionsData.layers[layerName] = zones.map(zone => {
+            if (!zone) return zone;
+            
+            // Parse shapes if they're strings
+            let parsedShapes = zone.shapes;
+            if (typeof zone.shapes === 'string') {
+              try {
+                parsedShapes = JSON.parse(zone.shapes);
+              } catch (e) {
+                console.error('[Deserialize] Failed to parse shapes:', e);
+                parsedShapes = [];
+              }
+            }
+            
+            return {
+              ...zone,
+              shapes: parsedShapes
+            };
+          });
+        } else {
+          deserializedActionsData.layers[layerName] = zones;
+        }
       }
     }
     
