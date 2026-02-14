@@ -4183,7 +4183,7 @@
         console.log('[Index] User:', user.email);
         
         // Real-time listener for collaborative editing
-        firestoreUnsubscribe = subscribeToProject(projectId, (updatedProject) => {
+        firestoreUnsubscribe = subscribeToProject(projectId, async (updatedProject) => {
           if (!updatedProject) {
             console.warn('[Index] Project deleted or access revoked');
             return;
