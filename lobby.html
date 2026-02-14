@@ -302,6 +302,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="firebase-data.js"></script>
 </head>
 <body>
   <header>
@@ -352,10 +353,11 @@
     });
 
     // ==================== Estado Local ====================
-    let projects = loadProjectsFromStorage();
+    let projects = {}; // Will be populated from Firestore
 
     // ==================== Render ====================
-    function renderProjects() {
+    function renderProjects(projectsData) {
+      projects = projectsData || {};
       const grid = document.getElementById('projectsGrid');
       const emptyState = document.getElementById('emptyState');
       const projectCount = document.getElementById('projectCount');
@@ -373,16 +375,16 @@
       emptyState.style.display = 'none';
       projectCount.textContent = `${projectsArray.length} ${projectsArray.length === 1 ? 'projeto' : 'projetos'}`;
 
-      // Ordenar por updated_at (mais recente primeiro)
+      // Ordenar por updatedAt (mais recente primeiro)
       const sorted = projectsArray.sort((a, b) => {
-        const dateA = new Date(a.updated_at || 0);
-        const dateB = new Date(b.updated_at || 0);
+        const dateA = new Date(a.updatedAt || a.updated_at || 0);
+        const dateB = new Date(b.updatedAt || b.updated_at || 0);
         return dateB - dateA;
       });
 
       grid.innerHTML = sorted.map(project => {
-        const updatedDate = project.updated_at 
-          ? new Date(project.updated_at).toLocaleString('pt-PT', {
+        const updatedDate = (project.updatedAt || project.updated_at)
+          ? new Date(project.updatedAt || project.updated_at).toLocaleString('pt-PT', {
               day: '2-digit',
               month: '2-digit',
               year: 'numeric',
@@ -411,20 +413,28 @@
       }).join('');
     }
 
-    // ==================== CRUD Operations ====================
-    function createNewProject() {
-      const id = generateUUID();
-      const now = new Date().toISOString();
+    // ==================== Firestore Operations ====================
+    async function createNewProject() {
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        showStatus('Utilizador não autenticado', 'bad');
+        return;
+      }
       
-      projects[id] = {
-        id: id,
+      const projectId = generateUUID();
+      const newProject = {
+        id: projectId,
         id_jsj: '',
         nome_projeto: 'Novo Projeto',
         cliente: '',
-        created_at: now,
-        updated_at: now,
+        designacao: '',
+        localizacao: '',
+        tipologia: '',
+        especialidade: '',
+        tipo_obra: '',
+        fase_atual: '',
+        resp_tecnico: '',
         floors: new Map(),
-        zones: new Map(),
         geoHorizons: new Map(),
         actionsEnabled: {
           graviticas: true,
@@ -437,12 +447,16 @@
           agua: false
         }
       };
-
-      saveProjectsToStorage(projects);
-      saveActiveProjectId(id);
       
-      // Redirecionar para index com query param
-      window.location.href = `Index_v10.2.html?project=new&id=${id}`;
+      try {
+        showStatus('A criar projeto...', 'ok');
+        await createProjectInFirestore(newProject, user.uid);
+        // Redirect to editor
+        window.location.href = `Index_v10.2.html?project=${projectId}`;
+      } catch (error) {
+        console.error('Erro ao criar projeto:', error);
+        showStatus('❌ Erro ao criar projeto: ' + error.message, 'bad');
+      }
     }
 
     function openProject(projectId) {
@@ -451,11 +465,11 @@
         return;
       }
       
-      saveActiveProjectId(projectId);
+      // Redirect to editor with project ID
       window.location.href = `Index_v10.2.html?project=${projectId}`;
     }
 
-    function deleteProject(projectId, event) {
+    async function deleteProject(projectId, event) {
       if (event) event.stopPropagation();
       
       const project = projects[projectId];
@@ -464,17 +478,20 @@
       if (!confirm(`⚠️ Tem a certeza que deseja apagar "${projectName}"?\n\nEsta ação não pode ser revertida!`)) {
         return;
       }
-
-      delete projects[projectId];
-      saveProjectsToStorage(projects);
       
-      // Se era o projeto ativo, limpar
-      if (loadActiveProjectId() === projectId) {
-        localStorage.removeItem(StorageKeys.ACTIVE_PROJECT);
+      try {
+        showStatus('A eliminar projeto...', 'ok');
+        await deleteProjectFromFirestore(projectId);
+        
+        // Remove from local state and re-render
+        delete projects[projectId];
+        renderProjects(projects);
+        
+        showStatus('✅ Projeto eliminado com sucesso', 'ok');
+      } catch (error) {
+        console.error('Erro ao eliminar projeto:', error);
+        showStatus('❌ Erro ao eliminar: ' + error.message, 'bad');
       }
-      
-      renderProjects();
-      showStatus('Projeto apagado com sucesso', 'ok');
     }
 
     // ==================== Status Messages ====================
@@ -490,14 +507,30 @@
       setTimeout(() => status.remove(), 3000);
     }
 
+    // ==================== Firestore Load ====================
+    async function loadAllProjects() {
+      const user = firebase.auth().currentUser;
+      if (!user) return;
+      
+      try {
+        const projectsData = await loadProjectsFromFirestore(user.uid);
+        renderProjects(projectsData);
+        console.log('[lobby.html] Loaded', Object.keys(projectsData).length, 'projects from Firestore');
+      } catch (error) {
+        console.error('Erro ao carregar projetos:', error);
+        showStatus('❌ Erro ao carregar projetos', 'bad');
+        // Show empty state on error
+        renderProjects({});
+      }
+    }
+
     // ==================== Firebase Functions ====================
     function initLobby(user) {
       // Display user email
       document.getElementById('userEmail').textContent = user.email;
       
-      // Load projects from localStorage (will be replaced with Firestore in Task 6)
-      renderProjects();
-      console.log('[lobby.html] Inicializado com', Object.keys(projects).length, 'projetos');
+      // Load projects from Firestore
+      loadAllProjects();
       console.log('[lobby.html] User:', user.email);
       
       // Event listeners
