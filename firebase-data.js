@@ -187,9 +187,27 @@ function serializeFloorsMap(floorsMap) {
       ? Array.from(floor.zones.values())
       : [];
     
+    // Serialize actionsData layers (fix nested arrays)
+    let serializedActionsData = floor.actionsData;
+    if (floor.actionsData?.layers) {
+      serializedActionsData = {
+        ...floor.actionsData,
+        layers: {}
+      };
+      
+      // Stringify shapes in each layer
+      for (const [layerName, layerZones] of Object.entries(floor.actionsData.layers)) {
+        serializedActionsData.layers[layerName] = layerZones.map(zone => ({
+          ...zone,
+          shapes: zone.shapes ? JSON.stringify(zone.shapes) : null
+        }));
+      }
+    }
+    
     return {
       ...floor,
-      zones: zonesArray
+      zones: zonesArray,
+      actionsData: serializedActionsData
     };
   });
   
@@ -247,9 +265,29 @@ function deserializeFloorsArray(floorsArray) {
       });
     }
     
+    // Deserialize actionsData layers (parse shapes)
+    let deserializedActionsData = floor.actionsData;
+    if (floor.actionsData?.layers) {
+      deserializedActionsData = {
+        ...floor.actionsData,
+        layers: {}
+      };
+      
+      // Parse shapes in each layer
+      for (const [layerName, layerZones] of Object.entries(floor.actionsData.layers)) {
+        deserializedActionsData.layers[layerName] = layerZones.map(zone => ({
+          ...zone,
+          shapes: zone.shapes && typeof zone.shapes === 'string' 
+            ? JSON.parse(zone.shapes) 
+            : (zone.shapes || [])
+        }));
+      }
+    }
+    
     floorsMap.set(floor.id, {
       ...floor,
-      zones: zonesMap
+      zones: zonesMap,
+      actionsData: deserializedActionsData
     });
   });
   
