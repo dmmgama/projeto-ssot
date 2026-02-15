@@ -92,3 +92,70 @@ window.getProject = getProject;
 window.updateProject = updateProject;
 window.deleteProject = deleteProject;
 window.listUserProjects = listUserProjects;
+
+async function createBlock(projectId, blockData) {
+	const { data, error } = await window.supabaseClient
+		.from('blocks')
+		.insert({
+			project_id: projectId,
+			...blockData
+		})
+		.select()
+		.single();
+
+	if (error) {
+		return { success: false, error: error.message };
+	}
+
+	return { success: true, block: data };
+}
+
+async function updateBlock(blockId, updates) {
+	const { error } = await window.supabaseClient
+		.from('blocks')
+		.update(updates)
+		.eq('id', blockId);
+
+	if (error) {
+		return { success: false, error: error.message };
+	}
+
+	return { success: true };
+}
+
+async function deleteBlock(blockId) {
+	const { count: floorCount } = await window.supabaseClient
+		.from('floors')
+		.select('id', { count: 'exact', head: true })
+		.eq('block_id', blockId);
+
+	const { error } = await window.supabaseClient
+		.from('blocks')
+		.delete()
+		.eq('id', blockId);
+
+	if (error) {
+		return { success: false, error: error.message };
+	}
+
+	return { success: true, deletedCount: floorCount || 0 };
+}
+
+async function listProjectBlocks(projectId) {
+	const { data, error } = await window.supabaseClient
+		.from('blocks')
+		.select('*')
+		.eq('project_id', projectId)
+		.order('created_at', { ascending: true });
+
+	if (error) {
+		return { success: false, blocks: [], error: error.message };
+	}
+
+	return { success: true, blocks: data || [] };
+}
+
+window.createBlock = createBlock;
+window.updateBlock = updateBlock;
+window.deleteBlock = deleteBlock;
+window.listProjectBlocks = listProjectBlocks;
