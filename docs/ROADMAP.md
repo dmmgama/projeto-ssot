@@ -5,307 +5,254 @@
 ## ✅ FASE 1: SANEAMENTO (Completo)
 
 ### v10.0 - Refactor Arquitetural
-- Array → UUID Maps
-- `appState` multi-projeto
-- Proxy legacy bridge
+**Duração**: 1 semana  
+**Objetivo**: Eliminar arrays, implementar UUID Maps, preparar multi-projeto
+
+**Entregas**:
+- Array → UUID Maps (floors, zones, geoHorizons)
+- `appState` global para multi-projeto
+- Proxy legacy bridge (compatibilidade)
 
 ---
 
 ## ✅ FASE 2: ARQUITETURA MULTI-PROJETO (Completo)
 
 ### v10.2 - Lobby Multi-Projeto
-- UI gestão projetos (CRUD)
-- localStorage persistência
+**Duração**: 2 semanas  
+**Objetivo**: Sistema gestão de múltiplos projetos com localStorage
+
+**Entregas**:
+- UI lobby (grid CRUD projetos)
 - Navegação lobby ↔ editor
 - Migração automática v9→v10
 
 ---
 
-## 🔨 FASE 1.5: EDITOR AVANÇADO (Pré-Firebase)
+## ✅ FASE 3: BACKEND CLOUD (Completo)
 
-### v10.4 - Protótipo Color-Trace (1 semana)
-**Objetivo**: Validar conceito técnico OpenCV (ficheiro isolado)
+### v11.0 - Firebase Backend
+**Duração**: 2 semanas  
+**Objetivo**: Persistência cloud com real-time sync
 
-- Color-trace PNG → Auto-detecção elementos
-- OpenCV.js findContours
-- Regras: Cor → Tipo elemento
-- DXF parser básico (teste)
-- PDF calibração escala (teste)
-
-**Entregável**: Ficheiro standalone `color-trace-prototype.html`  
-**Status**: Não integra SSOT (schema v10 vai mudar)
-
----
-
-## ✅ FASE 3: FIREBASE BACKEND (Completo)
-
-### v11.0 - Firebase Básico ✅ COMPLETO
-**Schema**: Mantém estrutura v10 (sem blocos ainda)
-
-- Firestore Collections: `projects/{id}/floors/{id}`
-- Firebase Auth (JSJ users)
-- Cloud sync (substitui localStorage)
-- Real-time updates
+**Entregas**:
+- Firestore collections (projects/{id})
+- Firebase Auth (@jsj.pt whitelist)
+- Real-time updates (onSnapshot)
+- Auto-save 30s
 - Migração localStorage→Firestore
 
-**Breaking Change**: Requer auth obrigatório
+**Breaking Change**: Auth obrigatória
 
 ---
 
-## 🔨 FASE 3.1: FIREBASE STORAGE LAYER (1 semana)
+## 🔨 FASE 3.1: FIREBASE STORAGE LAYER (NÃO REALIZADA)
 
-### v11.1 - Generic Asset Storage ✅ SPEC FINALIZADA
-**Branch Git**: V3.2-firebase-storage  
-**Objetivo**: Infraestrutura genérica para assets pesados (PNGs, PDFs, DXF, etc)
+### v11.1 - Generic Asset Storage ❌ CANCELADA
+**Motivo**: Trabalho descartável antes de migração Supabase (v11.2)
 
-**Motivação**:
-- Firestore docs limitados a 1MB
-- **Agora**: Floor images Base64 (~500KB cada) → 10 pisos = 5MB doc (rejects)
-- **Futuro**: PDFs geotécnicos, DXF plantas, Excel maps, videos
-- Storage: 5GB free (Spark plan) vs Firestore 1GB
+**Decisão Estratégica**: 
+- FUNDIR v11.1+v11.2 numa única milestone Supabase
+- Uma migração (Firestore→Supabase) em vez de duas
+- Momento ideal para breaking change total (schema blocos)
 
-**Arquitectura Final (Firestore-Centric)**:
-```javascript
-// Firestore Schema (Array mantido, subcollection adiada para v11.2)
-projects/{projectId} (document)
-  ├─ metadata fields (id_jsj, nome_projeto, etc.)
-  └─ floors: [
-      {
-        id: timestamp,
-        name, cota, area,
-        imageURL: "gs://bucket/projects/{id}/floors/{id}/image.png",
-        imageDownloadURL: "https://...", // Cached (TTL 7 dias)
-        imageURLExpiry: timestamp,
-        zones: [...]
-      }
-    ]
-
-// Storage Paths (Genérico)
-gs://ssot-jsj.appspot.com/
-  └─ projects/{projectId}/
-      ├─ floors/{floorId}/image.png
-      ├─ geotecnia/{docId}.pdf        // Futuro v11.2+
-      ├─ plantas/{dwgId}.dxf          // Futuro v11.2+
-      └─ reports/{reportId}.docx      // Futuro v13.0+
-```
-
-**Implementação v11.1 (Assets Only - Imagens)**:
-
-**Funções Genéricas (firebase-data.js)**:
-```javascript
-// Generic upload (preparado para qualquer tipo)
-async uploadAsset(projectId, path, file, metadata)
-  → { storageURL, downloadURL, expiry }
-
-// Lazy load com cache TTL
-async getAssetURL(storageURL, cachedURL, expiry)
-  → downloadURL (regenera se expirado)
-
-// Generic delete
-async deleteAsset(storageURL)
-  → void
-
-// Floor-specific wrappers (v11.1)
-async uploadFloorImage(projectId, floorId, file)
-async getFloorImageURL(floor)
-async deleteFloorImage(floor.imageURL)
-```
-
-**Lazy Loading Obrigatório**:
-- ❌ NO eager load (lobby.html → index.html)
-- ✅ Load on-demand (Secção 7 Viewer, quando user seleciona piso)
-- Cache client-side (URL.createObjectURL + flag `floor.imageLoaded`)
-
-**Security Rules**:
-```javascript
-// Storage Rules (paralelo a Firestore Rules)
-match /projects/{projectId}/{allPaths=**} {
-  allow read, write: if isOwner(projectId) && isJSJEmail();
-  // Valida ownership via Firestore doc lookup
-}
-```
-
-**Migration Script**:
-- `migrate-v11.0-to-v11.1.html` (one-time manual)
-- Converte `floor.imageData` (Base64) → Upload Storage → `floor.imageURL`
-- Backup Firestore obrigatório antes
-
-**Breaking Change**: 
-- Floor images: Base64 string → Storage URLs
-- Migração manual obrigatória (script fornecido)
-
-**Files Modified**:
-- `firebase-data.js` (+ generic storage layer ~200 linhas)
-- `Index_v11.0.html` → `Index_v11.1.html` (lazy load images)
-- `lobby.html` (metadata only, sem image load)
-- Firebase Console (Storage Rules deployment)
-
-**Files Created**:
-- `migrate-v11.0-to-v11.1.html` (migration script)
-
-**Futuro (v11.2+)**: 
-- Mesmas funções genéricas servem PDFs (Secção 3), DXF (auto-trace), DOCX (reports)
-- Subcollection migration (floors array → subcollection)
-
-**Próximo**: v11.2 Schema Blocos
+**🆕 NÃO REALIZADA POR OPÇÃO DE AVANÇAR PARA FASE 3.2, SENDO A FASE 3.2 A MIGRAÇÃO CORRENTE**
 
 ---
 
-## 🏗️ FASE 3.5: HIERARQUIA BLOCOS
+## 🔨 FASE 3.2: MIGRAÇÃO SUPABASE COMPLETA (EM CURSO)
 
-### v11.2 - Schema Blocos (2 semanas)
-**Nova Estrutura**:
+### v11.1 NOVA - Supabase Backend + Schema Blocos + Asset Storage
+**Duração**: 3-4 semanas  
+**Objetivo**: Stack unificado PostgreSQL + hierarquia Blocos + storage genérico
+
+**Stack Target**:
+- PostgreSQL (foreign keys, joins, transactions)
+- Supabase Auth (@jsj.pt whitelist SQL trigger)
+- Supabase Storage (blobs) + links servidor legacy
+- Row Level Security (RLS)
+- Realtime (PostgreSQL WAL)
+
+**Nova Hierarquia**:
 ```
-Projeto
-└─ Blocos
-   ├─ Geotecnia (por bloco)
-   ├─ Ações (por bloco)
-   └─ Tipologias (Fundações, Enterrados, Elevação, Cobertura)
-      └─ Pisos (editáveis: nome, cota, tipo)
+Projecto → Blocos → Pisos (tipologias editáveis) → Zonas
 ```
 
-**Implementação**:
-- Firestore: `projects/{id}/blocos/{id}/pisos/{id}` (SUBCOLLECTION)
-- UI Secção 2: CRUD Blocos + Tipologias
-- UI Secção 5: Selector Bloco → Geotecnia
-- UI Secção 7: Selector Bloco → Ações
-- **Remove**: Conceito "zonas" (substituído por elementos canvas)
-- Pisos editáveis: Nome/Cota/Tipologia mutáveis
-- Migração v11.1→v11.2 (array→subcollection)
+**Entregas Core**:
+- 6 tabelas relacionais (projects, blocos, pisos, zonas, geo_horizons, project_files)
+- RLS policies owner-only (cascading via JOINs)
+- Lazy loading imagens (Supabase Storage)
+- CRUD Blocos (UI accordion Secção 2)
+- Selector Bloco→Piso (Secção 7 Acções)
+- Migration script Firebase→Supabase (one-time manual)
 
-**Breaking Change**: JSONs v11.1 incompatíveis
+**🆕 Links Servidor Legacy**:
+- Campo `projects.server_path` (UNC paths Windows)
+- Tabela `project_files` (catálogo unificado server/storage/speckle)
+- Preparado para RAG v13.0+ (campo `embedding VECTOR` vazio)
+
+**Breaking Changes**:
+- ❌ Firebase Auth sessions invalidadas (re-login)
+- ❌ Schema incompatível (floors array → blocos relacionais)
+- ❌ JSONs v11.0 não importáveis
+- ✅ Migration script fornecido
+
+**O que NÃO muda**:
+- Frontend Vanilla JS
+- Motor gráfico (FloorViewer, zonas.html)
+- Cálculos EC1/EC8
+- UI 8 secções (layout)
+
+**Próximo**: v11.5 Editor Integrado
 
 ---
 
-### v11.5 - Editor Integrado (1 semana)
-**Usa**: Protótipo v10.4 adaptado para Blocos
+## 🗺️ FASE 4: EDITOR AVANÇADO
 
+### v11.5 - Editor Integrado
+**Duração**: 2 semanas  
+**Objetivo**: OpenCV auto-trace adaptado para hierarquia Blocos
+
+**Entregas**:
 - Color-trace → Lajes/Vigas/Pilares por Bloco
-- Click-to-link continuidade vigas
+- Click-to-link continuidade elementos
 - Numeração pilares multi-piso
 - Graph conectividade estrutural
-- Cálculo cargas acumuladas
-- Pré-dim automático:
-  - Momentos vigas (isolada vs contínua)
-  - Espessura lajes L/h (EC2)
-  - Secções sugeridas
-- Validações automáticas:
-  - Alinhamento pilares
-  - Simetria estrutural
-  - Vãos máximos
+- Pré-dimensionamento automático (EC2)
+- Validações estruturais (alinhamento, simetria, vãos)
 
-**Integração**: postMessage → Firebase (salva `actionsData` por Bloco)
+**Fundação**: Protótipo v10.4 (OpenCV isolado) adaptado para Blocos
 
 ---
 
-## 🔗 FASE 4: SPECKLE LIVE SYNC
+## 🔗 FASE 5: SPECKLE LIVE SYNC
 
-### v12.0 - Integração Speckle (1 semana)
+### v12.0 - Integração Speckle
+**Duração**: 1 semana  
+**Objetivo**: Live-sync com modelos BIM (Revit, Rhino, etc)
 
-- Speckle Viewer JS
+**Entregas**:
+- Speckle Viewer JS embebido
 - Webhook auto-refresh plantas
 - Mode toggle: Manual upload vs Live sync
 - Conflict resolution UI
-- Map: Revit floors → SSOT Blocos/Pisos
+- Map Revit floors → SSOT Blocos/Pisos
+
+**Fundação**: PostgreSQL (queries cross-model via foreign keys)
 
 **Requisito**: Speckle Server (cloud €50/mês ou self-hosted)
 
 ---
 
-## 🤖 FASE 5: AUTOMAÇÃO
+## 🤖 FASE 6: AUTOMAÇÃO + IA
 
-### v13.0 - Reports & Export (2 semanas)
+### v13.0 - Reports & RAG
+**Duração**: 3 semanas  
+**Objetivo**: Automação reports + pesquisa semântica
 
-- Cloud Functions → DOCX reports automáticos (usa Storage genérico v11.1)
-- Templates regulamentação (EC0/1/2/8)
+**Entregas**:
+
+**Automação**:
+- Supabase Edge Functions → DOCX reports (templates EC0/1/2/8)
 - Export peças desenhadas (auto-fill)
 - Quadro cargas PDF (1-página)
-- Mapa calor σ_solo (heatmap fundações)
 - Checklist EC automático
+
+**🆕 RAG (Pesquisa Semântica)**:
+- pgvector extension (PostgreSQL)
+- Embedding pipeline OpenAI (ou Ollama local)
+- Semantic search: "encontra estudo geotécnico SPT>20"
+- Chat interface: "quais vãos máximos Bloco A?"
+- IA extraction: Parse PDFs geotécnicos → auto-fill campos
+
+**Fundação**: Tabela `project_files` já preparada (campo `embedding` vazio preenchido agora)
 
 ---
 
-## ⚛️ FASE 6: ESCALABILIDADE
+## ⚛️ FASE 7: ESCALABILIDADE
 
-### v14.0 - React Migration (3-4 semanas)
+### v14.0 - React Migration
+**Duração**: 4 semanas  
+**Objetivo**: Componentização para manutenibilidade longo prazo
 
-- Componentização UI
-- State management (Redux/Zustand)
-- Modularização ficheiros (50+ componentes)
+**Entregas**:
+- Supabase React SDK (queries + real-time hooks)
+- State management (Zustand + Supabase)
+- Modularização 50+ componentes
 - TypeScript (opcional)
 - Canvas mantém Vanilla (useRef wrapper)
 
-**Objetivo**: Manutenibilidade longo prazo
-
 ---
 
-## 📋 CRONOGRAMA ESTIMADO
+## 📋 CRONOGRAMA
 
 | Versão | Duração | Acumulado |
 |--------|---------|-----------|
-| v10.4 | 1 sem | 1 sem |
-| v11.0 | 2 sem | 3 sem |
-| v11.1 | 1 sem | 4 sem |
-| v11.2 | 2 sem | 6 sem |
-| v11.5 | 1 sem | 7 sem |
-| v12.0 | 1 sem | 8 sem |
-| v13.0 | 2 sem | 10 sem |
-| v14.0 | 4 sem | 14 sem |
+| v10.0 | 1 sem | 1 sem |
+| v10.2 | 2 sem | 3 sem |
+| v11.0 | 2 sem | 5 sem |
+| v11.1 NOVA | 4 sem | 9 sem |
+| v11.5 | 2 sem | 11 sem |
+| v12.0 | 1 sem | 12 sem |
+| v13.0 | 3 sem | 15 sem |
+| v14.0 | 4 sem | 19 sem |
 
-**Total**: ~3.5 meses (tempo parcial, 1 dev)
+**Total**: ~5 meses (tempo parcial, 1 dev)
 
 ---
 
 ## 🎯 PRÓXIMOS PASSOS IMEDIATOS
 
-1. **Implementar v11.1**: Firebase Storage Layer (ver spec finalizada acima)
-2. **Design v11.2**: Mock UI Blocos (papel/Figma)
-3. **Validar v10.4**: Testa color-trace offline (aprende OpenCV)
+1. **Implementar v11.1 NOVA**: Seguir spec em `ESPECIFICACAO.md`
+2. **Design UI Blocos**: Mock accordion Secção 2 (papel/Figma)
+3. **Validar protótipo OpenCV**: Testar color-trace offline
 
 ---
 
-## 📝 NOTAS ESTRATÉGICAS
+## 📝 DECISÕES ESTRATÉGICAS
 
-### Decisões Arquitecturais
+### Supabase vs Firebase
+**Escolha**: Supabase PostgreSQL  
+**Motivos**:
+- Relacional (foreign keys, joins, transactions)
+- Sem limite 1MB docs
+- RLS nativo (vs Firestore Rules complexidade)
+- pgvector built-in (IA sem infra adicional)
+- Speckle integration natural (ambos PostgreSQL)
+- Edge Functions Deno (vs Cloud Functions Node.js)
 
-**Storage Genérico v11.1**:
-- Funções agnósticas de tipo (upload/download/delete)
-- Implementa só imagens agora, preparado para PDFs/DXF futuro
-- Evita refactor quando adicionar novos asset types
+**Trade-offs**:
+- ❌ Community menor que Firebase
+- ❌ Real-time table-level (não document-level granular)
 
-**Array mantido v11.1**:
-- Subcollection adiada para v11.2 (evita 2 migrações)
-- Array funciona <20 floors (scope JSJ)
-- v11.2 já refactora schema inteiro (Blocos)
+### Schema Blocos
+**Motivos**:
+- Hierarquia natural engenharia (Projecto → Blocos → Pisos → Zonas)
+- Geotecnia/Acções por bloco (diferentes condições)
+- Elimina "zonas" como top-level (agora só geometrias com uso)
 
-**Lazy Loading obrigatório**:
-- Deep search Gemini validou crítico para performance
-- Cache TTL 7 dias (balanço freshness vs API calls)
+### Links Servidor Legacy
+**Motivos**:
+- Bridge para ficheiros históricos (sem migração inicial)
+- Preparado para migração gradual server → cloud
+- Catálogo unificado (server + storage + speckle)
 
-**Blocos após Storage** (v11.2):
-- Firestore Collections mapeiam hierarquia natural
-- Evita migração localStorage complexa
-- Storage genérico já preparado para assets por bloco
+### React Fase Final
+**Motivos**:
+- Vanilla primeiro (aprende fundamentos JS)
+- Codebase estável antes de componentizar
+- Canvas imperativo (sem ganho React)
 
-**Editor protótipo v10.4**:
-- Valida tech (OpenCV) sem comprometer schema
-- Reaproveitado v11.5 (adapta para Blocos)
+---
 
-**React fase final** (v14.0):
-- Mantém Vanilla até codebase estável
-- Aprende fundamentos JS primeiro
-- Canvas continua imperativo (sem ganho React)
-
-### Compatibilidade
+## 🔄 COMPATIBILIDADE
 
 - ✅ v10.0→v10.2: Auto-migração
 - ⚠️ v10.2→v11.0: Requer Firebase auth
-- 🔥 v11.0→v11.1: Breaking (Base64→Storage, script manual)
-- 🔥 v11.1→v11.2: Breaking (schema Blocos)
-- ✅ v11.2→v14.0: Backward compatible
+- 🔥 v11.0→v11.1: Breaking (migration script manual)
+- ✅ v11.1→v14.0: Backward compatible (SQL migrations)
 
 ---
 
 **Última atualização**: 15/02/2026  
 **Versão atual**: v11.0  
-**Próxima milestone**: v11.1 (Asset Storage Layer)
+**Próxima milestone**: v11.1 NOVA (Supabase + Blocos + Storage)

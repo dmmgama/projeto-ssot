@@ -1,6 +1,6 @@
 # ⚠️ ZONA DE PERIGO: MAPA DE DEPENDÊNCIAS E RISCOS
 
-**Versão:** v11.1 (Firebase Storage Layer)  
+**Versão:** v11.1 (Supabase Backend + Schema Blocos)  
 **Instrução para o Agente:** Não refatorizar ou alterar estas secções sem validação profunda.  
 **Última Actualização:** 15/02/2026
 
@@ -10,14 +10,18 @@
 
 | Origem (Se mexeres aqui...) | Impacto (Isto parte...) | Gravidade | Motivo |
 | :--- | :--- | :--- | :--- |
-| **`projectData.floors`** (Adicionar/Remover campo) | **Secção 7 (Acções)** | 🔥 ALTA | `updateActionsFloorTabs()` gera abas dinamicamente. Se estrutura mudar, UI fica vazia. |
-| **`zone.uso`** (Alterar valores select ou campo) | **Cálculo de Cargas (Secção 7)** | 🔥 ALTA | `renderZoneActions()` e `getUsoCategoryData()` lêem categoria EC1. Mudança quebra qk/psi. |
+| **`projectData.blocos`** (Estrutura Maps) | **Secção 2 + Secção 7 (Acções)** | 🔥 CRÍTICA | `renderBlocos()` e `populateActionsBlocoSelector()` iteram Maps. Mudar quebra UI. |
+| **`zona.uso`** (Alterar valores ou campo) | **Cálculo de Cargas (Secção 7)** | 🔥 ALTA | `FloorViewer.getCategoryLoad()` lê categoria EC1. Mudança quebra qk/psi. |
 | **`geo_tipo_sismo`** (ID ou listener) | **Acção Sísmica (Secção 7)** | 🔥 ALTA | Listener copia para `sismo_terreno`. Quebrar dessincroniza inputs. |
-| **Estrutura `actionsData`** (layers/shapes) | **Viewer 2D + Editor (zonas.html)** | 🔥 ALTA | `postMessage` espera formato específico. Alteração unilateral quebra comunicação. |
-| **`FloorViewer` (classe)** | **Canvas Secção 7** | 🔥 ALTA | Motor gráfico completo. Alterar assinatura de métodos quebra renderização. |
-| **`collectAllData()` / `loadAllData()`** | **Import/Export JSON** | 🔥 CRÍTICA | Persistência. Alteração quebra compatibilidade com JSONs antigos. |
-| **Firebase CRUD functions** (v11.0+) | **Multi-user sync + Auth** | 🔥 CRÍTICA | Alterar serialização quebra Firestore. Memory leaks se listeners não limpos. |
-| **Storage Layer functions** (v11.1+) | **Image persistence + Lazy load** | 🔥 CRÍTICA | Alterar URL schema quebra migration. TTL errado causa 404s. |
+| **`actions_data.layers`** (Estrutura JSONB) | **Viewer 2D + Editor (zonas.html)** | 🔥 ALTA | `postMessage` espera formato específico. Alteração quebra comunicação. |
+| **`FloorViewer` (classe)** | **Canvas Secção 7** | 🔥 ALTA | Motor gráfico completo. Alterar métodos quebra renderização. |
+| **`collectAllData()` / `loadAllData()`** | **Import/Export + Auto-save** | 🔥 CRÍTICA | Persistência. Alteração quebra compatibilidade. |
+| **Supabase RLS policies** | **Security + Auth** | 🔥 CRÍTICA | RLS misconfiguration expõe dados entre users. |
+| **Foreign keys (CASCADE)** | **Data integrity** | 🔥 CRÍTICA | Remover CASCADE apaga dados órfãos silenciosamente. |
+| **Tabela `project_files`** | **Catálogo servidor legacy** | 🟡 MÉDIA | Links UNC dependem de rede JSJ. Quebrar inutiliza histórico. |
+| **`pisos.image_path`** (Storage path) | **Lazy loading imagens** | 🔥 ALTA | Alterar path pattern quebra Supabase Storage policies. |
+| **🆕 `get_effective_param()` SQL function** | **Inherit-or-Override pattern (materiais/sismo/vento)** | 🔥 CRÍTICA | Função corrompida → TODOS cálculos params efetivos falham (NULL). |
+| **🆕 `floors.floor_type` ENUM** | **Tipologia pisos (fundação/térreo/elevado/cobertura)** | 🟡 MÉDIA | Typo em INSERT rejeita row (constraint violation). |
 
 ---
 
@@ -58,7 +62,6 @@ sol_desc
 
 ### 2.6 Secção 7 – Checkboxes de Activação
 ```
-act_graviticas      # Sempre true (hardcoded)
 act_sismo, act_vento, act_impulsos, act_retracao
 act_temperatura, act_neve, act_agua
 ```
@@ -88,9 +91,72 @@ crit_reg, crit_dim
 kpiID, kpiNome, kpiFase, kpiImplant, kpiABC, kpiPisos, kpiAltura
 ```
 
-### 2.11 IDs Dinâmicos (Criados por JS)
-Padrão: `floor_name_{floorId}`, `zone_uso_{zoneId}`, etc.
-Criados por `addFloor()` e `renderZoneForm()` – NÃO aparecem no HTML base.
+### 2.11 🆕 Selectores Blocos (v11.1)
+```
+actionsBlockSelector    # Selector Bloco na Secção 7
+actionsFloorSelector    # Selector Piso (filtered by bloco)
+zonamentoFloorSelector  # Selector Piso no Viewer 2D
+```
+
+### 2.12 IDs Dinâmicos (Criados por JS)
+**NOTA v11.1**: Agora com UUIDs PostgreSQL (não timestamps)
+
+Padrão runtime (Maps):
+```javascript
+bloco_name_{blocoId}        // UUID
+piso_name_{pisoId}          // UUID
+piso_cota_{pisoId}          // UUID
+piso_tipologia_{pisoId}     // UUID 🆕 Editável
+zona_name_{zonaId}          // UUID
+zona_uso_{zonaId}           // UUID
+// ... etc
+```
+
+### 2.13 🆕 Floor Type Enum (v11.1)
+
+**Campo:** `floors.floor_type`  
+**Valores Permitidos:** `'fundacao'`, `'terreo'`, `'elevado'`, `'cobertura'`
+
+**Risco:** Code typo → INSERT inválido  
+
+**Exemplo Erro:**
+```javascript
+// ❌ ERRO (typo)
+await createFloor({floor_type: 'elevation'});  
+// PostgreSQL rejeita: invalid input value for enum floor_type: "elevation"
+
+// ✅ CORRECTO
+await createFloor({floor_type: 'elevado'});
+```
+
+**Validação Obrigatória:**
+- UI dropdown (só permite valores válidos)
+- PostgreSQL ENUM constraint automático
+- Client-side validation antes de INSERT
+
+**Mitigação:**
+```javascript
+// supabase-data.js
+const FLOOR_TYPES = ['fundacao', 'terreo', 'elevado', 'cobertura'];
+
+async function createFloor(pisoData) {
+  if (!FLOOR_TYPES.includes(pisoData.floor_type)) {
+    throw new Error(`Invalid floor_type: ${pisoData.floor_type}`);
+  }
+  // ... proceed
+}
+```
+
+**Impacto Futuro (v14.0 React):**
+```typescript
+// TypeScript enum (type-safe)
+enum FloorType {
+  FUNDACAO = 'fundacao',
+  TERREO = 'terreo',
+  ELEVADO = 'elevado',
+  COBERTURA = 'cobertura'
+}
+```
 
 ---
 
@@ -98,131 +164,233 @@ Criados por `addFloor()` e `renderZoneForm()` – NÃO aparecem no HTML base.
 
 ### 3.1 Estado
 ```
-initializeProjectData()    collectAllData()    loadAllData(data)
-```
-
-### 3.2 UI Dinâmica
-```
+initializeProjectData()
+collectAllData()      # 🆕 v11.1: Apenas metadata project-level
+loadAllData(projectId)  # 🆕 v11.1: Query PostgreSQL com JOINs
 updateKPIs()
-addFloor()    renderFloors()    deleteFloor()    toggleFloorZones()
-updateFloorName()    updateFloorCota()
-openAddZoneModal()    openEditZoneModal()    renderZoneForm()
-closeZoneModal()    saveZone()    deleteZone()
-calculateEquivThickness()    updateGeneralStats()
-addGeoRow()    renderGeoTable()
-toggleActionSection()    toggleActionBody()
-updateActionsFloorTabs() (🔥)    selectActionsFloor()    selectActionsZone()
 ```
 
-### 3.3 Cálculo EC1/EC8
+### 3.2 UI Dinâmica – Blocos 🆕
 ```
-renderZoneActions() (🔥)    getUsoCategoryData() (🔥)
-openAddPermanentModal()    addPermanentAction()    deletePermanentAction()
-openWallsModal()    renderWallsTable()    addWallRow()    calculateWalls()    saveWalls()
-generateSeismicCharts() (🔥)    generateSeismicChart()
-```
-
-### 3.4 Motor Gráfico
-```
-class FloorViewer { constructor, calculatePointELU (🔥), displayZoneCombinations,
-  drawShapes, handleClick/MouseDown/MouseMove/MouseUp,
-  pointInPolygon, polygonArea, getCategoryLoad (🔥), loadImage (🔥 v11.1) }
-openZonesEditor() (🔥)    initFloorViewer()    populateZonamentoFloorSelector()
+renderBlocos()              # Accordion hierárquico
+addBloco(projectId)
+deleteBloco(blocoId)
+updateBloco(blocoId, field, value)
+toggleBlocoContent(blocoId)
 ```
 
-### 3.5 IO
+### 3.3 UI Dinâmica – Pisos (Modificado)
 ```
-exportJSON()    importJSON()    exportMarkdown()    generateMarkdownReport()
-```
-
-### 3.6 Firebase v11.0
-```
-# firebase-data.js
-createProjectInFirestore() (🔥)    loadAllProjectsFromFirestore() (🔥)
-loadSingleProject() (🔥)    saveProjectToFirestore() (🔥)
-deleteProjectFromFirestore() (🔥)    subscribeToProject() (🔥)
-serializeFloorsMap()    deserializeFloorsArray()
-sanitizeNestedArrays() (🔥)    deserializeNestedStrings() (🔥)
-
-# Index_v11.0.html
-initEditor(user) (🔥)    saveCurrentProject() (🔥 async)    backToLobby() (🔥 async)
-
-# lobby.html
-loadProjects() (🔥)    createProject() (🔥)    deleteProject() (🔥)
+addPiso(blocoId, tipologia)     # 🆕 Com tipologia
+deletePiso(pisoId)
+updatePiso(pisoId, field, value)  # 🆕 Editável (nome/cota/tipologia)
+togglePisoZonas(pisoId)
 ```
 
-**Regras Firebase:**
-- `saveCurrentProject()` é async – sempre `await`
-- `subscribeToProject()` retorna unsubscribe – SEMPRE limpar em `beforeunload`
-- `initEditor(user)` depende de auth – não chamar se user null
-- Real-time listener só re-renderiza se `!document.hasFocus()`
-- Auto-save 30s – não reduzir (custo Firestore)
-
-### 3.7 Firebase Storage v11.1 🆕
+### 3.4 UI Dinâmica – Zonas (Modificado)
 ```
-# firebase-data.js (Generic Layer)
-uploadAsset(projectId, path, file, metadata) (🔥)
-getAssetURL(storageURL, cachedURL, expiry) (🔥)
-deleteAsset(storageURL) (🔥)
-
-# Floor-specific wrappers
-uploadFloorImage(projectId, floorId, file) (🔥)
-getFloorImageURL(floor) (🔥)
-deleteFloorImage(storageURL) (🔥)
-
-# Index_v11.1.html
-FloorViewer.loadImage(floor) (🔥 async lazy load)
-
-# Migration
-migrateFloorImagesToStorage() (🔥 one-time script)
+openAddZonaModal(pisoId)      # 🆕 pisoId em vez de floorId
+openEditZonaModal(pisoId, zonaId)
+renderZonaForm(zona)
+closeZonaModal()
+saveZona(pisoId, zonaData)    # 🆕 Async Supabase upsert
+deleteZona(zonaId)
 ```
 
-**Regras Storage:**
-- **NUNCA** alterar storage path pattern (`projects/{id}/floors/{id}/image.png`)
-- **TTL fixo 7 dias** – não mudar sem impacto analysis
-- **Lazy load obrigatório** – sem eager load no lobby
-- **Cache client-side** – `URL.createObjectURL()` + flag `floor.imageLoaded`
-- **Migration script** – backup Firestore antes de executar
+### 3.5 Cálculos EC1/EC8 (Mantidos)
+```
+calculateEquivThickness(tipo, h)
+updateGeneralStats()
+getUsoCategoryData() (🔥)
+openAddPermanentModal()
+addPermanentAction()
+deletePermanentAction(zoneId, index)
+openAddWallModal()
+addWall()
+deleteWall(zoneId, index)
+```
+
+### 3.6 Acções (Mantidos)
+```
+toggleActionSection(name, enabled)
+updateActionsFloorTabs()
+selectActionsFloor(floorId, btn)
+renderZoneActions(piso, zona) (🔥 DUPLICA LÓGICA §5)
+generateSeismicChart(canvasId, zona, terreno, q, amort, type)
+```
+
+### 3.7 Geotecnia (Mantidos)
+```
+addGeoRow()
+deleteGeoRow(index)
+renderGeoTable()
+```
+
+### 3.8 Motor Gráfico (Mantidos)
+```
+initFloorViewer()
+populateZonamentoFloorSelector()
+openZonesEditor(floorId)
+class FloorViewer {
+  loadFloor(floorId)
+  renderZones()
+  calculatePointELU(x, y) (🔥)
+  displayZoneCombinations() (🔥 DUPLICA LÓGICA §5)
+  getCategoryLoad(category) (🔥)
+}
+```
+
+### 3.9 🆕 Supabase CRUD (v11.1)
+```
+// Auth
+signupUser(email, password)
+loginUser(email, password)
+logoutUser()
+getCurrentUser()
+
+// Projects
+createProject(data)
+getProject(id)
+listUserProjects()
+updateProject(id, updates)
+deleteProject(id)
+
+// Blocos
+createBlock(projectId, data)
+getBlock(id)
+updateBlock(id, updates)
+deleteBlock(id)
+
+// Pisos
+createFloor(blockId, projectId, data)
+updateFloor(id, updates)
+deleteFloor(id)
+
+// Zonas
+createZone(floorId, projectId, data)
+updateZone(id, updates)
+deleteZone(id)
+
+// Storage
+uploadFloorImage(floorId, projectId, file)
+getFloorImageURL(floorId)
+deleteFloorImage(floorId)
+
+// Realtime
+subscribeToProject(projectId)
+```
 
 ---
 
 ## 4. EVENT LISTENERS CRÍTICOS
 
-| Listener | Motivo | Ficheiro |
-|---|---|---|
-| `geo_tipo_sismo` → `change` → copia para `sismo_terreno` | Sync Secção 5 ↔ 7 | Index |
-| `window` → `message` → `zonesData` → `floor.actionsData` + save | Comunicação com zonas.html | Index |
-| Inputs → `input` → `updateKPIs()` | KPIs tempo real | Index |
-| Canvas → click/mousedown/mousemove/mouseup | Interactividade Viewer 2D | FloorViewer |
-| `window` → `beforeunload` → `unsubscribe()` | Limpar listener Firestore | Index |
+### 4.1 Sync Geotécnica ↔ Sismo (🔥 NÃO TOCAR)
+```javascript
+// Linha ~3800 (Index_v11.1.html)
+const geoSismo = document.getElementById('geo_tipo_sismo');
+const sismoTerreno = document.getElementById('sismo_terreno');
+
+sismoTerreno.value = geoSismo.value;  // Init sync
+
+geoSismo.addEventListener('change', () => {
+  sismoTerreno.value = geoSismo.value;  // Live sync
+});
+```
+
+**Risco:** Remover listener → `sismo_terreno` dessincronizado → EC8 errado.
+
+### 4.2 🆕 Inherit-or-Override Radio Buttons (v11.1)
+```javascript
+// UI Nível 2: Radio buttons "Global / Por Bloco"
+document.querySelectorAll('input[name="materiais_scope"]').forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    if (e.target.value === 'global') {
+      // Mostra 1 formulário global
+      document.getElementById('materiaisGlobalForm').style.display = 'block';
+      document.getElementById('materiaisBlocosForm').style.display = 'none';
+    } else {
+      // Mostra tabs por bloco
+      document.getElementById('materiaisGlobalForm').style.display = 'none';
+      document.getElementById('materiaisBlocosForm').style.display = 'block';
+      populateBlocoTabs();
+    }
+  });
+});
+```
+
+**Risco:** Remover listener → UI não troca entre global/per-block.
 
 ---
 
 ## 5. DUPLICAÇÃO DE LÓGICA EC1
 
 Cálculo de cargas existe em **DOIS lugares**:
-1. `renderZoneActions(floor, zone)` – tabela HTML
-2. `FloorViewer.displayZoneCombinations()` – heatmap Canvas
+1. `renderZoneActions(piso, zona)` – tabela HTML (Secção 7 inferior)
+2. `FloorViewer.displayZoneCombinations()` – heatmap Canvas (Secção 7 Viewer)
 
 **REGRA**: Se alterares fórmula numa → TENS de alterar na outra.
+
+**Exemplo**: Max-Thickness Rule (v6+)
+```javascript
+// AMBOS os lugares têm esta lógica:
+let maxThicknessFound = 0;
+for (layerName in layers) {
+  if (layerName === 'Estrutura') {
+    const h = parseFloat(zone.manualLoad);
+    if (h > maxThicknessFound) {
+      maxThicknessFound = h;
+      G = (h * 25) + 1.5;  // Sobrescreve (não acumula!)
+    }
+  }
+}
+```
 
 ---
 
 ## 6. INTEGRIDADE DOS IDs HTML
 
-Se mudares o `id` de um input → `collectAllData()` deixa de o serializar → JSONs antigos perdem dados silenciosamente.
+Se mudares o `id` de um input → `collectAllData()` deixa de o serializar → dados perdidos.
 
-**Migração segura**: Adiciona fallback em `loadAllData()` + testa com JSON antigo.
+**Migração segura v11.1**:
+1. Adiciona novo campo na tabela `projects` (ALTER TABLE)
+2. Actualiza `collectAllData()` para ler novo ID
+3. Actualiza `loadAllData()` para popular novo ID
+4. Testa com projeto existente
+5. Deploy migration SQL
 
 ---
 
 ## 7. CONTRATO zonas.html (postMessage)
-
 ```javascript
 // zonas.html → Index:
-{ type: 'zonesData', data: { blueprint: {...}, layers: { "Estrutura": [...], "Sobrecargas": [...], "Paredes_RP": [...] } } }
+{
+  type: 'zonesData',
+  data: {
+    blueprint: {...},
+    layers: {
+      "Estrutura": [
+        {
+          id: 123,
+          design: "L1",
+          uso: "B",
+          manualLoad: "0.25",
+          shapes: [[[{x:100, y:200}]]]  // 🆕 v11.1: Array nativo (não string!)
+        }
+      ],
+      "Sobrecargas": [...],
+      "Paredes_RP": [...]
+    }
+  }
+}
 ```
-Se mudares estrutura → altera em AMBOS os ficheiros + testa Viewer 2D.
+
+**🆕 v11.1 MUDANÇA**: `shapes` agora é array nativo (PostgreSQL JSONB), não string JSON.
+
+Se mudares estrutura → altera em AMBOS os ficheiros:
+1. `zonas.html` (envia)
+2. `Index_v11.1.html` (recebe + FloorViewer renderiza)
+
+**Testa**: Viewer 2D após editar em zonas.html
 
 ---
 
@@ -230,118 +398,411 @@ Se mudares estrutura → altera em AMBOS os ficheiros + testa Viewer 2D.
 
 - [ ] ID está neste documento? → Pede confirmação
 - [ ] Função tem 0 callers? → Procura por nome (pode ser callback)
-- [ ] Afecta `projectData`? → Valida schema em `ESPECIFICACAO.md`
-- [ ] Afecta `actionsData`? → Testa zonas.html
+- [ ] Afecta `projectData.blocos`? → Valida schema em `ESPECIFICACAO.md`
+- [ ] Afecta `actions_data`? → Testa zonas.html
 - [ ] Cálculo EC1? → Altera AMBOS os lugares (§5)
 - [ ] Listener removido? → Valida sync
-- [ ] Firebase async? → Valida await + error handling
-- [ ] Storage path mudado? (v11.1) → Quebra migration script
+- [ ] Supabase async? → Valida `await` + error handling
+- [ ] Storage path mudado? → Quebra Supabase Storage policies
+- [ ] RLS policy alterada? → Testa ownership validation
+- [ ] Foreign key CASCADE mudado? → Testa delete cascading
+- [ ] 🆕 Floor type typo? → Valida dropdown values
+- [ ] 🆕 Inherit-or-Override params? → Testa `get_effective_param()` SQL function
 
 ---
 
-## 9. RISCOS FIREBASE v11.0
+## 9. RISCOS SUPABASE v11.1 🆕
 
-### 9.1 Nested Arrays
-Firestore rejeita arrays aninhados. `sanitizeNestedArrays()` / `deserializeNestedStrings()` fazem stringify/parse. **NUNCA remover.**
+### 9.1 RLS Misconfiguration
+**Problema**: Policy mal escrita expõe dados entre users.
 
-### 9.2 Memory Leaks
-`onSnapshot` continua após sair. Sempre guardar `unsubscribe` e limpar em `beforeunload`.
+**Exemplo perigoso**:
+```sql
+-- ❌ ERRADO: Qualquer user autenticado vê todos projects
+CREATE POLICY "bad_policy" ON projects
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
-### 9.3 Focus-Aware Updates
-Real-time update pode sobrescrever edição. Verificar `!document.hasFocus()` antes de `loadAllData()`.
+-- ✅ CORRECTO: Apenas owner vê
+CREATE POLICY "correct_policy" ON projects
+  FOR SELECT USING (user_id = auth.uid());
+```
+
+**Validação**: Testar com 2 users diferentes (@jsj.pt):
+1. User A cria project
+2. User B tenta aceder project de A
+3. Esperado: 403 Forbidden (RLS bloqueia)
+
+**Mitigação**: SEMPRE testar policies com multi-user (ver TESTES.md §1.6).
 
 ---
 
-## 10. RISCOS FIREBASE STORAGE v11.1 🆕
+### 9.2 Foreign Key Cascade Deletion
+**Problema**: Apagar `projects` row → CASCADE apaga blocos/pisos/zonas silenciosamente.
 
-### 10.1 Storage Path Pattern
+**Validação**:
+```sql
+-- Antes de DELETE project
+SELECT COUNT(*) FROM blocos WHERE project_id = 'uuid';
+SELECT COUNT(*) FROM pisos WHERE project_id = 'uuid';
+SELECT COUNT(*) FROM zonas WHERE project_id = 'uuid';
+
+-- DELETE project
+DELETE FROM projects WHERE id = 'uuid';
+
+-- Validar CASCADE funcionou
+SELECT COUNT(*) FROM blocos WHERE project_id = 'uuid';  -- Esperado: 0
 ```
-projects/{projectId}/floors/{floorId}/image.png
-```
-**CRÍTICO**: Se mudares padrão → Migration script quebra. Sempre manter compatibilidade.
 
-### 10.2 URL Expiration (Cache TTL)
-- Download URLs têm TTL **7 dias**
-- `getFloorImageURL()` regenera se expirado
-- **NÃO alterar TTL** sem validar impacto (API calls vs freshness)
+**Mitigação**:
+- UI: Confirm dialog com count (ex: "Projeto tem 3 blocos, 10 pisos. Apagar?")
+- Backend: Trigger audit log antes de CASCADE
 
-### 10.3 Lazy Loading Dependency
+---
+
+### 9.3 Storage Policies Path Validation
+**Problema**: Policy valida ownership via path prefix.
+
+**Path esperado**: `project-assets/{project_id}/floors/{floor_id}/image.png`
+
+**Se quebrar path pattern**:
 ```javascript
-// ❌ NUNCA fazer eager load
-floors.forEach(f => loadImage(f));
+// ❌ ERRADO: Path diferente
+const wrongPath = `assets/${projectId}/${floorId}.png`;
+await supabase.storage.from('project-assets').upload(wrongPath, file);
+// Resultado: 403 Forbidden (policy rejeita)
 
-// ✅ SEMPRE lazy load
-if (!floor.imageLoaded) {
-  await FloorViewer.loadImage(floor);
+// ✅ CORRECTO
+const correctPath = `${projectId}/floors/${floorId}/image.png`;
+await supabase.storage.from('project-assets').upload(correctPath, file);
+```
+
+**Validação**: Verificar path com regex antes de upload.
+
+**Mitigação**:
+```javascript
+// Helper function
+function buildStoragePath(projectId, entityType, entityId, filename) {
+  return `${projectId}/${entityType}/${entityId}/${filename}`;
 }
 ```
-**Motivo**: 10 floors × 500KB = 5MB download upfront → timeout/crash.
-
-### 10.4 Security Rules Sync
-Storage Rules **DEVEM** validar ownership via Firestore:
-```javascript
-firestore.get(/databases/(default)/documents/projects/$(projectId)).data.owner == request.auth.uid
-```
-Se mudares Firestore schema → **actualiza Storage Rules**.
-
-### 10.5 Migration Script (One-Time)
-`migrate-v11.0-to-v11.1.html`:
-- **SEMPRE** backup Firestore antes
-- **NUNCA** executar 2x (duplica Storage blobs)
-- **VALIDAR** todos os floors têm `imageURL` após migração
-
-### 10.6 Quota Limits (Spark Plan)
-- Storage: 5GB free
-- Downloads: 1GB/dia free
-- **Monitor usage** a 80% → alerta
-- **Não redimensionar imagens** client-side em v11.1 (v11.2+)
 
 ---
 
-## 11. DEPENDÊNCIAS CRUZADAS STORAGE v11.1 🆕
+### 9.4 🆕 Inherit-or-Override Query Pattern (v11.1)
+
+**Função SQL Crítica:**
+```sql
+CREATE OR REPLACE FUNCTION get_effective_param(
+  p_block_id UUID,
+  p_param_name TEXT
+) RETURNS JSONB AS $$
+  SELECT COALESCE(
+    (SELECT (row_to_json(b)::jsonb) -> p_param_name FROM blocks b WHERE b.id = p_block_id),
+    (SELECT (row_to_json(p)::jsonb) -> p_param_name FROM projects p 
+     JOIN blocks b ON p.id = b.project_id WHERE b.id = p_block_id)
+  );
+$$ LANGUAGE SQL;
+```
+
+**Risco:** Se função corrompida/apagada → TODOS os cálculos param efetivos falham.
+
+**Impacto:**
+- Materiais/Sismo/Vento retornam `NULL`
+- Cálculos EC1/EC8 crasham (divisão por zero, NaN)
+- UI mostra campos vazios
+
+**Exemplo Erro:**
+```javascript
+// Query param efetivo
+const { data } = await supabase.rpc('get_effective_param', {
+  p_block_id: 'bloco_A_id',
+  p_param_name: 'materiais'
+});
+
+// Se função não existe:
+// Error: function get_effective_param(uuid, text) does not exist
+// → materiais = NULL → gammaBetao = undefined → G = NaN
+```
+
+**Validação Obrigatória:**
+```sql
+-- Testar função existe e retorna valores
+SELECT get_effective_param('test_block_id', 'materiais');
+-- Esperado: JSONB válido OU NULL (não erro)
+
+-- Testar COALESCE funciona
+-- Bloco sem override → retorna project default
+SELECT get_effective_param('bloco_sem_override', 'sismo');
+-- Esperado: project.sismo (JSONB)
+
+-- Bloco com override → retorna block value
+SELECT get_effective_param('bloco_com_override', 'materiais');
+-- Esperado: blocks.materiais (JSONB)
+```
+
+**Mitigação:**
+1. **Deploy via migration script** (versionado Git)
+```sql
+-- migrations/003_create_get_effective_param.sql
+CREATE OR REPLACE FUNCTION get_effective_param(...) RETURNS JSONB AS $$ ... $$;
+```
+
+2. **Teste unitário em TESTES.md** (ver §1.14)
+
+3. **Fallback client-side redundante:**
+```javascript
+// supabase-data.js
+async function getEffectiveParam(blockId, paramName) {
+  try {
+    const { data, error } = await supabase.rpc('get_effective_param', {
+      p_block_id: blockId,
+      p_param_name: paramName
+    });
+    
+    if (error) throw error;
+    return data;
+    
+  } catch (err) {
+    // Fallback: Query manual (menos eficiente)
+    console.warn('get_effective_param failed, using fallback:', err);
+    
+    const { data: block } = await supabase
+      .from('blocks')
+      .select(`${paramName}, projects!inner(${paramName})`)
+      .eq('id', blockId)
+      .single();
+    
+    return block[paramName] || block.projects[paramName];
+  }
+}
+```
+
+4. **Health check startup:**
+```javascript
+// Index_v11.1.html - DOMContentLoaded
+async function validateSupabaseFunctions() {
+  try {
+    await supabase.rpc('get_effective_param', {
+      p_block_id: '00000000-0000-0000-0000-000000000000',  // Dummy UUID
+      p_param_name: 'materiais'
+    });
+    console.log('✅ Supabase functions OK');
+  } catch (err) {
+    console.error('🔥 CRITICAL: get_effective_param missing!', err);
+    alert('Erro crítico: Funções PostgreSQL não disponíveis. Contacte suporte.');
+  }
+}
+```
+
+**Impacto Futuro (v13.0+ Cloud Functions):**
+- Migrar lógica para Cloud Function server-side
+- Cache params efetivos em Redis (performance)
+
+---
+
+### 9.5 Realtime Subscription Leaks
+**Problema**: Subscrições não limpas → memory leaks + performance degradation.
+
+**Exemplo erro**:
+```javascript
+// ❌ ERRADO: Sem cleanup
+function loadProject(id) {
+  supabase
+    .from(`projects:id=eq.${id}`)
+    .on('UPDATE', callback)
+    .subscribe();
+  // Múltiplas chamadas = múltiplas subscriptions activas!
+}
+```
+
+**Mitigação**:
+```javascript
+// ✅ CORRECTO: Cleanup em beforeunload
+let currentSubscription = null;
+
+async function loadProject(id) {
+  // Limpa subscrição anterior
+  if (currentSubscription) {
+    await supabase.removeChannel(currentSubscription);
+  }
+  
+  currentSubscription = supabase
+    .channel(`project:${id}`)
+    .on('postgres_changes', {...}, callback)
+    .subscribe();
+}
+
+window.addEventListener('beforeunload', async () => {
+  if (currentSubscription) {
+    await supabase.removeChannel(currentSubscription);
+  }
+});
+```
+
+---
+
+### 9.6 Realtime Filter Scope
+**Problema**: Subscrever sem filtros → recebe updates de TODOS projects.
+
+**Exemplo perigoso**:
+```javascript
+// ❌ ERRADO
+// Subscreve a TABELA inteira (recebe updates de TODOS projects!)
+const subscription = supabase
+  .from('projects')
+  .on('UPDATE', callback)
+  .subscribe();
+
+// ✅ Filtrar server-side
+const subscription = supabase
+  .from(`projects:id=eq.${projectId}`)  // Filter server-side
+  .on('UPDATE', callback)
+  .subscribe();
+```
+
+**Mitigação**: Sempre usar filters em subscriptions (`table:column=eq.value`).
+
+---
+
+## 10. RISCOS MIGRATION SCRIPT 🆕
+
+### 10.1 One-Time Execution
+**CRÍTICO**: Migration script `migrate-firebase-to-supabase.html` **NUNCA** executar 2x.
+
+**Consequências**:
+- Duplica projects/blocos/pisos/zonas
+- Duplica blobs Supabase Storage
+- Incrementa quota desnecessariamente
+
+**Mitigação**:
+- Script verifica se project já existe (query `id_jsj` antes de insert)
+- Backup Firestore obrigatório antes de executar
+- Validation step final (count rows antes/depois)
+
+### 10.2 Foreign Key Order
+**Problema**: INSERT em ordem errada quebra foreign keys.
+
+**Ordem correcta**:
+```
+1. INSERT projects
+2. INSERT blocos (requer project_id)
+3. INSERT pisos (requer bloco_id)
+4. INSERT zonas (requer piso_id)
+5. INSERT geo_horizons (requer project_id)
+```
+
+**Script valida**: Aguarda cada INSERT antes de próximo.
+
+### 10.3 Base64 → Storage Upload Failures
+**Problema**: Upload imagem pode falhar (network, quota, etc).
+
+**Mitigação**:
+- Script usa try/catch por image
+- Continua migration se 1 image falhar (log error)
+- Validation step lista pisos sem `image_path`
+
+### 10.4 UUID vs Timestamp IDs
+**Problema**: Firebase usava timestamps (`Date.now()`), Supabase usa UUIDs.
+
+**Impacto**: IDs incompatíveis → `collectAllData()` legacy queries falham.
+
+**Mitigação**:
+- Migration script gera novos UUIDs PostgreSQL
+- NÃO tenta preservar IDs Firebase
+- `loadAllData()` v11.1 usa UUIDs nativos
+
+---
+
+## 11. DEPENDÊNCIAS CRUZADAS SUPABASE v11.1 🆕
 
 | Função | Depende de | Se quebrar |
 |--------|-----------|------------|
-| `uploadFloorImage()` | Auth user, projectId válido | Upload falha, sem rollback |
-| `getFloorImageURL()` | `floor.imageURL` existe | 404 em Viewer |
-| `FloorViewer.loadImage()` | `getFloorImageURL()` retorna URL válido | Canvas branco |
-| `deleteFloor()` | Chama `deleteFloorImage()` ANTES de remover doc | Storage leak (blob órfão) |
-| Migration script | Firestore read permissions | Migração parcial |
+| `createBloco()` | RLS policy projects, auth user | INSERT falha silent (403) |
+| `uploadFloorImage()` | Storage policy, `pisoId` válido | Upload 403, `image_path` null |
+| `getFloorImageURL()` | `piso.image_path` existe, Storage blob existe | 404 em Viewer, canvas branco |
+| `FloorViewer.loadImage()` | `getFloorImageURL()` retorna URL | Canvas sem imagem, erro console |
+| `deletePiso()` | Chama `deleteFloorImage()` ANTES de DELETE row | Storage leak (blob órfão) |
+| `subscribeToProject()` | Auth válida, projectId existe, RLS permite | Subscription silent fail (no error) |
+| `loadAllData()` | Foreign keys intactos, JOINs válidos | Dados parciais ou erro SQL |
+| Migration script | Firestore read permissions, Supabase write permissions | Migration parcial, rollback manual |
+| 🆕 `get_effective_param()` | Função SQL existe, blocks/projects válidos | Retorna NULL → cálculos falham |
 
-**REGRA**: Sempre chamar Storage delete **antes** de Firestore delete.
+**REGRA**: Sempre chamar Storage delete **antes** de PostgreSQL delete.
 
 ---
 
-## 12. BREAKING CHANGES v11.1
+## 12. BREAKING CHANGES v11.0 → v11.1
 
-### 12.1 Schema Floor (Firestore)
+### 12.1 Auth
 ```javascript
-// v11.0 (ANTIGO)
-floor = {
-  imageData: "data:image/png;base64,iVBOR..." // ~500KB
-}
+// v11.0 (Firebase)
+const user = firebase.auth().currentUser;
 
-// v11.1 (NOVO)
-floor = {
-  imageURL: "gs://bucket/projects/{id}/floors/{id}/image.png",
-  imageDownloadURL: "https://firebasestorage.googleapis.com/...",
-  imageURLExpiry: 1739750400000  // timestamp
-}
+// v11.1 (Supabase)
+const { data: { user } } = await supabase.auth.getUser();
 ```
 
-**Impacto**: JSONs v11.0 **incompatíveis** com v11.1 (requer migration).
+**Impacto**: Re-login obrigatório (sessions Firebase invalidadas).
 
-### 12.2 FloorViewer API
+### 12.2 Schema
 ```javascript
-// v11.0 (ANTIGO)
-new FloorViewer(canvasId, floorData); // Sync
+// v11.0 (Firestore)
+projectData.floors = [...]  // Array flat
 
-// v11.1 (NOVO)
-const viewer = new FloorViewer(canvasId, floorData);
-await viewer.loadImage(floor); // Async
+// v11.1 (Supabase)
+projectData.blocos = new Map([...])  // Hierarquia Blocos → Pisos → Zonas
 ```
 
-**Impacto**: Código que depende de imagem síncrona quebra.
+**Impacto**: JSONs v11.0 incompatíveis (migration script obrigatório).
+
+### 12.3 CRUD
+```javascript
+// v11.0 (Firestore)
+await saveProjectToFirestore(projectId, data);
+
+// v11.1 (Supabase)
+await saveProject(projectId, data);  // Upsert projects table
+await createPiso(blocoId, pisoData);  // Separado (foreign key)
+```
+
+**Impacto**: Código cliente requer refactor (CRUD separado por tabela).
+
+### 12.4 Real-time
+```javascript
+// v11.0 (Firestore onSnapshot)
+const unsubscribe = onSnapshot(doc(db, 'projects', id), callback);
+
+// v11.1 (Supabase Realtime)
+const subscription = supabase
+  .from(`projects:id=eq.${id}`)
+  .on('UPDATE', callback)
+  .subscribe();
+const unsubscribe = () => supabase.removeSubscription(subscription);
+```
+
+**Impacto**: Granularidade diferente (table-level vs document-level).
+
+### 12.5 Storage
+```javascript
+// v11.0 (Firestore inline Base64)
+floor.imageData = "data:image/png;base64,iVBOR..."  // String inline
+
+// v11.1 (Supabase Storage path)
+piso.image_path = "project-assets/{id}/pisos/{id}/image.png"  // Path reference
+```
+
+**Impacto**: Lazy load obrigatório (async fetch).
+
+### 12.6 Actions Data JSONB
+```javascript
+// v11.0 (Firestore nested arrays stringify)
+layer.shapes = "[[[{\"x\":100}]]]"  // String JSON
+
+// v11.1 (Supabase JSONB nativo)
+layer.shapes = [[[{x:100}]]]  // Array nativo
+```
+
+**Impacto**: `JSON.parse()` removido (direto).
 
 ---
 
