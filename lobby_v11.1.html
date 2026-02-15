@@ -1,10 +1,446 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-PT">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lobby v11.1</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>📁 SSOT JSJ - Gestão de Projetos</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #161a22;
+      --ink: #e8ecf1;
+      --muted: #9aa5b1;
+      --accent: #3aa3ff;
+      --ok: #2ecc71;
+      --warn: #f1c40f;
+      --bad: #e74c3c;
+      --line: #242936;
+      --pad: 12px;
+      --rad: 10px;
+      --gap: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, system-ui, sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 24px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    .top-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .top-toolbar h2 {
+      font-size: 18px;
+      color: var(--ink);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: #5bb3ff;
+      transform: translateY(-1px);
+    }
+
+    /* Projects Grid */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .project-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--rad);
+      padding: 20px;
+      transition: all 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .project-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(58, 163, 255, 0.15);
+    }
+
+    .project-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .project-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .project-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .project-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .project-meta div {
+      margin-bottom: 4px;
+    }
+
+    .project-meta strong {
+      color: var(--ink);
+    }
+
+    .project-date {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--line);
+    }
+
+    .project-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .btn-open {
+      flex: 1;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .btn-open:hover {
+      background: #5bb3ff;
+    }
+
+    .btn-delete {
+      background: rgba(231, 76, 60, 0.2);
+      border: 1px solid var(--bad);
+      color: var(--bad);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-delete:hover {
+      background: var(--bad);
+      color: #fff;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state h3 {
+      font-size: 20px;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    /* Status Message */
+    .status {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+
+    .status.ok {
+      background: var(--ok);
+      color: #fff;
+    }
+
+    .status.bad {
+      background: var(--bad);
+      color: #fff;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* User Header */
+    .user-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 16px 20px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--rad);
+    }
+
+    .user-header h2 {
+      font-size: 20px;
+      color: var(--accent);
+      margin: 0;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-info span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .btn-secondary {
+      background: rgba(231, 76, 60, 0.2);
+      border: 1px solid var(--bad);
+      color: var(--bad);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bad);
+      color: #fff;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-auth.js"></script>
 </head>
 <body>
+  <header>
+    <h1>📁 SSOT JSJ - Gestão de Projetos</h1>
+    <p>Sistema de gestão multi-projeto para Template Edifício v11.0</p>
+  </header>
+
+  <main>
+    <div id="authPanel" class="card" style="max-width: 520px; margin: 0 auto 24px; display: none;">
+      <h2 style="margin-bottom: 8px;">Autenticação Supabase</h2>
+      <p style="color: var(--muted); margin-bottom: 16px;">Inicia sessão ou cria conta @jsj.pt para aceder aos projetos.</p>
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+        <input id="authEmail" type="email" placeholder="email@jsj.pt" />
+        <input id="authPassword" type="password" placeholder="password" />
+      </div>
+      <div class="project-actions" style="margin-top: 12px;">
+        <button id="btnSignup" class="btn-primary" type="button">Signup</button>
+        <button id="btnLogin" class="btn-open" type="button">Login</button>
+      </div>
+    </div>
+
+    <div id="lobbyPanel" style="display: none;">
+    <div class="user-header">
+      <h2>🏛️ SSOT JSJ Template</h2>
+      <div class="user-info">
+        <span id="userEmail">Carregando...</span>
+        <button id="logoutBtn" class="btn-secondary">Sair</button>
+      </div>
+    </div>
+
+    <div class="top-toolbar">
+      <h2 id="projectCount">A carregar projetos...</h2>
+      <button class="btn-primary" onclick="createNewProject()">➕ Novo Projeto</button>
+    </div>
+
+    <div id="projectsGrid" class="projects-grid"></div>
+
+    <div id="emptyState" class="empty-state" style="display: none;">
+      <div class="empty-state-icon">📂</div>
+      <h3>Nenhum projeto criado</h3>
+      <p>Integração de dados será feita na Task 2.6. Grid em placeholder.</p>
+      <button class="btn-primary" onclick="showStatus('Task 2.6 irá criar projetos via Supabase', 'ok')">ℹ️ Placeholder</button>
+    </div>
+    </div>
+  </main>
+
+  <script>
+    let projects = [];
+
+    function renderProjects(projectsData) {
+      projects = projectsData || [];
+      const grid = document.getElementById('projectsGrid');
+      const emptyState = document.getElementById('emptyState');
+      const projectCount = document.getElementById('projectCount');
+
+      if (projects.length === 0) {
+        grid.style.display = 'none';
+        emptyState.style.display = 'block';
+        projectCount.textContent = 'Nenhum projeto';
+        return;
+      }
+
+      grid.style.display = 'grid';
+      emptyState.style.display = 'none';
+      projectCount.textContent = `${projects.length} ${projects.length === 1 ? 'projeto' : 'projetos'}`;
+      grid.innerHTML = '';
+    }
+
+    // ==================== Status Messages ====================
+    function showStatus(message, type = 'ok') {
+      const existing = document.querySelector('.status');
+      if (existing) existing.remove();
+
+      const status = document.createElement('div');
+      status.className = `status ${type}`;
+      status.textContent = message;
+      document.body.appendChild(status);
+
+      setTimeout(() => status.remove(), 3000);
+    }
+
+    function createNewProject() {
+      showStatus('Task 2.6 irá criar projetos via Supabase Database', 'ok');
+    }
+
+    async function refreshAuthUI() {
+      const { user } = await window.getCurrentUser();
+      const authPanel = document.getElementById('authPanel');
+      const lobbyPanel = document.getElementById('lobbyPanel');
+
+      if (!user) {
+        authPanel.style.display = 'block';
+        lobbyPanel.style.display = 'none';
+        renderProjects([]);
+        return;
+      }
+
+      authPanel.style.display = 'none';
+      lobbyPanel.style.display = 'block';
+      document.getElementById('userEmail').textContent = user.email || 'Utilizador autenticado';
+      renderProjects([]);
+    }
+
+    async function doSignup() {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const result = await window.signupUser(email, password);
+      if (!result.success) {
+        showStatus(`❌ Signup falhou: ${result.error}`, 'bad');
+        return;
+      }
+      showStatus('✅ Signup efetuado. Verifica o email se necessário.', 'ok');
+      await refreshAuthUI();
+    }
+
+    async function doLogin() {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const result = await window.loginUser(email, password);
+      if (!result.success) {
+        showStatus(`❌ Login falhou: ${result.error}`, 'bad');
+        return;
+      }
+      showStatus('✅ Login efetuado.', 'ok');
+      await refreshAuthUI();
+    }
+
+    async function logout() {
+      const result = await window.logoutUser();
+      if (!result.success) {
+        showStatus(`❌ Erro ao sair: ${result.error}`, 'bad');
+        return;
+      }
+      showStatus('Sessão terminada.', 'ok');
+      await refreshAuthUI();
+    }
+
+    document.getElementById('btnSignup').addEventListener('click', doSignup);
+    document.getElementById('btnLogin').addEventListener('click', doLogin);
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    refreshAuthUI();
+  </script>
 </body>
 </html>
