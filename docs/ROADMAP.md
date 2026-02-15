@@ -1,4 +1,4 @@
-# 🚀 ROADMAP SSOT JSJ - Atualizado 14/02/2026
+# 🚀 ROADMAP SSOT JSJ - Atualizado 15/02/2026
 
 ---
 
@@ -50,9 +50,11 @@
 
 **Breaking Change**: Requer auth obrigatório
 
+---
+
 ## 🔨 FASE 3.1: FIREBASE STORAGE LAYER (1 semana)
 
-### v11.1 - Generic Asset Storage
+### v11.1 - Generic Asset Storage ✅ SPEC FINALIZADA
 **Branch Git**: V3.2-firebase-storage  
 **Objetivo**: Infraestrutura genérica para assets pesados (PNGs, PDFs, DXF, etc)
 
@@ -62,36 +64,88 @@
 - **Futuro**: PDFs geotécnicos, DXF plantas, Excel maps, videos
 - Storage: 5GB free (Spark plan) vs Firestore 1GB
 
-**Arquitectura Genérica**:
+**Arquitectura Final (Firestore-Centric)**:
 ```javascript
-// Storage path pattern (flexível)
-projects/{projectId}/
-  ├─ floors/{floorId}/image.png
-  ├─ geotecnia/{docId}.pdf
-  ├─ plantas/{dwgId}.dxf
-  ├─ reports/{reportId}.docx
-  └─ media/{videoId}.mp4
+// Firestore Schema (Array mantido, subcollection adiada para v11.2)
+projects/{projectId} (document)
+  ├─ metadata fields (id_jsj, nome_projeto, etc.)
+  └─ floors: [
+      {
+        id: timestamp,
+        name, cota, area,
+        imageURL: "gs://bucket/projects/{id}/floors/{id}/image.png",
+        imageDownloadURL: "https://...", // Cached (TTL 7 dias)
+        imageURLExpiry: timestamp,
+        zones: [...]
+      }
+    ]
+
+// Storage Paths (Genérico)
+gs://ssot-jsj.appspot.com/
+  └─ projects/{projectId}/
+      ├─ floors/{floorId}/image.png
+      ├─ geotecnia/{docId}.pdf        // Futuro v11.2+
+      ├─ plantas/{dwgId}.dxf          // Futuro v11.2+
+      └─ reports/{reportId}.docx      // Futuro v13.0+
 ```
 
-**Implementação v11.1 (Fase 1 - Images Only)**:
-- `uploadAsset(path, data, mimeType)` - função genérica
-- `downloadAsset(path)` - função genérica
-- `deleteAsset(path)` - função genérica
-- **Usar agora**: Upload floor.imageData → `floors/{floorId}/image.png`
-- **Preparado futuro**: Mesmas funções servem PDFs, DXFs, etc
+**Implementação v11.1 (Assets Only - Imagens)**:
+
+**Funções Genéricas (firebase-data.js)**:
+```javascript
+// Generic upload (preparado para qualquer tipo)
+async uploadAsset(projectId, path, file, metadata)
+  → { storageURL, downloadURL, expiry }
+
+// Lazy load com cache TTL
+async getAssetURL(storageURL, cachedURL, expiry)
+  → downloadURL (regenera se expirado)
+
+// Generic delete
+async deleteAsset(storageURL)
+  → void
+
+// Floor-specific wrappers (v11.1)
+async uploadFloorImage(projectId, floorId, file)
+async getFloorImageURL(floor)
+async deleteFloorImage(floor.imageURL)
+```
+
+**Lazy Loading Obrigatório**:
+- ❌ NO eager load (lobby.html → index.html)
+- ✅ Load on-demand (Secção 7 Viewer, quando user seleciona piso)
+- Cache client-side (URL.createObjectURL + flag `floor.imageLoaded`)
+
+**Security Rules**:
+```javascript
+// Storage Rules (paralelo a Firestore Rules)
+match /projects/{projectId}/{allPaths=**} {
+  allow read, write: if isOwner(projectId) && isJSJEmail();
+  // Valida ownership via Firestore doc lookup
+}
+```
+
+**Migration Script**:
+- `migrate-v11.0-to-v11.1.html` (one-time manual)
+- Converte `floor.imageData` (Base64) → Upload Storage → `floor.imageURL`
+- Backup Firestore obrigatório antes
 
 **Breaking Change**: 
-- Floor images: Base64 → Storage URLs
-- Migração automática v11.0→v11.1
+- Floor images: Base64 string → Storage URLs
+- Migração manual obrigatória (script fornecido)
 
 **Files Modified**:
-- firebase-data.js (+ generic storage layer)
-- Index_v11.0.html → Index_v11.1.html (lazy load images)
+- `firebase-data.js` (+ generic storage layer ~200 linhas)
+- `Index_v11.0.html` → `Index_v11.1.html` (lazy load images)
+- `lobby.html` (metadata only, sem image load)
+- Firebase Console (Storage Rules deployment)
+
+**Files Created**:
+- `migrate-v11.0-to-v11.1.html` (migration script)
 
 **Futuro (v11.2+)**: 
-- Secção 3 (Elementos Base) → Upload PDFs
-- Plantas DXF → Auto-trace integration
-- Reports DOCX → Cloud Functions generation
+- Mesmas funções genéricas servem PDFs (Secção 3), DXF (auto-trace), DOCX (reports)
+- Subcollection migration (floors array → subcollection)
 
 **Próximo**: v11.2 Schema Blocos
 
@@ -111,15 +165,15 @@ Projeto
 ```
 
 **Implementação**:
-- Firestore: `projects/{id}/blocos/{id}/pisos/{id}`
+- Firestore: `projects/{id}/blocos/{id}/pisos/{id}` (SUBCOLLECTION)
 - UI Secção 2: CRUD Blocos + Tipologias
 - UI Secção 5: Selector Bloco → Geotecnia
 - UI Secção 7: Selector Bloco → Ações
 - **Remove**: Conceito "zonas" (substituído por elementos canvas)
 - Pisos editáveis: Nome/Cota/Tipologia mutáveis
-- Migração v11.0→v11.1
+- Migração v11.1→v11.2 (array→subcollection)
 
-**Breaking Change**: JSONs v11.0 incompatíveis
+**Breaking Change**: JSONs v11.1 incompatíveis
 
 ---
 
@@ -162,7 +216,7 @@ Projeto
 
 ### v13.0 - Reports & Export (2 semanas)
 
-- Cloud Functions → DOCX reports automáticos
+- Cloud Functions → DOCX reports automáticos (usa Storage genérico v11.1)
 - Templates regulamentação (EC0/1/2/8)
 - Export peças desenhadas (auto-fill)
 - Quadro cargas PDF (1-página)
@@ -191,21 +245,22 @@ Projeto
 |--------|---------|-----------|
 | v10.4 | 1 sem | 1 sem |
 | v11.0 | 2 sem | 3 sem |
-| v11.1 | 2 sem | 5 sem |
-| v11.5 | 1 sem | 6 sem |
-| v12.0 | 1 sem | 7 sem |
-| v13.0 | 2 sem | 9 sem |
-| v14.0 | 4 sem | 13 sem |
+| v11.1 | 1 sem | 4 sem |
+| v11.2 | 2 sem | 6 sem |
+| v11.5 | 1 sem | 7 sem |
+| v12.0 | 1 sem | 8 sem |
+| v13.0 | 2 sem | 10 sem |
+| v14.0 | 4 sem | 14 sem |
 
-**Total**: ~3 meses (tempo parcial, 1 dev)
+**Total**: ~3.5 meses (tempo parcial, 1 dev)
 
 ---
 
 ## 🎯 PRÓXIMOS PASSOS IMEDIATOS
 
-1. **Validar v10.4**: Testa color-trace offline (aprende OpenCV)
-2. **Design v11.1**: Mock UI Blocos (papel/Figma)
-3. **Setup Firebase**: Criar projeto, config auth
+1. **Implementar v11.1**: Firebase Storage Layer (ver spec finalizada acima)
+2. **Design v11.2**: Mock UI Blocos (papel/Figma)
+3. **Validar v10.4**: Testa color-trace offline (aprende OpenCV)
 
 ---
 
@@ -213,9 +268,24 @@ Projeto
 
 ### Decisões Arquitecturais
 
-**Blocos após Firebase** (v11.1):
+**Storage Genérico v11.1**:
+- Funções agnósticas de tipo (upload/download/delete)
+- Implementa só imagens agora, preparado para PDFs/DXF futuro
+- Evita refactor quando adicionar novos asset types
+
+**Array mantido v11.1**:
+- Subcollection adiada para v11.2 (evita 2 migrações)
+- Array funciona <20 floors (scope JSJ)
+- v11.2 já refactora schema inteiro (Blocos)
+
+**Lazy Loading obrigatório**:
+- Deep search Gemini validou crítico para performance
+- Cache TTL 7 dias (balanço freshness vs API calls)
+
+**Blocos após Storage** (v11.2):
 - Firestore Collections mapeiam hierarquia natural
 - Evita migração localStorage complexa
+- Storage genérico já preparado para assets por bloco
 
 **Editor protótipo v10.4**:
 - Valida tech (OpenCV) sem comprometer schema
@@ -230,11 +300,12 @@ Projeto
 
 - ✅ v10.0→v10.2: Auto-migração
 - ⚠️ v10.2→v11.0: Requer Firebase auth
-- 🔥 v11.0→v11.1: Breaking (schema Blocos)
-- ✅ v11.1→v14.0: Backward compatible
+- 🔥 v11.0→v11.1: Breaking (Base64→Storage, script manual)
+- 🔥 v11.1→v11.2: Breaking (schema Blocos)
+- ✅ v11.2→v14.0: Backward compatible
 
 ---
 
-**Última atualização**: 14/02/2026  
+**Última atualização**: 15/02/2026  
 **Versão atual**: v11.0  
-**Próxima milestone**: v11.1 
+**Próxima milestone**: v11.1 (Asset Storage Layer)
