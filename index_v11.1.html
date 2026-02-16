@@ -1936,6 +1936,9 @@
       await saveCurrentProject();
       window.location.href = 'lobby_v11.1.html';
     }
+    
+    // Export para garantir acessibilidade global
+    window.backToLobby = backToLobby;
 
     async function saveCurrentProject() {
       if (!appState.activeProjectId) return;
@@ -3238,18 +3241,9 @@
       }
     }
 
-    // Global FloorViewer instance
-    let floorViewer = null;
+    // ===== NOTA: floorViewer declarado em js/sec7-viewer.js =====
+    // variável local para uso em código legacy deste ficheiro
     let currentZonamentoFloor = null;
-
-    // Initialize FloorViewer
-    function initFloorViewer() {
-      const canvas = document.getElementById('zonamentoCanvas');
-      if (canvas && !floorViewer) {
-        floorViewer = new FloorViewer(canvas);
-        window.floorViewer = floorViewer;
-      }
-    }
 
     // Populate floor selector dropdown
     async function populateZonamentoFloorSelector() {
@@ -3271,16 +3265,16 @@
 
       if (!floorId) {
         currentZonamentoFloor = null;
-        if (floorViewer) floorViewer.clear();
+        if (window.floorViewer) window.floorViewer.clear();
         return;
       }
 
       const floor = findPisoById(floorId);
       if (floor) {
         currentZonamentoFloor = floor;
-        if (floorViewer) {
-          floorViewer.loadData(floor.actionsData || { layers: {} });
-          await floorViewer.loadFloorImage(floorId);
+        if (window.floorViewer) {
+          window.floorViewer.loadData(floor.actionsData || { layers: {} });
+          await window.floorViewer.loadFloorImage(floorId);
         }
 
         const blockId = document.getElementById('sec7-select-bloco')?.value;
@@ -3387,9 +3381,9 @@
       document.querySelectorAll('.viewer-toolbar button').forEach(btn => btn.classList.remove('active'));
       document.getElementById(`btn-${mode}`)?.classList.add('active');
 
-      if (floorViewer) {
-        floorViewer.setMode(mode);
-        floorViewer.render();
+      if (window.floorViewer) {
+        window.floorViewer.setMode(mode);
+        window.floorViewer.render();
       }
     }
 
@@ -3430,9 +3424,9 @@
 
           // Refresh viewer if this floor is currently selected
           if (currentZonamentoFloor && currentZonamentoFloor.id === floor.id) {
-            if (floorViewer) {
-              floorViewer.loadData(floor.actionsData);
-              floorViewer.render();
+            if (window.floorViewer) {
+              window.floorViewer.loadData(floor.actionsData);
+              window.floorViewer.render();
             }
           }
 
