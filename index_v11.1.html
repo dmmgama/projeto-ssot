@@ -15,6 +15,7 @@
   <script src="js/supabase-storage.js"></script>
   <script src="js/supabase-realtime.js"></script>
   <script src="js/ui-blocos.js"></script>
+  <script src="js/ui-acoes.js"></script>
   <link rel="stylesheet" href="css/styles_v11.1.css">
   
   <style>
@@ -1484,9 +1485,12 @@
             <div class="action-body show" id="body-zonamento">
               <!-- Floor Selector -->
               <div class="floor-selector-row">
-                <label>Selecionar Piso:</label>
-                <select id="zonamentoFloorSelect" onchange="onZonamentoFloorChange()">
-                  <option value="">-- Selecione um piso --</option>
+                <label>Selecionar Bloco:</label>
+                <select id="sec7-select-bloco" onchange="onSec7BlockChange()">
+                  <option value="">Seleccionar Bloco...</option>
+                </select>
+                <select id="sec7-select-piso" onchange="onSec7FloorChange()" disabled>
+                  <option value="">Seleccionar Piso...</option>
                 </select>
                 <button class="btn-primary" onclick="openZonamentoEditor()">✏️ Editar Zonamento</button>
               </div>
@@ -3109,28 +3113,27 @@
       const canvas = document.getElementById('zonamentoCanvas');
       if (canvas && !floorViewer) {
         floorViewer = new FloorViewer(canvas);
+        window.floorViewer = floorViewer;
       }
     }
 
     // Populate floor selector dropdown
-    function populateZonamentoFloorSelector() {
-      const select = document.getElementById('zonamentoFloorSelect');
-      if (!select) return;
-
-      select.innerHTML = '<option value="">-- Selecione um piso --</option>';
-      projectData.floors.forEach(floor => {
-        const zoneCount = floor.actionsData?.layers?.length || 0;
-        const option = document.createElement('option');
-        option.value = floor.id;
-        option.textContent = `${floor.name} (Cota: ${floor.cota}m, ${zoneCount} zonas)`;
-        select.appendChild(option);
-      });
+    async function populateZonamentoFloorSelector() {
+      if (!appState.activeProjectId || typeof window.populateBlockSelector !== 'function') {
+        return;
+      }
+      await window.populateBlockSelector(appState.activeProjectId);
     }
 
     // Handle floor selection change
     async function onZonamentoFloorChange() {
-      const select = document.getElementById('zonamentoFloorSelect');
-      const floorId = select.value;
+      const select = document.getElementById('sec7-select-piso');
+      const floorId = select ? select.value : '';
+
+      await onZonamentoFloorChangeById(floorId);
+    }
+
+    async function onZonamentoFloorChangeById(floorId) {
 
       if (!floorId) {
         currentZonamentoFloor = null;
@@ -3148,10 +3151,12 @@
       }
     }
 
+    window.onZonamentoFloorChangeById = onZonamentoFloorChangeById;
+
     // Open zonamento editor
     function openZonamentoEditor() {
-      const select = document.getElementById('zonamentoFloorSelect');
-      const floorId = select.value;
+      const select = document.getElementById('sec7-select-piso');
+      const floorId = select ? select.value : '';
 
       if (!floorId) {
         alert('Por favor, selecione um piso primeiro.');
@@ -4127,6 +4132,9 @@
         appState.activeProjectId = projectId;
         if (typeof window.renderBlocos === 'function') {
           await window.renderBlocos(projectId);
+        }
+        if (typeof window.populateBlockSelector === 'function') {
+          await window.populateBlockSelector(projectId);
         }
       }
     }

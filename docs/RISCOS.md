@@ -93,9 +93,9 @@ kpiID, kpiNome, kpiFase, kpiImplant, kpiABC, kpiPisos, kpiAltura
 
 ### 2.11 🆕 Selectores Blocos (v11.1)
 ```
-actionsBlockSelector    # Selector Bloco na Secção 7
-actionsFloorSelector    # Selector Piso (filtered by bloco)
-zonamentoFloorSelector  # Selector Piso no Viewer 2D
+sec7-select-bloco       # ✅ Selector Bloco na Secção 7 (novo)
+sec7-select-piso        # ✅ Selector Piso (filtrado por bloco, novo)
+zonamentoFloorSelector  # ❌ Removido em v11.1
 ```
 
 ### 2.12 IDs Dinâmicos (Criados por JS)
