@@ -11,6 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-auth.js"></script>
+  <script src="js/supabase-storage.js"></script>
   
   <style>
     :root {
@@ -3100,7 +3101,7 @@
     }
 
     // Handle floor selection change
-    function onZonamentoFloorChange() {
+    async function onZonamentoFloorChange() {
       const select = document.getElementById('zonamentoFloorSelect');
       const floorId = select.value;
 
@@ -3113,11 +3114,9 @@
       const floor = findPisoById(floorId);
       if (floor) {
         currentZonamentoFloor = floor;
-        if (floorViewer && floor.actionsData) {
-          floorViewer.loadData(floor.actionsData);
-          floorViewer.render();
-        } else if (floorViewer) {
-          floorViewer.clear();
+        if (floorViewer) {
+          floorViewer.loadData(floor.actionsData || { layers: {} });
+          await floorViewer.loadFloorImage(floorId);
         }
       }
     }
@@ -3280,17 +3279,36 @@
         this.offsetX = 0;
         this.offsetY = 0;
 
-        if (data.blueprint && data.blueprint.image) {
-          const img = new Image();
-          img.onload = () => {
-            this.blueprint = img;
-            this.updateFitTransform();
-            this.render();
-          };
-          img.src = data.blueprint.image;
-        } else {
+        this.render();
+      }
+
+      async loadFloorImage(floorId) {
+        if (typeof window.getFloorImageURL !== 'function') {
+          this.blueprint = null;
           this.render();
+          return;
         }
+
+        const { url } = await window.getFloorImageURL(floorId);
+
+        if (!url) {
+          this.blueprint = null;
+          this.render();
+          return;
+        }
+
+        const img = new Image();
+        img.onload = () => {
+          this.blueprint = img;
+          this.updateFitTransform();
+          this.render();
+        };
+        img.onerror = () => {
+          console.error('Failed to load floor image');
+          this.blueprint = null;
+          this.render();
+        };
+        img.src = url;
       }
 
       updateFitTransform() {
