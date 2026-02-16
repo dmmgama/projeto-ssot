@@ -159,3 +159,85 @@ window.createBlock = createBlock;
 window.updateBlock = updateBlock;
 window.deleteBlock = deleteBlock;
 window.listProjectBlocks = listProjectBlocks;
+
+async function createFloor(blockId, projectId, floorData) {
+	const { data, error } = await window.supabaseClient
+		.from('floors')
+		.insert({
+			block_id: blockId,
+			project_id: projectId,
+			...floorData
+		})
+		.select()
+		.single();
+
+	if (error) {
+		return { success: false, error: error.message };
+	}
+
+	return { success: true, floor: data };
+}
+
+async function updateFloor(floorId, updates) {
+	const { error } = await window.supabaseClient
+		.from('floors')
+		.update(updates)
+		.eq('id', floorId);
+
+	if (error) {
+		return { success: false, error: error.message };
+	}
+
+	return { success: true };
+}
+
+async function deleteFloor(floorId) {
+	if (typeof window.deleteFloorImage === 'function') {
+		await window.deleteFloorImage(floorId);
+	}
+
+	const { error } = await window.supabaseClient
+		.from('floors')
+		.delete()
+		.eq('id', floorId);
+
+	if (error) {
+		return { success: false, error: error.message };
+	}
+
+	return { success: true };
+}
+
+async function listBlockFloors(blockId) {
+	const { data, error } = await window.supabaseClient
+		.from('floors')
+		.select('*')
+		.eq('block_id', blockId)
+		.order('cota', { ascending: true });
+
+	if (error) {
+		return { success: false, floors: [], error: error.message };
+	}
+
+	return { success: true, floors: data || [] };
+}
+
+async function getFloor(floorId) {
+	const { data, error } = await window.supabaseClient
+		.from('floors')
+		.select('*')
+		.eq('id', floorId)
+		.single();
+
+	if (error) {
+		return { floor: null, error: error.message };
+	}
+
+	return { floor: data };
+}
+
+window.createFloor = createFloor;
+window.updateFloor = updateFloor;
+window.deleteFloor = deleteFloor;
+window.listBlockFloors = listBlockFloors;
+window.getFloor = getFloor;
