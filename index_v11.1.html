@@ -11,7 +11,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-auth.js"></script>
+  <script src="js/supabase-database.js"></script>
   <script src="js/supabase-storage.js"></script>
+  <script src="js/supabase-realtime.js"></script>
+  <script src="js/ui-blocos.js"></script>
+  <link rel="stylesheet" href="css/styles_v11.1.css">
   
   <style>
     :root {
@@ -1279,6 +1283,28 @@
 
       <!-- SEC 2: CARACTERIZAÇÃO GERAL -->
       <section id="sec2" class="section">
+        <h2>Nível 2 · Blocos</h2>
+
+        <section id="secao-2">
+          <button id="btn-add-bloco" class="btn-primary" type="button">+ Adicionar Bloco</button>
+          <div id="blocos-container"></div>
+        </section>
+
+        <template id="template-bloco-item">
+          <div class="bloco-accordion" data-block-id="">
+            <div class="bloco-header">
+              <span class="bloco-name" contenteditable="true"></span>
+              <button class="btn-sm btn-collapse" type="button">▼</button>
+              <button class="btn-danger btn-delete-bloco" type="button">🗑️</button>
+            </div>
+            <div class="bloco-body">
+              <textarea class="bloco-description" placeholder="Descrição..."></textarea>
+              <div class="tipologias-accordion"></div>
+            </div>
+          </div>
+        </template>
+
+        <div style="display:none;">
         <h2>2 · Caracterização Geral</h2>
 
         <h3>📊 Resumo Geral (Automático)</h3>
@@ -1300,6 +1326,7 @@
         <h3>🏢 Pisos e Zonas</h3>
         <button class="add-row" onclick="addFloor()">➕ Adicionar Piso</button>
         <div id="floorsContainer"></div>
+        </div>
       </section>
 
       <!-- SEC 3: ELEMENTOS BASE -->
@@ -4098,6 +4125,9 @@
       const projectId = urlParams.get('project');
       if (projectId) {
         appState.activeProjectId = projectId;
+        if (typeof window.renderBlocos === 'function') {
+          await window.renderBlocos(projectId);
+        }
       }
     }
 

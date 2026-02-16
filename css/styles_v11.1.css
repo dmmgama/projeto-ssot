@@ -1,0 +1,85 @@
+#secao-2 {
+  display: grid;
+  gap: 12px;
+}
+
+#blocos-container {
+  display: grid;
+  gap: 10px;
+}
+
+.bloco-accordion {
+  border: 1px solid var(--line);
+  border-radius: var(--rad);
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.bloco-header {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.bloco-name {
+  min-height: 28px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  outline: none;
+}
+
+.bloco-name:focus {
+  border-color: var(--accent);
+  background: #0d1016;
+}
+
+.bloco-body {
+  display: none;
+  padding: 10px;
+}
+
+.bloco-body.open {
+  display: block;
+}
+
+.bloco-description {
+  margin-bottom: 10px;
+}
+
+.tipologias-accordion {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.tipologia {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: #121722;
+}
+
+.tipologia h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.pisos-list {
+  min-height: 30px;
+  display: grid;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.piso-item {
+  font-size: 12px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #0d1016;
+}
