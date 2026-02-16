@@ -1852,6 +1852,10 @@
       projects: {}
     };
 
+    let autoSaveTimer = null;
+    let isDirty = false;
+    let realtimeSubscription = null;
+
     // Proxy para acesso rápido ao projeto ativo
     Object.defineProperty(appState, 'activeProject', {
       get() {
@@ -1885,16 +1889,78 @@
         geoHorizons: project.geoHorizons
       };
 
-      if (typeof window.saveProjectToFirestore !== 'function') {
-        return;
-      }
+      const updates = {
+        id_jsj: document.getElementById('id_jsj')?.value || '',
+        nome_projeto: document.getElementById('nome_projeto')?.value || 'Projeto Sem Nome',
+        cliente: document.getElementById('cliente')?.value || '',
+        designacao: document.getElementById('designacao')?.value || '',
+        localizacao: document.getElementById('localizacao')?.value || '',
+        tipologia: document.getElementById('tipologia')?.value || '',
+        especialidade: document.getElementById('especialidade')?.value || ''
+      };
 
       try {
-        await window.saveProjectToFirestore(updatedProject);
-        console.log('✅ [Index] Saved');
+        if (typeof window.updateProject === 'function') {
+          const result = await window.updateProject(appState.activeProjectId, updates);
+          if (!result.success) {
+            console.error('❌ [Index] Save error:', result.error);
+            return;
+          }
+        }
+
+        console.log('✅ Auto-save completo');
+        isDirty = false;
       } catch (error) {
         console.error('❌ [Index] Save error:', error);
       }
+    }
+
+    function markDirty() {
+      isDirty = true;
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(async () => {
+        if (isDirty) {
+          await saveCurrentProject();
+        }
+      }, 30000);
+    }
+
+    function showToast(message) {
+      const existingToast = document.getElementById('realtime-toast');
+      if (existingToast) {
+        existingToast.remove();
+      }
+
+      const toast = document.createElement('div');
+      toast.id = 'realtime-toast';
+      toast.textContent = message;
+      toast.style.position = 'fixed';
+      toast.style.top = '20px';
+      toast.style.right = '20px';
+      toast.style.background = 'var(--warn)';
+      toast.style.color = '#111';
+      toast.style.padding = '10px 14px';
+      toast.style.borderRadius = '8px';
+      toast.style.zIndex = '9999';
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity .2s ease-in-out';
+      document.body.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+      });
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 250);
+      }, 5000);
+    }
+
+    function attachDirtyListeners() {
+      document.querySelectorAll('input, textarea, select').forEach((el) => {
+        el.addEventListener('input', markDirty);
+        el.addEventListener('change', markDirty);
+      });
     }
 
     // Legacy Bridge (Proxy)
@@ -4136,8 +4202,24 @@
         if (typeof window.populateBlockSelector === 'function') {
           await window.populateBlockSelector(projectId);
         }
+
+        if (typeof window.subscribeToProject === 'function') {
+          realtimeSubscription = window.subscribeToProject(projectId, (payload) => {
+            if (payload.eventType === 'UPDATE') {
+              showToast('⚠️ Projeto actualizado remotamente. Recarregar?');
+            }
+          });
+        }
       }
+
+      attachDirtyListeners();
     }
+
+    window.addEventListener('beforeunload', () => {
+      if (realtimeSubscription && typeof realtimeSubscription.unsubscribe === 'function') {
+        realtimeSubscription.unsubscribe();
+      }
+    });
 
     initEditor();
   </script>
