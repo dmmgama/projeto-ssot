@@ -303,3 +303,28 @@ window.createZone = createZone;
 window.updateZone = updateZone;
 window.deleteZone = deleteZone;
 window.listFloorZones = listFloorZones;
+
+async function loadProjectHierarchy(projectId) {
+	const { data, error } = await window.supabaseClient
+		.from('projects')
+		.select(`
+			*,
+			blocks (
+				*,
+				floors (
+					*,
+					zones (*)
+				)
+			)
+		`)
+		.eq('id', projectId)
+		.single();
+
+	if (error) {
+		return { success: false, project: null, error: error.message };
+	}
+
+	return { success: true, project: data };
+}
+
+window.loadProjectHierarchy = loadProjectHierarchy;
