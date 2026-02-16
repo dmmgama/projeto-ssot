@@ -346,3 +346,24 @@
   margin: 0;
   line-height: 1.5;
 }
+
+/* Secção 7 - Tabs Zonamento */
+.tab-btn {
+  padding: 8px 12px;
+  background: #0d0d0d;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  background: #1a1a1a;
+  border-color: #00aaff;
+}
+
+.tab-btn.active {
+  border-color: #00aaff;
+  background: #003355;
+}
