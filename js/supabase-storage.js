@@ -70,3 +70,44 @@ async function getFloorImageURL(floorId) {
 }
 
 window.getFloorImageURL = getFloorImageURL;
+
+async function deleteFloorImage(floorId) {
+	try {
+		const { data: floor, error: floorError } = await window.supabaseClient
+			.from('floors')
+			.select('image_path')
+			.eq('id', floorId)
+			.single();
+
+		if (floorError) {
+			return { success: false, error: floorError.message };
+		}
+
+		if (!floor || !floor.image_path) {
+			return { success: true };
+		}
+
+		const { error: removeError } = await window.supabaseClient.storage
+			.from('floor-images')
+			.remove([floor.image_path]);
+
+		if (removeError) {
+			return { success: false, error: removeError.message };
+		}
+
+		if (typeof window.updateFloor !== 'function') {
+			return { success: false, error: 'updateFloor não disponível' };
+		}
+
+		const updateResult = await window.updateFloor(floorId, { image_path: null });
+		if (!updateResult.success) {
+			return { success: false, error: updateResult.error || 'Falha ao limpar image_path' };
+		}
+
+		return { success: true };
+	} catch (error) {
+		return { success: false, error: error.message || 'Erro ao remover imagem do piso' };
+	}
+}
+
+window.deleteFloorImage = deleteFloorImage;
