@@ -337,8 +337,8 @@
     <div id="emptyState" class="empty-state" style="display: none;">
       <div class="empty-state-icon">📂</div>
       <h3>Nenhum projeto criado</h3>
-      <p>Integração de dados será feita na Task 2.6. Grid em placeholder.</p>
-      <button class="btn-primary" onclick="showStatus('Task 2.6 irá criar projetos via Supabase', 'ok')">ℹ️ Placeholder</button>
+      <p>Comece por criar o seu primeiro projeto JSJ.</p>
+      <button class="btn-primary" onclick="createNewProject()">➕ Criar Primeiro Projeto</button>
     </div>
     </div>
   </main>
@@ -346,8 +346,20 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-auth.js"></script>
+  <script src="js/supabase-database.js"></script>
   <script>
     let projects = [];
+
+    function formatDate(value) {
+      if (!value) return 'Nunca editado';
+      return new Date(value).toLocaleString('pt-PT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
 
     function renderProjects(projectsData) {
       projects = projectsData || [];
@@ -365,7 +377,24 @@
       grid.style.display = 'grid';
       emptyState.style.display = 'none';
       projectCount.textContent = `${projects.length} ${projects.length === 1 ? 'projeto' : 'projetos'}`;
-      grid.innerHTML = '';
+      grid.innerHTML = projects.map((project) => {
+        const title = project.nome_projeto || 'Projeto Sem Nome';
+        const cliente = project.cliente || 'N/A';
+        const updatedDate = formatDate(project.updated_at);
+        return `
+          <div class="project-card" onclick="openProject('${project.id}')">
+            <div class="project-icon">🏢</div>
+            <div class="project-title">${title}</div>
+            <div class="project-meta">
+              <div><strong>Cliente:</strong> ${cliente}</div>
+            </div>
+            <div class="project-date">📅 Atualizado: ${updatedDate}</div>
+            <div class="project-actions">
+              <button class="btn-open" onclick="openProject('${project.id}'); event.stopPropagation();">Abrir</button>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     // ==================== Status Messages ====================
@@ -381,8 +410,36 @@
       setTimeout(() => status.remove(), 3000);
     }
 
-    function createNewProject() {
-      showStatus('Task 2.6 irá criar projetos via Supabase Database', 'ok');
+    async function loadProjects() {
+      const result = await window.listUserProjects();
+      if (!result.success) {
+        showStatus(`❌ Erro ao carregar projetos: ${result.error}`, 'bad');
+        renderProjects([]);
+        return;
+      }
+
+      renderProjects(result.projects);
+    }
+
+    async function createNewProject() {
+      const nome_projeto = prompt('Nome do projeto:');
+      if (!nome_projeto) {
+        return;
+      }
+
+      const cliente = prompt('Cliente:') || '';
+      const result = await window.createProject({ nome_projeto, cliente });
+      if (!result.success) {
+        showStatus(`❌ Erro ao criar projeto: ${result.error}`, 'bad');
+        return;
+      }
+
+      showStatus('✅ Projeto criado com sucesso.', 'ok');
+      await loadProjects();
+    }
+
+    function openProject(projectId) {
+      window.location.href = `index_v11.1.html?project=${projectId}`;
     }
 
     async function refreshAuthUI() {
@@ -400,7 +457,7 @@
       authPanel.style.display = 'none';
       lobbyPanel.style.display = 'block';
       document.getElementById('userEmail').textContent = user.email || 'Utilizador autenticado';
-      renderProjects([]);
+      await loadProjects();
     }
 
     async function doSignup() {
