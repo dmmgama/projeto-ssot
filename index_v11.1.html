@@ -1477,154 +1477,326 @@
       <!-- SEC 7: AÇÕES -->
       <section id="sec7" class="section">
         <h2>7 · Ações</h2>
-        
+
         <!-- ========================================= -->
         <!-- SELECTOR BLOCO (NOVO v11.1)              -->
         <!-- ========================================= -->
-        <div id="sec7-selector-bloco" style="margin-bottom: 40px; padding: 20px; background: #1a1a1a; border-radius: 8px;">
-          <label style="font-size: 1.1em; display: block; margin-bottom: 10px;">
+        <div id="sec7-selector-bloco" style="margin-bottom: 40px; padding: 20px; background: var(--panel); border-radius: 8px; border: 1px solid var(--line);">
+          <label style="font-size: 1.1em; display: block; margin-bottom: 10px; font-weight: 600;">
             🏗️ Selecionar Bloco Estrutural:
           </label>
-          <select id="sec7-bloco-principal" style="width: 100%; max-width: 400px; padding: 12px; background: #0d0d0d; border: 1px solid #00aaff; border-radius: 4px; color: #fff; font-size: 1em;">
+          <select id="sec7-bloco-principal" style="width: 100%; max-width: 400px; padding: 12px; background: var(--bg); border: 1px solid var(--accent); border-radius: 4px; color: var(--ink); font-size: 1em;">
             <option value="">-- Escolher bloco --</option>
           </select>
-          <p style="color: #999; font-size: 0.9em; margin-top: 10px;">
-            Todas as configurações abaixo aplicam-se ao bloco selecionado.
+          <p style="color: var(--muted); font-size: 0.9em; margin-top: 10px;">
+            ⚠️ Todas as ações e configurações abaixo aplicam-se ao bloco selecionado
           </p>
         </div>
-        
+
         <!-- ========================================= -->
-        <!-- CONTEÚDO (MOSTRA APÓS SELECIONAR BLOCO)  -->
-        <!-- ========================================= -->
-        <div id="sec7-conteudo" style="display: none;">
-          
-          <!-- QUADRO 1: SELEÇÃO AÇÕES -->
-          <div id="sec7-quadro1" style="margin-bottom: 40px;">
-            <h3>Quadro 1: Seleção de Ações a Considerar</h3>
-            <p style="color: #999; font-size: 0.9em; margin-bottom: 20px;">
-              Selecione as ações relevantes para este projeto
-            </p>
-            
-            <div class="acoes-checkboxes" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-              <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="acao-graviticas" checked style="margin-right: 10px; width: 18px; height: 18px;">
-                <span>⚖️ Ações Gravíticas (G+Q)</span>
-              </label>
-              
-              <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="acao-sismica" style="margin-right: 10px; width: 18px; height: 18px;">
-                <span>🌍 Ação Sísmica</span>
-              </label>
-              
-              <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="acao-vento" style="margin-right: 10px; width: 18px; height: 18px;">
-                <span>💨 Ação do Vento</span>
-              </label>
-              
-              <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="acao-terras" style="margin-right: 10px; width: 18px; height: 18px;">
-                <span>▲ Impulsos de Terras</span>
-              </label>
-              
-              <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="acao-retracao" style="margin-right: 10px; width: 18px; height: 18px;">
-                <span>🌡️ Retração/Fluência</span>
-              </label>
-              
-              <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="acao-termica" style="margin-right: 10px; width: 18px; height: 18px;">
-                <span>🌡️ Variação Térmica</span>
-              </label>
-              
-              <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="acao-neve" style="margin-right: 10px; width: 18px; height: 18px;">
-                <span>❄️ Sobrecarga Neve</span>
-              </label>
-              
-              <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="acao-hidrostatica" style="margin-right: 10px; width: 18px; height: 18px;">
-                <span>💧 Pressão Hidrostática</span>
-              </label>
+        <!-- CONTEÚDO v11.0 (MOSTRA APÓS BLOCO)       -->
+        <!--================== ========================= -->
+        <div id="sec7-conteudo-v11" style="display: none;">
+
+          <!-- Quadro 1: Seleção -->
+          <div class="actions-selector">
+            <h3 style="margin:0 0 4px 0;font-size:15px">Quadro 1: Seleção de Ações a Considerar</h3>
+            <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Selecione as ações relevantes para este
+              projeto</p>
+            <div class="actions-checkboxes">
+              <div class="checkbox-item mandatory">
+                <input type="checkbox" id="act_graviticas" checked disabled>
+                <label for="act_graviticas">⚖️ Ações Gravíticas (G+Q)</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="act_sismo" onchange="toggleActionSection('sismo',this.checked)">
+                <label for="act_sismo">🌍 Ação Sísmica</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="act_vento" onchange="toggleActionSection('vento',this.checked)">
+                <label for="act_vento">🌬️ Ação do Vento</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="act_impulsos" onchange="toggleActionSection('impulsos',this.checked)">
+                <label for="act_impulsos">🏔️ Impulsos de Terras</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="act_retracao" onchange="toggleActionSection('retracao',this.checked)">
+                <label for="act_retracao">↔️ Retração/Fluência</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="act_temperatura" onchange="toggleActionSection('temperatura',this.checked)">
+                <label for="act_temperatura">🌡️ Variação Térmica</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="act_neve" onchange="toggleActionSection('neve',this.checked)">
+                <label for="act_neve">❄️ Sobrecarga Neve</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="act_agua" onchange="toggleActionSection('agua',this.checked)">
+                <label for="act_agua">💧 Pressão Hidrostática</label>
+              </div>
             </div>
           </div>
-          
-          <!-- QUADRO 2: AÇÕES SELECIONADAS -->
-          <div id="sec7-quadro2">
-            <h3>Quadro 2: Ações Selecionadas (Detalhamento)</h3>
-            
-            <!-- 7.1 ZONAMENTO GRÁFICO -->
-            <details id="sec7-1-zonamento" open style="margin-bottom: 30px;">
-              <summary style="cursor: pointer; font-size: 1.2em; padding: 15px; background: #1a1a1a; border-radius: 8px; border-left: 4px solid #00aaff;">
-                🗺️ 7.1 - Zonamento Gráfico
-              </summary>
-              
-              <div style="padding: 20px;">
-                
-                <!-- Selector Piso + Botão Editar -->
-                <div style="display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-end;">
-                  <div style="flex: 1;">
-                    <label>Selecionar Piso:</label>
-                    <select id="sec7-select-piso" disabled style="width: 100%; padding: 10px; background: #0d0d0d; border: 1px solid #333; border-radius: 4px; color: #fff;">
-                      <option value="">-- Escolher piso --</option>
+
+          <!-- Quadro 2: Ações Selecionadas -->
+          <h3 style="margin:20px 0 12px 0">Quadro 2: Ações Selecionadas (Detalhamento)</h3>
+          <div class="actions-container">
+
+            <!-- SECTION 7.1: AÇÕES GRAVÍTICAS (ZONAMENTO GRÁFICO) -->
+            <div class="action-section active" id="section-zonamento">
+              <div class="action-header" onclick="toggleActionBody('zonamento')">
+                <h3>🗺️ 7.1 · Zonamento Gráfico</h3>
+                <span class="action-toggle">▼</span>
+              </div>
+              <div class="action-body show" id="body-zonamento">
+                <!-- Floor Selector -->
+                <div class="floor-selector-row">
+                  <label>Selecionar Piso:</label>
+                  <select id="zonamentoFloorSelect" onchange="onZonamentoFloorChange()">
+                    <option value="">-- Selecione um piso --</option>
+                  </select>
+                  <button class="btn-primary" onclick="openZonamentoEditor()">✏️ Editar Zonamento</button>
+                </div>
+
+                <!-- Zonamento Viewer Container -->
+                <div class="zonamento-container">
+                  <!-- Canvas Area -->
+                  <div class="canvas-wrapper">
+                    <div class="viewer-toolbar">
+                      <button id="btn-limpa" onclick="setViewerMode('limpa')">📷 Limpa</button>
+                      <button id="btn-lajes" onclick="setViewerMode('lajes')">📐 Lajes</button>
+                      <button id="btn-sobrecargas" onclick="setViewerMode('sobrecargas')">⚖️ Sobrecargas</button>
+                      <button id="btn-rcp" onclick="setViewerMode('rcp')">🧱 RCP</button>
+                      <button id="btn-combinacoes" onclick="setViewerMode('combinacoes')">🔥 Combinações</button>
+                      <button id="btn-heatmap" onclick="setViewerMode('heatmap')">🌡️ Mapa ELU</button>
+                      <button id="btn-probe" onclick="setViewerMode('probe')">🖱️ Sonda</button>
+                      <button id="btn-predim" onclick="setViewerMode('predim')">📏 Pré-Dim</button>
+                      <button id="btn-predimpil" onclick="setViewerMode('predimpil')">🏢 Pré-Dim Pilares</button>
+                    </div>
+                    <canvas id="zonamentoCanvas" class="viewer-canvas" width="800" height="600"></canvas>
+                  </div>
+
+                  <!-- Info Panel -->
+                  <div class="info-panel" id="zonamentoInfoPanel">
+                    <div class="empty-state">
+                      <p>👆 Selecione um piso e um modo de visualização</p>
+                      <p style="font-size:11px;margin-top:8px;color:var(--muted)">
+                        No modo <strong>Combinações</strong>, clique numa zona para ver o breakdown de cargas
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AÇÃO SÍSMICA -->
+            <div class="action-section" id="section-sismo">
+              <div class="action-header" onclick="toggleActionBody('sismo')">
+                <h3>🌍 Ação Sísmica (EC8)</h3>
+                <span class="action-toggle">▼</span>
+              </div>
+              <div class="action-body" id="body-sismo">
+                <div class="grid">
+                  <div class="card"><label>Zona Sísmica</label>
+                    <select id="sismo_zona">
+                      <option>1.1</option>
+                      <option>1.2</option>
+                      <option>1.3</option>
+                      <option>1.4</option>
+                      <option>2.1</option>
+                      <option>2.2</option>
+                      <option>2.3</option>
+                      <option>2.4</option>
+                      <option>2.5</option>
                     </select>
                   </div>
-                  
-                  <button id="btn-editar-zonamento" disabled style="padding: 10px 20px; background: #00aaff; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap;">
-                    ✏️ Editar Zonamento
-                  </button>
+                  <div class="card"><label>Tipo de Terreno (auto-preenchido)</label>
+                    <select id="sismo_terreno" disabled>
+                      <option value="A">A - Rocha</option>
+                      <option value="B">B - Depósitos rígidos</option>
+                      <option value="C">C - Depósitos médios</option>
+                      <option value="D">D - Depósitos brandos</option>
+                      <option value="E">E - Perfil especial</option>
+                    </select>
+                    <small style="color:var(--muted);font-size:10px">Importado da Geotécnica</small>
+                  </div>
+                  <div class="card"><label>Classe Importância</label>
+                    <select id="sismo_importancia">
+                      <option>I (γI=0.85)</option>
+                      <option selected>II (γI=1.0)</option>
+                      <option>III (γI=1.15)</option>
+                      <option>IV (γI=1.45)</option>
+                    </select>
+                  </div>
+                  <div class="card"><label>Coef. Comportamento (q)</label><input id="sismo_q" type="number" step="0.1"
+                      value="3.0" /></div>
+                  <div class="card"><label>Amortecimento (%)</label><input id="sismo_amort" type="number" step="0.5"
+                      value="5.0" /></div>
                 </div>
-                
-                <!-- Tabs Visualização -->
-                <div id="sec7-tabs" style="display: none; margin-bottom: 20px;">
-                  <div class="tabs-header" style="display: flex; gap: 5px; flex-wrap: wrap; border-bottom: 2px solid #333; padding-bottom: 10px;">
-                    <button class="tab-btn active" data-tab="limpa" style="padding: 8px 12px; background: #0d0d0d; border: 1px solid #00aaff; border-radius: 4px; color: #fff; cursor: pointer;">
-                      🧹 Limpa
-                    </button>
-                    <button class="tab-btn" data-tab="lajes" style="padding: 8px 12px; background: #0d0d0d; border: 1px solid #333; border-radius: 4px; color: #fff; cursor: pointer;">
-                      🧱 Lajes
-                    </button>
-                    <button class="tab-btn" data-tab="sobrecargas" style="padding: 8px 12px; background: #0d0d0d; border: 1px solid #333; border-radius: 4px; color: #fff; cursor: pointer;">
-                      ⚖️ Sobrecargas
-                    </button>
-                    <button class="tab-btn" data-tab="rcp" style="padding: 8px 12px; background: #0d0d0d; border: 1px solid #333; border-radius: 4px; color: #fff; cursor: pointer;">
-                      📦 RCP
-                    </button>
-                    <button class="tab-btn" data-tab="combinacoes" style="padding: 8px 12px; background: #0d0d0d; border: 1px solid #333; border-radius: 4px; color: #fff; cursor: pointer;">
-                      🔥 Combinações
-                    </button>
-                    <button class="tab-btn" data-tab="mapa-elu" style="padding: 8px 12px; background: #0d0d0d; border: 1px solid #333; border-radius: 4px; color: #fff; cursor: pointer;">
-                      🌡️ Mapa ELU
-                    </button>
-                    <button class="tab-btn" data-tab="sonda" style="padding: 8px 12px; background: #0d0d0d; border: 1px solid #333; border-radius: 4px; color: #fff; cursor: pointer;">
-                      🔍 Sonda
-                    </button>
-                    <button class="tab-btn" data-tab="predim" style="padding: 8px 12px; background: #0d0d0d; border: 1px solid #333; border-radius: 4px; color: #fff; cursor: pointer;">
-                      🏗️ Pré-Dim
-                    </button>
-                    <button class="tab-btn" data-tab="predim-pilares" style="padding: 8px 12px; background: #0d0d0d; border: 1px solid #333; border-radius: 4px; color: #fff; cursor: pointer;">
-                      🏛️ Pré-Dim Pilares
-                    </button>
+
+                <h4 style="margin:20px 0 12px 0;font-size:14px">Espectros de Resposta</h4>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                  <div class="chart-container">
+                    <h5 style="margin:0 0 12px 0;font-size:13px;color:var(--ink)">Sismo Tipo 1 (M ≥ 5.5)</h5>
+                    <canvas id="seismicChart1" class="chart-canvas"></canvas>
+                  </div>
+                  <div class="chart-container">
+                    <h5 style="margin:0 0 12px 0;font-size:13px;color:var(--ink)">Sismo Tipo 2 (M < 5.5)</h5>
+                    <canvas id="seismicChart2" class="chart-canvas"></canvas>
                   </div>
                 </div>
-                
-                <!-- Canvas -->
-                <canvas id="sec7-canvas" width="1200" height="800" 
-                        style="display: none; border: 1px solid #333; width: 100%; max-height: 600px; background: #0a0a0a;">
-                </canvas>
-                
-                <!-- Placeholder -->
-                <div id="sec7-placeholder" style="text-align: center; padding: 60px; color: #666; background: #0d0d0d; border-radius: 8px;">
-                  <p style="font-size: 1.2em; margin-bottom: 10px;">👆 Selecione um piso acima</p>
-                  <p style="font-size: 0.9em;">O canvas mostrará o zonamento gráfico após seleção</p>
+
+                <div class="card" style="margin-top:16px">
+                  <label>Observações</label>
+                  <textarea id="sismo_obs" rows="3"></textarea>
                 </div>
-                
               </div>
-            </details>
-            
+            </div>
+
+            <!-- AÇÃO DO VENTO -->
+            <div class="action-section" id="section-vento">
+              <div class="action-header" onclick="toggleActionBody('vento')">
+                <h3>🌬️ Ação do Vento (EC1-1-4)</h3>
+                <span class="action-toggle">▼</span>
+              </div>
+              <div class="action-body" id="body-vento">
+                <div class="grid">
+                  <div class="card"><label>Zona</label><select id="vento_zona">
+                      <option>A</option>
+                      <option>B</option>
+                    </select></div>
+                  <div class="card"><label>vb,0 (m/s)</label><input id="vento_vb" type="number" step="0.1" value="27" />
+                  </div>
+                  <div class="card"><label>Categoria Terreno</label>
+                    <select id="vento_cat">
+                      <option>0 (mar)</option>
+                      <option>I (lagos)</option>
+                      <option>II (rural)</option>
+                      <option>III (suburbano)</option>
+                      <option>IV (urbano)</option>
+                    </select>
+                  </div>
+                  <div class="card"><label>z0 (m)</label><input id="vento_z0" type="number" step="0.01" value="0.3" />
+                  </div>
+                  <div class="card"><label>co</label><input id="vento_co" type="number" step="0.1" value="1.0" /></div>
+                  <div class="card"><label>cpi</label><input id="vento_cpi" type="number" step="0.1" value="0.0" /></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- IMPULSOS TERRAS -->
+            <div class="action-section" id="section-impulsos">
+              <div class="action-header" onclick="toggleActionBody('impulsos')">
+                <h3>🏔️ Impulsos de Terras</h3>
+                <span class="action-toggle">▼</span>
+              </div>
+              <div class="action-body" id="body-impulsos">
+                <div class="grid">
+                  <div class="card"><label>Altura (m)</label><input id="imp_h" type="number" step="0.1" /></div>
+                  <div class="card"><label>γ (kN/m³)</label><input id="imp_gamma" type="number" step="0.1" value="18" />
+                  </div>
+                  <div class="card"><label>φ (°)</label><input id="imp_phi" type="number" step="1" value="30" /></div>
+                  <div class="card"><label>c (kPa)</label><input id="imp_c" type="number" step="1" value="0" /></div>
+                  <div class="card"><label>K0</label><input id="imp_k0" type="number" step="0.01" value="0.5" /></div>
+                  <div class="card"><label>q (kN/m²)</label><input id="imp_q" type="number" step="0.1" /></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RETRAÇÃO -->
+            <div class="action-section" id="section-retracao">
+              <div class="action-header" onclick="toggleActionBody('retracao')">
+                <h3>↔️ Retração e Fluência</h3>
+                <span class="action-toggle">▼</span>
+              </div>
+              <div class="action-body" id="body-retracao">
+                <div class="grid">
+                  <div class="card"><label>HR (%)</label><input id="ret_hr" type="number" step="5" value="70" /></div>
+                  <div class="card"><label>t0 (dias)</label><input id="ret_t0" type="number" step="1" value="28" /></div>
+                  <div class="card"><label>Cimento</label><select id="ret_cement">
+                      <option>R</option>
+                      <option>N</option>
+                      <option>S</option>
+                    </select></div>
+                  <div class="card"><label>Cura</label><select id="ret_cura">
+                      <option>Ao ar</option>
+                      <option>Cofragem</option>
+                      <option>Tratamento</option>
+                    </select></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TEMPERATURA -->
+            <div class="action-section" id="section-temperatura">
+              <div class="action-header" onclick="toggleActionBody('temperatura')">
+                <h3>🌡️ Variação Térmica</h3>
+                <span class="action-toggle">▼</span>
+              </div>
+              <div class="action-body" id="body-temperatura">
+                <div class="grid">
+                  <div class="card"><label>ΔT Contração (°C)</label><input id="temp_contr" type="number" step="1"
+                      value="-15" /></div>
+                  <div class="card"><label>ΔT Expansão (°C)</label><input id="temp_exp" type="number" step="1"
+                      value="20" /></div>
+                  <div class="card"><label>α (10⁻⁶/°C)</label><input id="temp_alpha" type="number" step="0.1"
+                      value="10" /></div>
+                  <div class="card"><label>T ref (°C)</label><input id="temp_ref" type="number" step="1" value="20" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- NEVE -->
+            <div class="action-section" id="section-neve">
+              <div class="action-header" onclick="toggleActionBody('neve')">
+                <h3>❄️ Sobrecarga Neve (EC1-1-3)</h3>
+                <span class="action-toggle">▼</span>
+              </div>
+              <div class="action-body" id="body-neve">
+                <div class="grid">
+                  <div class="card"><label>Zona</label><select id="neve_zona">
+                      <option>A</option>
+                      <option>B</option>
+                      <option>C</option>
+                    </select></div>
+                  <div class="card"><label>Altitude (m)</label><input id="neve_alt" type="number" step="10" /></div>
+                  <div class="card"><label>sk (kN/m²)</label><input id="neve_sk" type="number" step="0.1" value="0.3" />
+                  </div>
+                  <div class="card"><label>Ce</label><input id="neve_ce" type="number" step="0.1" value="1.0" /></div>
+                  <div class="card"><label>Ct</label><input id="neve_ct" type="number" step="0.1" value="1.0" /></div>
+                  <div class="card"><label>μ</label><input id="neve_mu" type="number" step="0.1" value="0.8" /></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ÁGUA -->
+            <div class="action-section" id="section-agua">
+              <div class="action-header" onclick="toggleActionBody('agua')">
+                <h3>💧 Pressão Hidrostática</h3>
+                <span class="action-toggle">▼</span>
+              </div>
+              <div class="action-body" id="body-agua">
+                <div class="grid">
+                  <div class="card"><label>Nível (m)</label><input id="agua_nivel" type="number" step="0.1" /></div>
+                  <div class="card"><label>γw (kN/m³)</label><input id="agua_gamma" type="number" step="0.1" value="10" />
+                  </div>
+                  <div class="card"><label>Subpressões</label><select id="agua_subp">
+                      <option>Sim</option>
+                      <option>Não</option>
+                    </select></div>
+                  <div class="card"><label>Drenagem</label><select id="agua_dren">
+                      <option>Sim</option>
+                      <option>Não</option>
+                    </select></div>
+                </div>
+              </div>
+            </div>
+
           </div>
-          
         </div>
-        
+
       </section>
 
       <!-- SEC 8: CRITÉRIOS -->
