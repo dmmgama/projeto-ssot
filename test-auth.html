@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test Supabase Auth</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    form { margin-bottom: 16px; display: grid; gap: 8px; max-width: 320px; }
+    input, button { padding: 8px; }
+    #status { margin-top: 16px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Teste Auth</h1>
+
+  <form id="signup-form">
+    <strong>Signup</strong>
+    <input id="signup-email" type="email" placeholder="email@jsj.pt" required />
+    <input id="signup-password" type="password" placeholder="password" required />
+    <button type="submit">Signup</button>
+  </form>
+
+  <form id="login-form">
+    <strong>Login</strong>
+    <input id="login-email" type="email" placeholder="email@jsj.pt" required />
+    <input id="login-password" type="password" placeholder="password" required />
+    <button type="submit">Login</button>
+  </form>
+
+  <button id="logout-btn">Logout</button>
+  <div id="user-email">User: -</div>
+  <div id="status"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-auth.js"></script>
+  <script>
+    const statusEl = document.getElementById('status');
+    const userEmailEl = document.getElementById('user-email');
+
+    function logStatus(label, value) {
+      console.log(label, value);
+      statusEl.textContent = `${label}: ${JSON.stringify(value, null, 2)}`;
+    }
+
+    async function refreshUser() {
+      const { user } = await window.getCurrentUser();
+      userEmailEl.textContent = `User: ${user ? user.email : '-'}`;
+    }
+
+    document.getElementById('signup-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+      const result = await window.signupUser(email, password);
+      logStatus('signup', result);
+      await refreshUser();
+    });
+
+    document.getElementById('login-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const result = await window.loginUser(email, password);
+      logStatus('login', result);
+      await refreshUser();
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      const result = await window.logoutUser();
+      logStatus('logout', result);
+      await refreshUser();
+    });
+
+    refreshUser();
+  </script>
+</body>
+</html>

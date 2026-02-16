@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test Supabase Config</title>
+</head>
+<body>
+  <h1>Teste Supabase Config</h1>
+  <p>Abre a consola do browser para validar o client.</p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script>
+    console.log('supabase client:', window.supabaseClient);
+    const sessionPromise = window.supabaseClient.auth.getSession();
+    console.log('getSession() returns Promise:', sessionPromise instanceof Promise);
+    sessionPromise
+      .then((result) => console.log('getSession() result:', result))
+      .catch((error) => console.error('getSession() error:', error));
+  </script>
+</body>
+</html>
