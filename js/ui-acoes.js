@@ -1,4 +1,188 @@
-// ===== POPULATE BLOCOS SELECTOR =====
+// ===== ESTADO AÇÕES =====
+const acoesState = {
+  graviticas: { enabled: true, scope: 'global' },
+  sismica: { enabled: false, scope: 'global' },
+  vento: { enabled: false, scope: 'global' },
+  terras: { enabled: false, scope: 'global' },
+  retracao: { enabled: false, scope: 'global' },
+  termica: { enabled: false, scope: 'global' },
+  neve: { enabled: false, scope: 'global' },
+  hidrostatica: { enabled: false, scope: 'global' }
+};
+
+// ===== GET CURRENT PROJECT ID =====
+function getCurrentProjectId() {
+  if (window.appState && window.appState.activeProjectId) {
+    return window.appState.activeProjectId;
+  }
+  
+  // Fallback: URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('project') || null;
+}
+
+// ===== INIT LISTENERS QUADRO 1 =====
+function initAcoesQuadro1() {
+  // Listener checkboxes (mostrar/ocultar scope selector)
+  document.querySelectorAll('.acao-checkbox input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+      const acaoId = e.target.id.replace('acao-', '');
+      const scopeDiv = document.getElementById(`scope-${acaoId}`);
+      
+      if (!scopeDiv) return;
+      
+      if (e.target.checked) {
+        scopeDiv.style.display = 'block';
+        acoesState[acaoId].enabled = true;
+      } else {
+        scopeDiv.style.display = 'none';
+        acoesState[acaoId].enabled = false;
+      }
+      
+      renderAcoesGlobais();
+      renderAcoesPorBloco();
+    });
+  });
+  
+  // Listener scope selectors (global vs por-bloco)
+  document.querySelectorAll('.scope-selector').forEach(select => {
+    select.addEventListener('change', (e) => {
+      const acaoId = e.target.dataset.acao;
+      if (acoesState[acaoId]) {
+        acoesState[acaoId].scope = e.target.value;
+      }
+      
+      renderAcoesGlobais();
+      renderAcoesPorBloco();
+    });
+  });
+}
+
+// ===== RENDER AÇÕES GLOBAIS =====
+function renderAcoesGlobais() {
+  const container = document.getElementById('sec7-globais-container');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  const acoesGlobais = Object.entries(acoesState)
+    .filter(([key, val]) => val.enabled && val.scope === 'global');
+  
+  if (acoesGlobais.length === 0) {
+    container.innerHTML = '<p style="color: var(--muted); padding: 20px; background: #0d0d0d; border-radius: 6px; text-align: center;">Nenhuma ação global selecionada.</p>';
+    return;
+  }
+  
+  acoesGlobais.forEach(([key, val]) => {
+    const acaoDiv = document.createElement('div');
+    acaoDiv.className = 'acao-global-toggle';
+    
+    acaoDiv.innerHTML = `
+      <h4>${getAcaoLabel(key)}</h4>
+      <div class="acao-toggles" style="margin-top: 15px;">
+        <p style="color: var(--muted); font-size: 0.9em;">
+          Configuração global de ${getAcaoLabel(key)} (aplica-se a todos os blocos).
+        </p>
+        <!-- TODO: Adicionar campos específicos por tipo de ação -->
+      </div>
+    `;
+    
+    container.appendChild(acaoDiv);
+  });
+}
+
+// ===== RENDER AÇÕES POR BLOCO =====
+async function renderAcoesPorBloco() {
+  const container = document.getElementById('sec7-por-bloco-container');
+  if (!container) return;
+  
+  const blocoSelect = document.getElementById('sec7-select-bloco-acoes');
+  const blocoId = blocoSelect ? blocoSelect.value : null;
+  
+  container.innerHTML = '';
+  
+  const acoesPorBloco = Object.entries(acoesState)
+    .filter(([key, val]) => val.enabled && val.scope === 'por-bloco');
+  
+  if (acoesPorBloco.length === 0) {
+    container.innerHTML = '<p style="color: var(--muted); padding: 20px; background: #0d0d0d; border-radius: 6px; text-align: center;">Nenhuma ação "Por Bloco" selecionada.</p>';
+    return;
+  }
+  
+  if (!blocoId) {
+    container.innerHTML = '<p style="color: var(--muted); padding: 20px; background: #0d0d0d; border-radius: 6px; text-align: center;">Selecione um bloco acima.</p>';
+    return;
+  }
+  
+  acoesPorBloco.forEach(([key, val]) => {
+    const acaoDiv = document.createElement('div');
+    acaoDiv.className = 'acao-bloco-toggle';
+    
+    acaoDiv.innerHTML = `
+      <h4>${getAcaoLabel(key)} (Bloco específico)</h4>
+      <div class="acao-toggles" style="margin-top: 15px;">
+        <p style="color: var(--muted); font-size: 0.9em;">
+          Configuração de ${getAcaoLabel(key)} para o bloco selecionado.
+        </p>
+        <!-- TODO: Adicionar campos específicos por tipo de ação -->
+      </div>
+    `;
+    
+    container.appendChild(acaoDiv);
+  });
+}
+
+// ===== POPULATE BLOCOS SELECTOR (AÇÕES) =====
+async function populateBlocosAcoes() {
+  const projectId = getCurrentProjectId();
+  if (!projectId) return;
+  
+  const select = document.getElementById('sec7-select-bloco-acoes');
+  if (!select) return;
+  
+  if (!window.supabaseClient || !window.listProjectBlocks) {
+    console.warn('[ui-acoes] Supabase ou listProjectBlocks não disponível');
+    return;
+  }
+  
+  const { data: blocks, error } = await window.supabaseClient
+    .from('blocks')
+    .select('id, name')
+    .eq('project_id', projectId)
+    .order('created_at');
+  
+  if (error) {
+    console.error('[ui-acoes] Erro carregar blocos:', error);
+    return;
+  }
+  
+  select.innerHTML = '<option value="">Escolher bloco...</option>';
+  
+  (blocks || []).forEach(block => {
+    const option = document.createElement('option');
+    option.value = block.id;
+    option.textContent = block.name || 'Bloco sem nome';
+    select.appendChild(option);
+  });
+}
+
+// ===== HELPER: LABEL AÇÃO =====
+function getAcaoLabel(key) {
+  const labels = {
+    graviticas: '⚖️ Ações Gravíticas (G+Q)',
+    sismica: '🌍 Ação Sísmica',
+    vento: '💨 Ação do Vento',
+    terras: '▲ Impulsos de Terras',
+    retracao: '↔️ Retração/Fluência',
+    termica: '🌡️ Variação Térmica',
+    neve: '❄️ Sobrecarga Neve',
+    hidrostatica: '💧 Pressão Hidrostática'
+  };
+  return labels[key] || key;
+}
+
+// ===== PREVIOUS CODE (Canvas visualization) =====
+
 async function populateBlockSelector(projectId) {
   const blockSelect = document.getElementById('sec7-select-bloco');
   const floorSelect = document.getElementById('sec7-select-piso');
@@ -191,10 +375,37 @@ window.onSec7FloorChange = onSec7FloorChange;
 window.loadFloorCanvas = loadFloorCanvas;
 window.initSec7Canvas = initSec7Canvas;
 
+// Export Secção 7 Ações functions
+window.initAcoesQuadro1 = initAcoesQuadro1;
+window.renderAcoesGlobais = renderAcoesGlobais;
+window.renderAcoesPorBloco = renderAcoesPorBloco;
+window.populateBlocosAcoes = populateBlocosAcoes;
+
+// ===== INIT SECÇÃO 7 COMPLETA =====
+function initSec7() {
+  initSec7Canvas();
+  
+  // Init Quadro 1 (ações)
+  initAcoesQuadro1();
+  populateBlocosAcoes();
+  
+  // Listener selector bloco (ações por bloco)
+  const blocoAcoesSelect = document.getElementById('sec7-select-bloco-acoes');
+  if (blocoAcoesSelect) {
+    blocoAcoesSelect.addEventListener('change', () => {
+      renderAcoesPorBloco();
+    });
+  }
+  
+  // Render inicial
+  renderAcoesGlobais();
+  renderAcoesPorBloco();
+}
+
 // Auto-init on DOMContentLoaded (if not already initialized)
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initSec7Canvas);
+  document.addEventListener('DOMContentLoaded', initSec7);
 } else {
   // DOM already loaded
-  initSec7Canvas();
+  initSec7();
 }

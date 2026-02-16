@@ -258,3 +258,91 @@
   border-radius: 4px;
   display: block;
 }
+
+/* ===== SECÇÃO 7: AÇÕES ===== */
+.acoes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.acao-card {
+  padding: 15px;
+  background: #0d0d0d;
+  border: 1px solid #333;
+  border-radius: 8px;
+  transition: border-color 0.2s;
+}
+
+.acao-card:hover {
+  border-color: #555;
+}
+
+.acao-checkbox {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 1.05em;
+  font-weight: 500;
+}
+
+.acao-checkbox input[type="checkbox"] {
+  margin-right: 10px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.acao-scope {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #333;
+}
+
+.scope-selector {
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 5px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.scope-selector:hover {
+  border-color: var(--accent);
+}
+
+.scope-selector:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.acao-global-toggle,
+.acao-bloco-toggle {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  border-left: 4px solid var(--accent);
+}
+
+.acao-global-toggle h4,
+.acao-bloco-toggle h4 {
+  margin: 0 0 15px 0;
+  color: var(--accent);
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.acao-toggles {
+  margin-top: 15px;
+}
+
+.acao-toggles p {
+  margin: 0;
+  line-height: 1.5;
+}
