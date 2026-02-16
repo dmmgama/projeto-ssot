@@ -10,7 +10,7 @@
 
 /**
  * Creates a new project in Firestore with audit metadata
- * @param {Object} projectData - Project data with Maps (floors, zones, geoHorizons)
+ * @param {Object} projectData - Project data with Maps (floors, geoHorizons)
  * @param {string} userId - Firebase user UID (owner)
  * @returns {Promise<string>} - Project ID
  */
@@ -207,8 +207,8 @@ function sanitizeNestedArrays(value) {
 
 /**
  * Serializes floors (Map OR Object) to Array for Firestore.
- * Handles nested zones (Map or Object), and stringifies nested arrays
- * inside actionsData.layers[].shapes.
+ * Handles actionsData and stringifies nested arrays inside actionsData.layers[].shapes.
+ * NOTE: zones removed in v11.1 refactor - kept for backwards compatibility only
  * @param {Map|Object} floorsInput - Map or Object of floors
  * @returns {Array} - Array of floor objects safe for Firestore
  */
@@ -227,26 +227,13 @@ function serializeFloorsMap(floorsInput) {
   return floorsArray.map(floor => {
     if (!floor) return floor;
     
-    // Handle zones — could be Map, Object, or Array
-    let zonesArray;
-    if (floor.zones instanceof Map) {
-      zonesArray = Array.from(floor.zones.values());
-    } else if (floor.zones && typeof floor.zones === 'object' && !Array.isArray(floor.zones)) {
-      zonesArray = Object.values(floor.zones);
-    } else if (Array.isArray(floor.zones)) {
-      zonesArray = floor.zones;
-    } else {
-      zonesArray = [];
-    }
-    
     // Serialize actionsData — sanitize all nested arrays recursively
     let serializedActionsData = floor.actionsData
       ? sanitizeNestedArrays(floor.actionsData)
       : undefined;
     
     const result = {
-      ...floor,
-      zones: zonesArray,
+      ...floor
     };
     
     // Only include actionsData if it exists
@@ -290,9 +277,9 @@ function deserializeProject(data) {
 
 /**
  * Deserializes floors Array to Map
- * Handles nested zones Array → Map conversion
+ * NOTE: zones removed in v11.1 refactor - kept for backwards compatibility only
  * @param {Array} floorsArray - Array of floor objects
- * @returns {Map} - Map of floors with zones Maps
+ * @returns {Map} - Map of floors
  */
 function deserializeFloorsArray(floorsArray) {
   const floorsMap = new Map();
@@ -302,14 +289,6 @@ function deserializeFloorsArray(floorsArray) {
   }
   
   floorsArray.forEach(floor => {
-    // Deserialize zones Array → Map
-    const zonesMap = new Map();
-    if (floor.zones && Array.isArray(floor.zones)) {
-      floor.zones.forEach(zone => {
-        zonesMap.set(zone.id, zone);
-      });
-    }
-    
     // Deserialize actionsData — parse any stringified arrays back
     let deserializedActionsData = floor.actionsData
       ? deserializeNestedStrings(floor.actionsData)
@@ -317,7 +296,6 @@ function deserializeFloorsArray(floorsArray) {
     
     floorsMap.set(floor.id, {
       ...floor,
-      zones: zonesMap,
       actionsData: deserializedActionsData
     });
   });

@@ -242,68 +242,6 @@ window.deleteFloor = deleteFloor;
 window.listBlockFloors = listBlockFloors;
 window.getFloor = getFloor;
 
-async function createZone(floorId, projectId, zoneData) {
-	const { data, error } = await window.supabaseClient
-		.from('zones')
-		.insert({
-			floor_id: floorId,
-			project_id: projectId,
-			...zoneData
-		})
-		.select()
-		.single();
-
-	if (error) {
-		return { success: false, error: error.message };
-	}
-
-	return { success: true, zone: data };
-}
-
-async function updateZone(zoneId, updates) {
-	const { error } = await window.supabaseClient
-		.from('zones')
-		.update(updates)
-		.eq('id', zoneId);
-
-	if (error) {
-		return { success: false, error: error.message };
-	}
-
-	return { success: true };
-}
-
-async function deleteZone(zoneId) {
-	const { error } = await window.supabaseClient
-		.from('zones')
-		.delete()
-		.eq('id', zoneId);
-
-	if (error) {
-		return { success: false, error: error.message };
-	}
-
-	return { success: true };
-}
-
-async function listFloorZones(floorId) {
-	const { data, error } = await window.supabaseClient
-		.from('zones')
-		.select('*')
-		.eq('floor_id', floorId);
-
-	if (error) {
-		return { success: false, zones: [], error: error.message };
-	}
-
-	return { success: true, zones: data || [] };
-}
-
-window.createZone = createZone;
-window.updateZone = updateZone;
-window.deleteZone = deleteZone;
-window.listFloorZones = listFloorZones;
-
 async function loadProjectHierarchy(projectId) {
 	const { data, error } = await window.supabaseClient
 		.from('projects')
@@ -312,8 +250,7 @@ async function loadProjectHierarchy(projectId) {
 			blocks (
 				*,
 				floors (
-					*,
-					zones (*)
+					id, name, tipologia, cota, cotas_tosco, image_path, created_at, block_id, project_id
 				)
 			)
 		`)

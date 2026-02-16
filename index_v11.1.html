@@ -1305,6 +1305,53 @@
           </div>
         </template>
 
+        <!-- Template para Piso (v11.1 - minimalista geometria) -->
+        <template id="template-piso-item">
+          <div class="piso-item" data-floor-id="">
+            <div class="piso-header">
+              <!-- Nome editável inline -->
+              <span class="piso-name" contenteditable="true">Piso 0</span>
+              
+              <!-- Tipologia dropdown -->
+              <select class="piso-tipologia">
+                <option value="fundacao">🏗️ Fundação</option>
+                <option value="enterrado">⬇️ Enterrado</option>
+                <option value="elevado">⬆️ Elevado</option>
+                <option value="cobertura">🏠 Cobertura</option>
+              </select>
+              
+              <!-- Botão expandir -->
+              <button class="btn-expand-piso" type="button">▼</button>
+              
+              <!-- Botão delete -->
+              <button class="btn-delete-piso" type="button">🗑️</button>
+            </div>
+            
+            <!-- Corpo expandível (cotas) -->
+            <div class="piso-body" style="display: none;">
+              <h5>Cotas de Tosco</h5>
+              <div class="cotas-list">
+                <!-- Dinamicamente gerado -->
+              </div>
+              <button class="btn-add-cota" type="button">+ Adicionar Cota</button>
+              
+              <!-- Upload imagem (opcional) -->
+              <h5>Planta Arquitectura</h5>
+              <input type="file" class="piso-image-upload" accept="image/png,image/jpeg">
+              <div class="piso-image-preview"></div>
+            </div>
+          </div>
+        </template>
+        
+        <!-- Template item cota -->
+        <template id="template-cota-item">
+          <div class="cota-item">
+            <input type="number" class="cota-value" step="0.01" placeholder="0.00"> m
+            <button class="btn-delete-cota" type="button">🗑️</button>
+            <span class="cota-label"></span> <!-- "Principal" na primeira -->
+          </div>
+        </template>
+
         <div style="display:none;">
         <h2>2 · Caracterização Geral</h2>
 
@@ -1430,6 +1477,42 @@
       <!-- SEC 7: AÇÕES -->
       <section id="sec7" class="section">
         <h2>7 · Ações</h2>
+
+        <!-- Subsecção 7.1: Visualização Planta Piso -->
+        <div id="sec7-1-canvas" style="margin-bottom: 30px;">
+          <h3 style="margin:0 0 12px 0;font-size:15px">7.1 - Visualização Planta Piso</h3>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:12px">
+            Selecione o bloco e piso para visualizar a planta de arquitectura.
+            Upload de plantas é feito em Secção 2 (Blocos).
+          </p>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+            <div>
+              <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px;">
+                Selecionar Bloco:
+              </label>
+              <select id="sec7-select-bloco" style="width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--ink);">
+                <option value="">Escolher bloco...</option>
+              </select>
+            </div>
+            
+            <div>
+              <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px;">
+                Selecionar Piso:
+              </label>
+              <select id="sec7-select-piso" disabled style="width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--ink);">
+                <option value="">Escolher piso...</option>
+              </select>
+            </div>
+          </div>
+          
+          <canvas id="sec7-canvas" width="1200" height="800" 
+                  style="border: 1px solid var(--line); border-radius: 4px; margin-top: 12px; display: none; max-width: 100%; background: #0d1016;"></canvas>
+          
+          <p id="sec7-no-image" style="display: none; color: var(--muted); padding: 40px; text-align: center; border: 1px dashed var(--line); border-radius: 4px;">
+            Este piso não tem planta. Faça upload em <strong>Secção 2 (Blocos)</strong>.
+          </p>
+        </div>
 
         <!-- Quadro 1: Seleção -->
         <div class="actions-selector">

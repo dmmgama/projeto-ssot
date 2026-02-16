@@ -39,12 +39,11 @@ function saveProjectsToStorage(projects) {
         geoHorizons: {}
       };
 
-      // Converter Maps de floors (contém zones Map aninhado)
+      // Converter Maps de floors
       if (project.floors instanceof Map) {
         for (const [fId, floor] of project.floors.entries()) {
           serialized[projectId].floors[fId] = {
-            ...floor,
-            zones: {} // Converte Map de zones aninhado
+            ...floor
           };
           
           // DEBUG: Validar actionsData na serialização
@@ -52,14 +51,7 @@ function saveProjectsToStorage(projects) {
             console.log(`[saveProjectsToStorage] Floor ${fId} serializado com actionsData:`, 
               Object.keys(floor.actionsData.layers || {}).length, 'layers');
           }
-          
-          if (floor.zones instanceof Map) {
-            for (const [zId, zone] of floor.zones.entries()) {
-              serialized[projectId].floors[fId].zones[zId] = zone;
-            }
-          } else {
-            serialized[projectId].floors[fId].zones = floor.zones || {};
-          }
+        }
         }
       } else {
         serialized[projectId].floors = project.floors || {};
@@ -106,18 +98,11 @@ function loadProjectsFromStorage() {
         geoHorizons: new Map()
       };
 
-      // Reconstrói floors Map com zones Map aninhado
+      // Reconstrói floors Map
       if (project.floors) {
         for (const [fId, floor] of Object.entries(project.floors)) {
-          const zonesMap = new Map();
-          if (floor.zones) {
-            for (const [zId, zone] of Object.entries(floor.zones)) {
-              zonesMap.set(zId, zone);
-            }
-          }
           projects[projectId].floors.set(fId, {
-            ...floor,
-            zones: zonesMap
+            ...floor
           });
           
           // DEBUG: Validar actionsData na desserialização

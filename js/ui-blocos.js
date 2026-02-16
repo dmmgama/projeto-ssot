@@ -1,11 +1,16 @@
-const BLOCO_TIPOLOGIAS = ['Fundações', 'Enterrados', 'Elevação', 'Cobertura'];
+const BLOCO_TIPOLOGIAS = {
+  'fundacao': '🏗️ Fundação',
+  'enterrado': '⬇️ Enterrado',
+  'elevado': '⬆️ Elevado',
+  'cobertura': '🏠 Cobertura'
+};
 
 function createTipologiaHTML() {
-  return BLOCO_TIPOLOGIAS.map((tipo) => `
-    <div class="tipologia" data-tipo="${tipo}">
-      <h4>${tipo}</h4>
+  return Object.entries(BLOCO_TIPOLOGIAS).map(([key, label]) => `
+    <div class="tipologia" data-tipo="${key}">
+      <h4>${label}</h4>
       <div class="pisos-list"></div>
-      <button class="btn-sm btn-add-piso" data-tipo="${tipo}" type="button">+ Piso</button>
+      <button class="btn-sm btn-add-piso" data-tipo="${key}" type="button">+ Piso</button>
     </div>
   `).join('');
 }
@@ -20,14 +25,208 @@ async function fillPisosForBlock(blockElement, blockId) {
     const pisos = floors.filter((floor) => (floor.tipologia || '') === tipologia);
 
     if (pisos.length === 0) {
-      pisosList.innerHTML = '<div class="piso-item" style="opacity:.7">Sem pisos</div>';
+      pisosList.innerHTML = '<div style="opacity:.7;font-size:12px;padding:8px;color:var(--muted)">Sem pisos</div>';
       return;
     }
 
-    pisosList.innerHTML = pisos.map((floor) => {
-      const cota = Number.isFinite(Number(floor.cota)) ? Number(floor.cota) : 0;
-      return `<div class="piso-item">${floor.name || 'Piso'} (Cota ${cota})</div>`;
-    }).join('');
+    pisosList.innerHTML = '';
+    pisos.forEach((floor) => {
+      renderPiso(floor, pisosList);
+    });
+  });
+}
+
+// ===== RENDER PISO =====
+function renderPiso(floor, parentElement) {
+  const template = document.getElementById('template-piso-item');
+  if (!template) {
+    console.error('Template piso-item não encontrado');
+    return;
+  }
+  
+  const pisoItem = template.content.cloneNode(true);
+  const pisoDiv = pisoItem.querySelector('.piso-item');
+  
+  pisoDiv.dataset.floorId = floor.id;
+  
+  // Nome editável
+  const nameSpan = pisoItem.querySelector('.piso-name');
+  nameSpan.textContent = floor.name || 'Piso';
+  nameSpan.addEventListener('blur', async (e) => {
+    const newName = e.target.textContent.trim() || 'Piso';
+    await window.updateFloor(floor.id, { name: newName });
+    e.target.textContent = newName;
+  });
+  
+  // Tipologia dropdown
+  const tipologiaSelect = pisoItem.querySelector('.piso-tipologia');
+  tipologiaSelect.value = floor.tipologia || 'elevado';
+  tipologiaSelect.addEventListener('change', async (e) => {
+    await window.updateFloor(floor.id, { tipologia: e.target.value });
+    // Re-render blocos para mover piso para tipologia correta
+    if (window.currentBlocosProjectId) {
+      await renderBlocos(window.currentBlocosProjectId);
+    }
+  });
+  
+  // Botão expandir
+  const expandBtn = pisoItem.querySelector('.btn-expand-piso');
+  const pisoBody = pisoDiv.querySelector('.piso-body');
+  expandBtn.addEventListener('click', () => {
+    const isOpen = pisoBody.style.display !== 'none';
+    pisoBody.style.display = isOpen ? 'none' : 'block';
+    expandBtn.textContent = isOpen ? '▼' : '▲';
+    expandBtn.classList.toggle('expanded', !isOpen);
+  });
+  
+  // Botão delete
+  pisoItem.querySelector('.btn-delete-piso').addEventListener('click', async () => {
+    if (!confirm(`Apagar piso "${floor.name || 'Piso'}"?`)) return;
+    
+    const result = await window.deleteFloor(floor.id);
+    if (!result.success) {
+      alert(result.error || 'Erro ao apagar piso');
+      return;
+    }
+    
+    if (window.currentBlocosProjectId) {
+      await renderBlocos(window.currentBlocosProjectId);
+    }
+  });
+  
+  // Render cotas
+  const cotasList = pisoItem.querySelector('.cotas-list');
+  renderCotas(floor, cotasList);
+  
+  // Botão adicionar cota
+  const addCotaBtn = pisoItem.querySelector('.btn-add-cota');
+  addCotaBtn.addEventListener('click', async () => {
+    const newCotaStr = prompt('Nova cota (m):', '0.00');
+    if (!newCotaStr) return;
+    
+    const newCota = parseFloat(newCotaStr);
+    if (isNaN(newCota)) {
+      alert('Cota inválida');
+      return;
+    }
+    
+    const cotas = floor.cotas_tosco || [floor.cota];
+    const updatedCotas = [...cotas, newCota];
+    await window.updateFloor(floor.id, { cotas_tosco: updatedCotas });
+    
+    // Re-render este piso
+    if (window.currentBlocosProjectId) {
+      await renderBlocos(window.currentBlocosProjectId);
+    }
+  });
+  
+  // Upload imagem
+  const uploadInput = pisoItem.querySelector('.piso-image-upload');
+  const imagePreview = pisoItem.querySelector('.piso-image-preview');
+  
+  uploadInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!window.uploadFloorImage) {
+      alert('Função uploadFloorImage não disponível');
+      return;
+    }
+    
+    const result = await window.uploadFloorImage(
+      floor.id, 
+      window.currentBlocosProjectId, 
+      file
+    );
+    
+    if (!result.success) {
+      alert(result.error || 'Erro ao fazer upload');
+      return;
+    }
+    
+    // Mostrar preview
+    const url = await window.getFloorImageURL(floor.id);
+    if (url) {
+      imagePreview.innerHTML = `<img src="${url}" style="max-width: 200px; margin-top: 10px; border: 1px solid var(--line); border-radius: 4px;">`;
+    }
+  });
+  
+  // Se já tem imagem, mostra preview
+  if (floor.image_path && window.getFloorImageURL) {
+    window.getFloorImageURL(floor.id).then(url => {
+      if (url) {
+        imagePreview.innerHTML = `<img src="${url}" style="max-width: 200px; margin-top: 10px; border: 1px solid var(--line); border-radius: 4px;">`;
+      }
+    }).catch(err => {
+      console.error('Erro carregar preview imagem:', err);
+    });
+  }
+  
+  parentElement.appendChild(pisoItem);
+}
+
+// ===== RENDER COTAS =====
+function renderCotas(floor, cotasContainer) {
+  const template = document.getElementById('template-cota-item');
+  if (!template) {
+    console.error('Template cota-item não encontrado');
+    return;
+  }
+  
+  cotasContainer.innerHTML = '';
+  
+  const cotas = floor.cotas_tosco || [floor.cota || 0];
+  
+  cotas.forEach((cotaValue, index) => {
+    const cotaItem = template.content.cloneNode(true);
+    
+    const input = cotaItem.querySelector('.cota-value');
+    input.value = cotaValue;
+    
+    // Label "Principal" na primeira
+    const label = cotaItem.querySelector('.cota-label');
+    if (index === 0) {
+      label.textContent = '(Principal)';
+      label.style.fontWeight = 'bold';
+    }
+    
+    // Update on blur
+    input.addEventListener('blur', async (e) => {
+      const newValue = parseFloat(e.target.value);
+      if (isNaN(newValue)) {
+        e.target.value = cotaValue;
+        return;
+      }
+      
+      const updatedCotas = [...cotas];
+      updatedCotas[index] = newValue;
+      
+      // Primeira cota também atualiza campo `cota` (principal)
+      const updates = { cotas_tosco: updatedCotas };
+      if (index === 0) {
+        updates.cota = newValue;
+      }
+      
+      await window.updateFloor(floor.id, updates);
+    });
+    
+    // Delete cota (exceto primeira - sempre tem 1 mínimo)
+    const deleteBtn = cotaItem.querySelector('.btn-delete-cota');
+    if (index === 0 || cotas.length === 1) {
+      deleteBtn.style.display = 'none'; // Não pode apagar principal ou única cota
+    } else {
+      deleteBtn.addEventListener('click', async () => {
+        const updatedCotas = cotas.filter((_, i) => i !== index);
+        await window.updateFloor(floor.id, { cotas_tosco: updatedCotas });
+        
+        // Re-render
+        if (window.currentBlocosProjectId) {
+          await renderBlocos(window.currentBlocosProjectId);
+        }
+      });
+    }
+    
+    cotasContainer.appendChild(cotaItem);
   });
 }
 
@@ -131,14 +330,20 @@ async function renderBlocos(projectId) {
     blockElement.querySelectorAll('.btn-add-piso').forEach((addPisoBtn) => {
       addPisoBtn.addEventListener('click', async () => {
         const tipologia = addPisoBtn.dataset.tipo;
-        const name = prompt('Nome do piso:', 'Piso X') || 'Piso X';
-        const cotaInput = prompt('Cota do piso:', '0');
-        const cota = Number(cotaInput);
+        const name = prompt('Nome do piso:', `Piso ${BLOCO_TIPOLOGIAS[tipologia] || tipologia}`) || 'Piso X';
+        const cotaInput = prompt('Cota principal (m):', '0.00');
+        const cota = parseFloat(cotaInput);
+
+        if (isNaN(cota)) {
+          alert('Cota inválida');
+          return;
+        }
 
         const createResult = await window.createFloor(block.id, projectId, {
           name,
           tipologia,
-          cota: Number.isFinite(cota) ? cota : 0
+          cota: cota,
+          cotas_tosco: [cota] // Array com cota principal
         });
 
         if (!createResult.success) {
@@ -146,7 +351,7 @@ async function renderBlocos(projectId) {
           return;
         }
 
-        await fillPisosForBlock(blockElement, block.id);
+        await renderBlocos(projectId);
       });
     });
 
