@@ -42,3 +42,31 @@ async function uploadFloorImage(floorId, projectId, file) {
 }
 
 window.uploadFloorImage = uploadFloorImage;
+
+async function getFloorImageURL(floorId) {
+	try {
+		const { data: floor, error: floorError } = await window.supabaseClient
+			.from('floors')
+			.select('image_path')
+			.eq('id', floorId)
+			.single();
+
+		if (floorError || !floor || !floor.image_path) {
+			return { url: null };
+		}
+
+		const { data, error } = await window.supabaseClient.storage
+			.from('floor-images')
+			.createSignedUrl(floor.image_path, 604800);
+
+		if (error || !data?.signedUrl) {
+			return { url: null, error: error?.message };
+		}
+
+		return { url: data.signedUrl };
+	} catch (error) {
+		return { url: null, error: error.message || 'Erro ao gerar signed URL' };
+	}
+}
+
+window.getFloorImageURL = getFloorImageURL;
