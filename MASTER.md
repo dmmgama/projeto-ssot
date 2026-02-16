@@ -178,10 +178,10 @@ cat RISCOS.md          # O que NÃO tocar
 # - Deploy SQL trigger whitelist de ESPECIFICACAO.md §2.3
 
 # 4. Config local
-# - Edita supabase-config.js com tuas credenciais
+# - Edita js/supabase-config.js com tuas credenciais
 # - Supabase Dashboard → Settings → API → anon key + URL
 
-# 5. Abre Index_v11.1.html no browser
+# 5. Abre index_v11.1.html no browser
 # - Autentica com email @jsj.pt
 # - Cria primeiro projeto
 # - Testa CRUD blocos/pisos/zonas

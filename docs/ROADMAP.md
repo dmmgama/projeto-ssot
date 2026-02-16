@@ -59,7 +59,7 @@
 
 ---
 
-## 🔨 FASE 3.2: MIGRAÇÃO SUPABASE COMPLETA (EM CURSO)
+## ✅ FASE 3.2: MIGRAÇÃO SUPABASE COMPLETA (COMPLETO)
 
 ### v11.1 NOVA - Supabase Backend + Schema Blocos + Asset Storage
 **Duração**: 3-4 semanas  
@@ -202,9 +202,9 @@ Projecto → Blocos → Pisos (tipologias editáveis) → Zonas
 
 ## 🎯 PRÓXIMOS PASSOS IMEDIATOS
 
-1. **Implementar v11.1 NOVA**: Seguir spec em `ESPECIFICACAO.md`
-2. **Design UI Blocos**: Mock accordion Secção 2 (papel/Figma)
-3. **Validar protótipo OpenCV**: Testar color-trace offline
+1. **Iniciar v11.5**: Editor Integrado (OpenCV + conectividade)
+2. **Consolidar QA visual final**: suite manual `TESTES.md` (secções pendentes)
+3. **Preparar baseline performance**: referência para v11.5
 
 ---
 
@@ -253,6 +253,6 @@ Projecto → Blocos → Pisos (tipologias editáveis) → Zonas
 
 ---
 
-**Última atualização**: 15/02/2026  
-**Versão atual**: v11.0  
-**Próxima milestone**: v11.1 NOVA (Supabase + Blocos + Storage)
+**Última atualização**: 16/02/2026  
+**Versão atual**: v11.1  
+**Próxima milestone**: v11.5 (Editor Integrado OpenCV)

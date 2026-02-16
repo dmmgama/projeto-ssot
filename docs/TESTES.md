@@ -6,6 +6,20 @@
 
 ---
 
+## ✅ REGISTO EXECUÇÃO TASK 5.2 (16/02/2026)
+
+### Automatizado (executado)
+- ✅ CRUD Projects/Blocks: `scripts/validate-task2-1-2.ps1` → `VALIDACAO_TASKS_2_1_2_OK`
+- ✅ RLS com 2 users: `scripts/validate-sprint2-rls.ps1` → `SPRINT2_RLS_VALIDATION_OK`
+
+### Manual (pendente validação visual)
+- ⏳ §1.1 Persistência completa via UI
+- ⏳ §1.10 Lazy loading via Network tab
+- ⏳ §1.7 Realtime com 2 browsers
+- ⏳ §5.1/§5.2 validação visual de cálculos no viewer
+
+---
+
 ## 1. TESTES DE REGRESSÃO OBRIGATÓRIOS
 
 ### 1.1 Teste de Persistência (IO)
