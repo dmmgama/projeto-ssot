@@ -3214,10 +3214,43 @@
           floorViewer.loadData(floor.actionsData || { layers: {} });
           await floorViewer.loadFloorImage(floorId);
         }
+
+        const blockId = document.getElementById('sec7-select-bloco')?.value;
+        if (blockId) {
+          const materiais = await getEffectiveParam(blockId, 'materiais');
+          window.currentEffectiveMateriais = materiais;
+          const fck = materiais?.betao?.fck;
+          if (typeof fck !== 'undefined') {
+            console.log(`[Params] fck = ${fck}`);
+          }
+        }
       }
     }
 
     window.onZonamentoFloorChangeById = onZonamentoFloorChangeById;
+
+    async function getEffectiveParam(blockId, paramName) {
+      if (!window.supabaseClient || typeof window.supabaseClient.rpc !== 'function') {
+        return null;
+      }
+
+      try {
+        const { data, error } = await window.supabaseClient.rpc('get_effective_param', {
+          p_block_id: blockId,
+          p_param_name: paramName
+        });
+
+        if (error) {
+          console.warn('get_effective_param error:', error.message);
+          return null;
+        }
+
+        return data || null;
+      } catch (error) {
+        console.warn('get_effective_param exception:', error.message);
+        return null;
+      }
+    }
 
     // Open zonamento editor
     function openZonamentoEditor() {

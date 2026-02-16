@@ -65,6 +65,11 @@ async function renderBlocos(projectId) {
       </div>
       <div class="bloco-body">
         <textarea class="bloco-description" placeholder="Descrição...">${block.description || ''}</textarea>
+        <label style="display:flex;gap:8px;align-items:center;margin-bottom:8px;font-size:12px;color:var(--muted)">
+          <input class="bloco-override-toggle" type="checkbox" ${block.override_params ? 'checked' : ''} />
+          Override Params Globais
+        </label>
+        <textarea class="bloco-override-json" placeholder='{"materiais":{"betao":{"fck":25}}}' style="display:${block.override_params ? 'block' : 'none'};margin-bottom:10px;">${block.override_params ? JSON.stringify(block.override_params, null, 2) : ''}</textarea>
         <div class="tipologias-accordion">
           ${createTipologiaHTML()}
         </div>
@@ -76,6 +81,8 @@ async function renderBlocos(projectId) {
     const deleteBtn = blockElement.querySelector('.btn-delete-bloco');
     const bodyEl = blockElement.querySelector('.bloco-body');
     const descEl = blockElement.querySelector('.bloco-description');
+    const overrideToggle = blockElement.querySelector('.bloco-override-toggle');
+    const overrideJson = blockElement.querySelector('.bloco-override-json');
 
     nameEl.addEventListener('blur', async () => {
       const newName = nameEl.textContent.trim() || 'Novo Bloco';
@@ -101,6 +108,24 @@ async function renderBlocos(projectId) {
 
     descEl.addEventListener('change', async () => {
       await window.updateBlock(block.id, { description: descEl.value });
+    });
+
+    overrideToggle.addEventListener('change', async () => {
+      const enabled = overrideToggle.checked;
+      overrideJson.style.display = enabled ? 'block' : 'none';
+      if (!enabled) {
+        overrideJson.value = '';
+        await window.updateBlock(block.id, { override_params: null });
+      }
+    });
+
+    overrideJson.addEventListener('change', async () => {
+      try {
+        const parsed = overrideJson.value.trim() ? JSON.parse(overrideJson.value) : null;
+        await window.updateBlock(block.id, { override_params: parsed });
+      } catch (_error) {
+        alert('JSON inválido em override params');
+      }
     });
 
     blockElement.querySelectorAll('.btn-add-piso').forEach((addPisoBtn) => {
