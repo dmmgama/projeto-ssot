@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Editor Zonamento Gráfico</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    #toolbar {
+      padding: 15px;
+      background: #1a1a1a;
+      border-bottom: 1px solid #333;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    button {
+      padding: 8px 16px;
+      background: #00aaff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover { background: #0088cc; }
+    button:disabled {
+      background: #333;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    #canvas-container {
+      position: relative;
+      width: 100%;
+      height: calc(100vh - 60px);
+      overflow: auto;
+    }
+    canvas {
+      display: block;
+      background: #0d0d0d;
+      cursor: crosshair;
+    }
+  </style>
+</head>
+<body>
+
+<div id="toolbar">
+  <button id="btn-polygon">🖊️ Desenhar Polígono</button>
+  <button id="btn-clear">🗑️ Limpar</button>
+  <button id="btn-save">💾 Guardar</button>
+  <button id="btn-close">✖️ Fechar</button>
+  <span id="status" style="margin-left: auto; color: #999;">Carregar...</span>
+</div>
+
+<div id="canvas-container">
+  <canvas id="canvas" width="1200" height="800"></canvas>
+</div>
+
+<script type="module">
+  // ===== CONFIG SUPABASE =====
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  
+  const SUPABASE_URL = 'https://vkuqmnoepiddpidmdale.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrdXFtbm9lcGlkZHBpZG1kYWxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExOTIxMDUsImV4cCI6MjA4Njc2ODEwNX0.66AiBEfBDuC0s6qp_vf3jCqQAEQZkynCkFLR0XoKeMs';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
+  // ===== GET FLOOR ID FROM URL =====
+  const urlParams = new URLSearchParams(window.location.search);
+  const floorId = urlParams.get('floor');
+  
+  if (!floorId) {
+    document.getElementById('status').textContent = '❌ Floor ID não fornecido';
+  }
+  
+  // ===== ESTADO =====
+  let polygons = [];
+  let currentPolygon = [];
+  let isDrawing = false;
+  let floorImage = null;
+  
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  // ===== LOAD FLOOR DATA =====
+  async function loadFloorData() {
+    if (!floorId) return;
+    
+    try {
+      // Load imagem
+      const imageURL = await getFloorImageURL(floorId);
+      if (imageURL) {
+        const img = new Image();
+        img.src = imageURL;
+        await img.decode();
+        floorImage = img;
+        
+        // Resize canvas to image
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        render();
+      }
+      
+      // TODO: Load polygons existentes (se houver)
+      
+      document.getElementById('status').textContent = '✅ Pronto';
+    } catch (error) {
+      console.error('Erro carregar floor:', error);
+      document.getElementById('status').textContent = '❌ Erro carregar';
+    }
+  }
+  
+  // ===== HELPER: GET IMAGE URL =====
+  async function getFloorImageURL(floorId) {
+    const { data } = await supabase
+      .from('floors')
+      .select('image_path')
+      .eq('id', floorId)
+      .single();
+    
+    if (!data?.image_path) return null;
+    
+    const { data: urlData } = await supabase.storage
+      .from('floor-images')
+      .createSignedUrl(data.image_path, 60 * 60 * 24 * 7); // 7 dias
+    
+    return urlData?.signedUrl || null;
+  }
+  
+  // ===== RENDER =====
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 1. Desenhar imagem
+    if (floorImage) {
+      ctx.drawImage(floorImage, 0, 0);
+    }
+    
+    // 2. Desenhar polígonos salvos
+    polygons.forEach(poly => {
+      ctx.fillStyle = 'rgba(0, 170, 255, 0.3)';
+      ctx.strokeStyle = '#00aaff';
+      ctx.lineWidth = 2;
+      
+      ctx.beginPath();
+      poly.forEach((point, i) => {
+        if (i === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      });
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    });
+    
+    // 3. Desenhar polígono atual (em construção)
+    if (currentPolygon.length > 0) {
+      ctx.fillStyle = 'rgba(255, 170, 0, 0.3)';
+      ctx.strokeStyle = '#ffaa00';
+      ctx.lineWidth = 2;
+      
+      ctx.beginPath();
+      currentPolygon.forEach((point, i) => {
+        if (i === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      });
+      ctx.stroke();
+      
+      // Pontos
+      currentPolygon.forEach(point => {
+        ctx.fillStyle = '#ffaa00';
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+  }
+  
+  // ===== DESENHAR POLÍGONO =====
+  document.getElementById('btn-polygon').addEventListener('click', () => {
+    isDrawing = true;
+    currentPolygon = [];
+    document.getElementById('status').textContent = 'Click para adicionar pontos. Duplo-click para fechar.';
+  });
+  
+  canvas.addEventListener('click', (e) => {
+    if (!isDrawing) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    currentPolygon.push({ x, y });
+    render();
+  });
+  
+  canvas.addEventListener('dblclick', () => {
+    if (!isDrawing || currentPolygon.length < 3) return;
+    
+    // Fechar polígono
+    polygons.push([...currentPolygon]);
+    currentPolygon = [];
+    isDrawing = false;
+    
+    render();
+    document.getElementById('status').textContent = `✅ ${polygons.length} polígonos`;
+  });
+  
+  // ===== LIMPAR =====
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    if (!confirm('Apagar todos os polígonos?')) return;
+    polygons = [];
+    currentPolygon = [];
+    isDrawing = false;
+    render();
+    document.getElementById('status').textContent = '🗑️ Limpo';
+  });
+  
+  // ===== GUARDAR =====
+  document.getElementById('btn-save').addEventListener('click', async () => {
+    // TODO: Guardar polygons no Supabase
+    // Formato: floors.actions_data (JSONB) ou tabela separada
+    console.log('Polígonos para guardar:', polygons);
+    alert(`${polygons.length} polígonos guardados! (TODO: implementar save)`);
+  });
+  
+  // ===== FECHAR =====
+  document.getElementById('btn-close').addEventListener('click', () => {
+    window.close();
+  });
+  
+  // ===== INIT =====
+  loadFloorData();
+</script>
+
+</body>
+</html>

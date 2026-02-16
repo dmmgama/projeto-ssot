@@ -17,6 +17,7 @@ function getCurrentProjectId() {
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {
   initBlocoPrincipalSelector();
+  initAcoesCheckboxes();
   initTabs();
   initEditarZonamento();
   initPisoSelector();
@@ -60,6 +61,9 @@ async function initBlocoPrincipalSelector() {
     
     // Com bloco → mostrar conteúdo + popular pisos
     conteudo.style.display = 'block';
+    
+    // Update nomes nos toggles
+    updateBlocoNamesInToggles();
     
     // Load pisos do bloco
     const { data: floors } = await window.supabaseClient
@@ -217,6 +221,107 @@ function initEditarZonamento() {
     if (!popup) {
       alert('Popup bloqueado! Permita popups para este site.');
     }
+  });
+}
+
+// ===== CHECKBOXES AÇÕES → TOGGLES =====
+function initAcoesCheckboxes() {
+  const checkboxes = [
+    { id: 'acao-graviticas', label: '⚖️ Ações Gravíticas (G+Q)' },
+    { id: 'acao-sismica', label: '🌍 Ação Sísmica' },
+    { id: 'acao-vento', label: '💨 Ação do Vento' },
+    { id: 'acao-terras', label: '▲ Impulsos de Terras' },
+    { id: 'acao-retracao', label: '🌡️ Retração/Fluência' },
+    { id: 'acao-termica', label: '🌡️ Variação Térmica' },
+    { id: 'acao-neve', label: '❄️ Sobrecarga Neve' },
+    { id: 'acao-hidrostatica', label: '💧 Pressão Hidrostática' }
+  ];
+  
+  checkboxes.forEach(({ id, label }) => {
+    const checkbox = document.getElementById(id);
+    if (!checkbox) return;
+    
+    checkbox.addEventListener('change', (e) => {
+      const acaoId = id.replace('acao-', '');
+      
+      if (e.target.checked) {
+        // Criar toggle para esta ação
+        createAcaoToggle(acaoId, label);
+      } else {
+        // Remover toggle
+        removeAcaoToggle(acaoId);
+      }
+    });
+  });
+  
+  // Init: Criar toggles das ações já checked (ex: graviticas)
+  checkboxes.forEach(({ id, label }) => {
+    const checkbox = document.getElementById(id);
+    if (checkbox?.checked) {
+      const acaoId = id.replace('acao-', '');
+      createAcaoToggle(acaoId, label);
+    }
+  });
+}
+
+// ===== CRIAR TOGGLE AÇÃO =====
+function createAcaoToggle(acaoId, label) {
+  const quadro2 = document.getElementById('sec7-quadro2');
+  
+  // Evitar duplicados
+  if (document.getElementById(`toggle-${acaoId}`)) return;
+  
+  const toggleDiv = document.createElement('details');
+  toggleDiv.id = `toggle-${acaoId}`;
+  toggleDiv.style.cssText = 'margin-bottom: 30px;';
+  
+  toggleDiv.innerHTML = `
+    <summary style="cursor: pointer; font-size: 1.2em; padding: 15px; background: #1a1a1a; border-radius: 8px; border-left: 4px solid #00aaff;">
+      ${label}
+    </summary>
+    
+    <div style="padding: 20px; background: #0d0d0d; margin-top: 10px; border-radius: 8px;">
+      <p style="color: #999;">
+        Configuração de <strong>${label}</strong> para o bloco <span id="bloco-name-${acaoId}"></span>.
+      </p>
+      
+      <!-- TODO: Adicionar campos específicos de cada ação -->
+      <div style="margin-top: 20px;">
+        <label>Valor exemplo:</label>
+        <input type="number" step="0.1" value="0" style="padding: 8px; background: #1a1a1a; border: 1px solid #333; border-radius: 4px; color: #fff; width: 200px;">
+      </div>
+    </div>
+  `;
+  
+  // Inserir ANTES de 7.1 Zonamento Gráfico
+  const zonamento = document.getElementById('sec7-1-zonamento');
+  quadro2.insertBefore(toggleDiv, zonamento);
+  
+  // Update nome bloco
+  updateBlocoNamesInToggles();
+}
+
+// ===== REMOVER TOGGLE AÇÃO =====
+function removeAcaoToggle(acaoId) {
+  const toggle = document.getElementById(`toggle-${acaoId}`);
+  if (toggle) toggle.remove();
+}
+
+// ===== UPDATE NOME BLOCO EM TOGGLES =====
+async function updateBlocoNamesInToggles() {
+  if (!currentBlockId) return;
+  
+  const { data: block } = await window.supabaseClient
+    .from('blocks')
+    .select('name')
+    .eq('id', currentBlockId)
+    .single();
+  
+  if (!block) return;
+  
+  // Update todos os spans com nome do bloco
+  document.querySelectorAll('[id^="bloco-name-"]').forEach(span => {
+    span.textContent = block.name;
   });
 }
 
