@@ -297,9 +297,6 @@
     }
   </style>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-config.js"></script>
-  <script src="js/supabase-auth.js"></script>
 </head>
 <body>
   <header>
@@ -312,12 +309,12 @@
       <h2 style="margin-bottom: 8px;">Autenticação Supabase</h2>
       <p style="color: var(--muted); margin-bottom: 16px;">Inicia sessão ou cria conta @jsj.pt para aceder aos projetos.</p>
       <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
-        <input id="authEmail" type="email" placeholder="email@jsj.pt" />
-        <input id="authPassword" type="password" placeholder="password" />
+        <input id="input-email" type="email" placeholder="email@jsj.pt" />
+        <input id="input-password" type="password" placeholder="password" />
       </div>
       <div class="project-actions" style="margin-top: 12px;">
-        <button id="btnSignup" class="btn-primary" type="button">Signup</button>
-        <button id="btnLogin" class="btn-open" type="button">Login</button>
+        <button id="btn-signup" class="btn-primary" type="button">Signup</button>
+        <button id="btn-login" class="btn-open" type="button">Login</button>
       </div>
     </div>
 
@@ -346,6 +343,9 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-auth.js"></script>
   <script>
     let projects = [];
 
@@ -404,26 +404,34 @@
     }
 
     async function doSignup() {
-      const email = document.getElementById('authEmail').value.trim();
-      const password = document.getElementById('authPassword').value;
-      const result = await window.signupUser(email, password);
-      if (!result.success) {
-        showStatus(`❌ Signup falhou: ${result.error}`, 'bad');
+      const email = document.getElementById('input-email').value.trim();
+      const password = document.getElementById('input-password').value;
+      if (!email || !password) {
+        alert('Preenche email e password');
         return;
       }
-      showStatus('✅ Signup efetuado. Verifica o email se necessário.', 'ok');
+      const result = await window.signupUser(email, password);
+      if (!result.success) {
+        alert('Signup falhou: ' + result.error);
+        return;
+      }
+      alert('Signup sucesso! Faz login.');
       await refreshAuthUI();
     }
 
     async function doLogin() {
-      const email = document.getElementById('authEmail').value.trim();
-      const password = document.getElementById('authPassword').value;
-      const result = await window.loginUser(email, password);
-      if (!result.success) {
-        showStatus(`❌ Login falhou: ${result.error}`, 'bad');
+      const email = document.getElementById('input-email').value.trim();
+      const password = document.getElementById('input-password').value;
+      if (!email || !password) {
+        alert('Preenche email e password');
         return;
       }
-      showStatus('✅ Login efetuado.', 'ok');
+      const result = await window.loginUser(email, password);
+      if (!result.success) {
+        alert('Login falhou: ' + result.error);
+        return;
+      }
+      alert('Login sucesso!');
       await refreshAuthUI();
     }
 
@@ -437,10 +445,38 @@
       await refreshAuthUI();
     }
 
-    document.getElementById('btnSignup').addEventListener('click', doSignup);
-    document.getElementById('btnLogin').addEventListener('click', doLogin);
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-    refreshAuthUI();
+    window.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('btn-signup').addEventListener('click', doSignup);
+      document.getElementById('btn-login').addEventListener('click', doLogin);
+      document.getElementById('logoutBtn').addEventListener('click', logout);
+
+      const { user } = await getCurrentUser();
+
+      if (user) {
+        console.log('User autenticado:', user.email);
+      } else {
+        console.log('User não autenticado');
+      }
+
+      await refreshAuthUI();
+    });
+  </script>
+  <script>
+    // DEBUG: Testa se supabase está disponível
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('=== SUPABASE DEBUG ===');
+      console.log('window.supabase (CDN):', typeof window.supabase);
+      console.log('window.supabaseClient (config):', typeof window.supabaseClient);
+      console.log('signupUser function:', typeof signupUser);
+      console.log('loginUser function:', typeof loginUser);
+      console.log('======================');
+
+      if (typeof window.supabaseClient === 'undefined') {
+        console.error('❌ ERRO: supabaseClient não inicializado! Verifica supabase-config.js');
+      } else {
+        console.log('✅ Supabase client OK');
+      }
+    });
   </script>
 </body>
 </html>
