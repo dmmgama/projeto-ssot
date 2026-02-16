@@ -52,7 +52,6 @@ function saveProjectsToStorage(projects) {
               Object.keys(floor.actionsData.layers || {}).length, 'layers');
           }
         }
-        }
       } else {
         serialized[projectId].floors = project.floors || {};
       }

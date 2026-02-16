@@ -1925,19 +1925,12 @@
   </div>
 
   <script>
-    // ==================== DADOS GLOBAIS ====================
-    // ==================== DADOS GLOBAIS v10.1 ====================
-    // uuidv4 agora vem de shared.js como generateUUID()
-    const uuidv4 = generateUUID; // Alias para compatibilidade
-
+    // ==================== GLOBAL STATE & CONSTANTS ====================
+    // Estado global da aplicação (DEVE ser declarado primeiro)
     const appState = {
       activeProjectId: null,
       projects: {}
     };
-
-    let autoSaveTimer = null;
-    let isDirty = false;
-    let realtimeSubscription = null;
 
     // Proxy para acesso rápido ao projeto ativo
     Object.defineProperty(appState, 'activeProject', {
@@ -1946,6 +1939,15 @@
       }
     });
 
+    // Variáveis de controlo
+    let autoSaveTimer = null;
+    let isDirty = false;
+    let realtimeSubscription = null;
+
+    // Alias para compatibilidade (generateUUID vem de shared.js)
+    const uuidv4 = generateUUID;
+
+    // ==================== STATE FUNCTIONS ====================
     // Funções de Navegação Lobby
     async function backToLobby() {
       await saveCurrentProject();
